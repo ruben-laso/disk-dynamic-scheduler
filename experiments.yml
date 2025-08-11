@@ -31,9 +31,6 @@ instances:
       - name: atacseq_1000_3908761308
         files: [ ]
         extra_args: [ '-w atacseq_1000.dot', '-i 3908761308' ]
-      - name: atacseq_18000_3908761308
-        files: [ ]
-        extra_args: [ '-w atacseq_18000.dot', '-i 3908761308' ]
       - name: atacseq_20000_3908761308
         files: [ ]
         extra_args: [ '-w atacseq_20000.dot', '-i 3908761308' ]
@@ -67,9 +64,6 @@ instances:
       - name: atacseq_15000_11187378708
         files: [ ]
         extra_args: [ '-w atacseq_15000.dot', '-i 11187378708' ]
-      - name: atacseq_18000_11187378708
-        files: [ ]
-        extra_args: [ '-w atacseq_18000.dot', '-i 11187378708' ]
       - name: atacseq_20000_11187378708
         files: [ ]
         extra_args: [ '-w atacseq_20000.dot', '-i 11187378708' ]
@@ -103,9 +97,6 @@ instances:
       - name: atacseq_15000_11809629756
         files: [ ]
         extra_args: [ '-w atacseq_15000.dot', '-i 11809629756' ]
-      - name: atacseq_18000_11809629756
-        files: [ ]
-        extra_args: [ '-w atacseq_18000.dot', '-i 11809629756' ]
       - name: atacseq_20000_11809629756
         files: [ ]
         extra_args: [ '-w atacseq_20000.dot', '-i 11809629756' ]
@@ -139,9 +130,6 @@ instances:
       - name: atacseq_15000_14091675276
         files: [ ]
         extra_args: [ '-w atacseq_15000.dot', '-i 14091675276' ]
-      - name: atacseq_18000_14091675276
-        files: [ ]
-        extra_args: [ '-w atacseq_18000.dot', '-i 14091675276' ]
       - name: atacseq_20000_14091675276
         files: [ ]
         extra_args: [ '-w atacseq_20000.dot', '-i 14091675276' ]
@@ -181,9 +169,6 @@ instances:
       - name: chipseq_15000_3793245764
         files: [ ]
         extra_args: [ '-w chipseq_15000.dot', '-i 3793245764' ]
-      - name: chipseq_18000_3793245764
-        files: [ ]
-        extra_args: [ '-w chipseq_18000.dot', '-i 3793245764' ]
       - name: chipseq_20000_3793245764
         files: [ ]
         extra_args: [ '-w chipseq_20000.dot', '-i 3793245764' ]
@@ -217,9 +202,6 @@ instances:
       - name: chipseq_15000_4605965334
         files: [ ]
         extra_args: [ '-w chipseq_15000.dot', '-i 4605965334' ]
-      - name: chipseq_18000_4605965334
-        files: [ ]
-        extra_args: [ '-w chipseq_18000.dot', '-i 4605965334' ]
       - name: chipseq_20000_4605965334
         files: [ ]
         extra_args: [ '-w chipseq_20000.dot', '-i 4605965334' ]
@@ -253,9 +235,6 @@ instances:
       - name: chipseq_15000_4807293396
         files: [ ]
         extra_args: [ '-w chipseq_15000.dot', '-i 4807293396' ]
-      - name: chipseq_18000_4807293396
-        files: [ ]
-        extra_args: [ '-w chipseq_18000.dot', '-i 4807293396' ]
       - name: chipseq_20000_4807293396
         files: [ ]
         extra_args: [ '-w chipseq_20000.dot', '-i 4807293396' ]
@@ -289,9 +268,6 @@ instances:
       - name: chipseq_15000_5058052541
         files: [ ]
         extra_args: [ '-w chipseq_15000.dot', '-i 5058052541' ]
-      - name: chipseq_18000_5058052541
-        files: [ ]
-        extra_args: [ '-w chipseq_18000.dot', '-i 5058052541' ]
       - name: chipseq_20000_5058052541
         files: [ ]
         extra_args: [ '-w chipseq_20000.dot', '-i 5058052541' ]
@@ -325,9 +301,6 @@ instances:
       - name: chipseq_15000_32978181418
         files: [ ]
         extra_args: [ '-w chipseq_15000.dot', '-i 32978181418' ]
-      - name: chipseq_18000_32978181418
-        files: [ ]
-        extra_args: [ '-w chipseq_18000.dot', '-i 32978181418' ]
       - name: chipseq_20000_32978181418
         files: [ ]
         extra_args: [ '-w chipseq_20000.dot', '-i 32978181418' ]
@@ -361,9 +334,6 @@ instances:
       - name: chipseq_15000_41366257414
         files: [ ]
         extra_args: [ '-w chipseq_15000.dot', '-i 41366257414' ]
-      - name: chipseq_18000_41366257414
-        files: [ ]
-        extra_args: [ '-w chipseq_18000.dot', '-i 41366257414' ]
       - name: chipseq_20000_41366257414
         files: [ ]
         extra_args: [ '-w chipseq_20000.dot', '-i 41366257414' ]
@@ -397,9 +367,6 @@ instances:
       - name: eager_15000_8330435694
         files: [ ]
         extra_args: [ '-w eager_15000.dot', '-i 8330435694' ]
-      - name: eager_18000_8330435694
-        files: [ ]
-        extra_args: [ '-w eager_18000.dot', '-i 8330435694' ]
       - name: eager_20000_8330435694
         files: [ ]
         extra_args: [ '-w eager_20000.dot', '-i 8330435694' ]
@@ -433,9 +400,6 @@ instances:
       - name: eager_15000_14754556884
         files: [ ]
         extra_args: [ '-w eager_15000.dot', '-i 14754556884' ]
-      - name: eager_18000_14754556884
-        files: [ ]
-        extra_args: [ '-w eager_18000.dot', '-i 14754556884' ]
       - name: eager_20000_14754556884
         files: [ ]
         extra_args: [ '-w eager_20000.dot', '-i 14754556884' ]
@@ -469,9 +433,6 @@ instances:
       - name: eager_15000_19075314980
         files: [ ]
         extra_args: [ '-w eager_15000.dot', '-i 19075314980' ]
-      - name: eager_18000_19075314980
-        files: [ ]
-        extra_args: [ '-w eager_18000.dot', '-i 19075314980' ]
       - name: eager_20000_19075314980
         files: [ ]
         extra_args: [ '-w eager_20000.dot', '-i 19075314980' ]
@@ -505,9 +466,6 @@ instances:
       - name: eager_15000_19100037384
         files: [ ]
         extra_args: [ '-w eager_15000.dot', '-i 19100037384' ]
-      - name: eager_18000_19100037384
-        files: [ ]
-        extra_args: [ '-w eager_18000.dot', '-i 19100037384' ]
       - name: eager_20000_19100037384
         files: [ ]
         extra_args: [ '-w eager_20000.dot', '-i 19100037384' ]
@@ -541,9 +499,6 @@ instances:
       - name: eager_15000_19132169434
         files: [ ]
         extra_args: [ '-w eager_15000.dot', '-i 19132169434' ]
-      - name: eager_18000_19132169434
-        files: [ ]
-        extra_args: [ '-w eager_18000.dot', '-i 19132169434' ]
       - name: eager_20000_19132169434
         files: [ ]
         extra_args: [ '-w eager_20000.dot', '-i 19132169434' ]
@@ -577,9 +532,6 @@ instances:
       - name: eager_15000_25705994498
         files: [ ]
         extra_args: [ '-w eager_15000.dot', '-i 25705994498' ]
-      - name: eager_18000_25705994498
-        files: [ ]
-        extra_args: [ '-w eager_18000.dot', '-i 25705994498' ]
       - name: eager_20000_25705994498
         files: [ ]
         extra_args: [ '-w eager_20000.dot', '-i 25705994498' ]
@@ -613,9 +565,6 @@ instances:
       - name: methylseq_15000_6273818718
         files: [ ]
         extra_args: [ '-w methylseq_15000.dot', '-i 6273818718' ]
-      - name: methylseq_18000_6273818718
-        files: [ ]
-        extra_args: [ '-w methylseq_18000.dot', '-i 6273818718' ]
       - name: methylseq_20000_6273818718
         files: [ ]
         extra_args: [ '-w methylseq_20000.dot', '-i 6273818718' ]
@@ -649,9 +598,6 @@ instances:
       - name: methylseq_15000_6761426956
         files: [ ]
         extra_args: [ '-w methylseq_15000.dot', '-i 6761426956' ]
-      - name: methylseq_18000_6761426956
-        files: [ ]
-        extra_args: [ '-w methylseq_18000.dot', '-i 6761426956' ]
       - name: methylseq_20000_6761426956
         files: [ ]
         extra_args: [ '-w methylseq_20000.dot', '-i 6761426956' ]
@@ -685,9 +631,6 @@ instances:
       - name: methylseq_15000_8885797810
         files: [ ]
         extra_args: [ '-w methylseq_15000.dot', '-i 8885797810' ]
-      - name: methylseq_18000_8885797810
-        files: [ ]
-        extra_args: [ '-w methylseq_18000.dot', '-i 8885797810' ]
       - name: methylseq_20000_8885797810
         files: [ ]
         extra_args: [ '-w methylseq_20000.dot', '-i 8885797810' ]
@@ -721,9 +664,6 @@ instances:
       - name: methylseq_15000_11897958606
         files: [ ]
         extra_args: [ '-w methylseq_15000.dot', '-i 11897958606' ]
-      - name: methylseq_18000_11897958606
-        files: [ ]
-        extra_args: [ '-w methylseq_18000.dot', '-i 11897958606' ]
       - name: methylseq_20000_11897958606
         files: [ ]
         extra_args: [ '-w methylseq_20000.dot', '-i 11897958606' ]
@@ -757,9 +697,6 @@ instances:
       - name: methylseq_15000_17027257018
         files: [ ]
         extra_args: [ '-w methylseq_15000.dot', '-i 17027257018' ]
-      - name: methylseq_18000_17027257018
-        files: [ ]
-        extra_args: [ '-w methylseq_18000.dot', '-i 17027257018' ]
       - name: methylseq_20000_17027257018
         files: [ ]
         extra_args: [ '-w methylseq_20000.dot', '-i 17027257018' ]
@@ -793,9 +730,6 @@ instances:
       - name: methylseq_15000_22500260922
         files: [ ]
         extra_args: [ '-w methylseq_15000.dot', '-i 22500260922' ]
-      - name: methylseq_18000_22500260922
-        files: [ ]
-        extra_args: [ '-w methylseq_18000.dot', '-i 22500260922' ]
       - name: methylseq_20000_22500260922
         files: [ ]
         extra_args: [ '-w methylseq_20000.dot', '-i 22500260922' ]
@@ -829,9 +763,6 @@ instances:
       - name: methylseq_15000_110641579976
         files: [ ]
         extra_args: [ '-w methylseq_15000.dot', '-i 110641579976' ]
-      - name: methylseq_18000_110641579976
-        files: [ ]
-        extra_args: [ '-w methylseq_18000.dot', '-i 110641579976' ]
       - name: methylseq_20000_110641579976
         files: [ ]
         extra_args: [ '-w methylseq_20000.dot', '-i 110641579976' ]
@@ -856,9 +787,6 @@ instances:
       - name: atacseq_10000_2223941232
         files: [ ]
         extra_args: [ '-w atacseq_10000.dot', '-i 2223941232' ]
-      - name: atacseq_18000_2223941232
-        files: [ ]
-        extra_args: [ '-w atacseq_18000.dot', '-i 2223941232' ]
       - name: atacseq_20000_2223941232
         files: [ ]
         extra_args: [ '-w atacseq_20000.dot', '-i 2223941232' ]
@@ -1042,5 +970,5 @@ experiments:
 ##
 matrix:
   include:
-    - experiments: [ A1-ndev] #A1-dev, A2-dev, A3-dev, BASE-dev, A1-bdev, A2-bdev, A3-bdev, BASE-bdev, A1-30dev, A2-30dev, A3-30dev, BASE-30dev] #BASE-ndev, A1-ndev, A3-ndev ] #,
+    - experiments: [ A1-ndev,A2-ndev , A3-ndev,  BASE-ndev, A1-dev, A2-dev, A3-dev, BASE-dev, A1-bdev, A2-bdev, A3-bdev, BASE-bdev, A1-30dev, A2-30dev, A3-30dev, BASE-30dev] # A1-ndev, A3-ndev ] #,
       axes: [penalties]
