@@ -72,7 +72,7 @@ int main(const int argc, char* argv[])
         }
     }
 
-    graph_t* graphMemTopology = read_dot_graph(filename.c_str(), nullptr, nullptr, nullptr);
+    graph_t* graphMemTopology = read_dot_graph(filename.c_str(), nullptr, nullptr, nullptr,"swaps");
     checkForZeroMemories(graphMemTopology);
 
     const auto i1 = options.workflowName.find("//");

@@ -413,7 +413,7 @@ void free_graph(const graph_t* graph)
  * (defined by \p node_memory_label).
  */
 
-graph_t* read_dot_graph(const char* filename, const char* memory_label, const char* timing_label, const char* node_memory_label)
+graph_t* read_dot_graph(const char* filename, const char* memory_label, const char* timing_label, const char* node_memory_label, const char *swapRateLabel)
 {
     // If memory_label is nullptr, all edges are assumed of
     // weight=1. Similarly, if timing_label is nullptr, all durations are
@@ -454,6 +454,11 @@ graph_t* read_dot_graph(const char* filename, const char* memory_label, const ch
             const double node_memory = strtod(agget(ag_node, (char*)node_memory_label), nullptr);
             someV->memoryRequirement = node_memory;
         }
+        if(swapRateLabel) {
+            char * swap_rate =  agget(ag_node, (char*)swapRateLabel);
+            someV->swapRateText = swap_rate;
+        }
+
     }
 
     /*

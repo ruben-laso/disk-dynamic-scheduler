@@ -1,25 +1,25 @@
 strict digraph "" {
-	1	[label=fastqc];
-	10	[label=multiqc];
+	1	[label=fastqc, swaps=low];
+	10	[label=multiqc, swaps=low];
 	1 -> 10;
-	2	[label=trim_galore];
-	3	[label=bismark_align];
+	2	[label=trim_galore, swaps=low];
+	3	[label=bismark_align, swaps=high];
 	2 -> 3;
 	2 -> 10;
-	0	[label=get_software_versions];
+	0	[label=get_software_versions, swaps=low];
 	0 -> 10;
-	4	[label=bismark_deduplicate];
+	4	[label=bismark_deduplicate, swaps=high];
 	3 -> 4;
-	9	[label=preseq];
+	9	[label=preseq, swaps=high];
 	3 -> 9;
-	6	[label=bismark_report];
+	6	[label=bismark_report, swaps=low];
 	3 -> 6;
-	7	[label=bismark_summary];
+	7	[label=bismark_summary, swaps=low];
 	3 -> 7;
 	3 -> 10;
-	5	[label=bismark_methXtract];
+	5	[label=bismark_methXtract, swaps=moderate];
 	4 -> 5;
-	8	[label=qualimap];
+	8	[label=qualimap, swaps=moderate];
 	4 -> 8;
 	4 -> 6;
 	4 -> 7;
@@ -31,5 +31,5 @@ strict digraph "" {
 	8 -> 10;
 	6 -> 10;
 	7 -> 10;
-	11	[label=output_documentation];
+	11	[label=output_documentation, swaps=low];
 }
