@@ -178,7 +178,7 @@ strict digraph "" {
 	26	 [label=library_merge, swaps=moderate];
 	24 -> 26;
 	24 -> 32;
-	28	 [label=bedtools, swaps=mopderate];
+	28	 [label=bedtools, swaps=moderate];
 	24 -> 28;
 	24 -> 30;
 	33	 [label=bam_trim, swaps=low];

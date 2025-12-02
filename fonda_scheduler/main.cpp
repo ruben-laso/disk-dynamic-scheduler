@@ -47,10 +47,12 @@ int main(const int argc, char* argv[])
     const auto workflow_rows = fonda_scheduler::loadTracesFile(options.pathPrefix + options.tracesFile);
 
     // Theoretical perfect (static schedule)
-    imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options.memoryMultiplicator, options.readWritePenalty, options.offloadPenalty, options.speedMultiplicator);
+    imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
 
     // With deviations
-    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options.memoryMultiplicator, options.readWritePenalty, options.offloadPenalty, options.speedMultiplicator);
+    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+
+   // actualCluster->printProcessors();
 
     const double biggestMem = imaginedCluster->getMemBiggestFreeProcessor()->getMemorySize();
 
@@ -82,9 +84,23 @@ int main(const int argc, char* argv[])
     options.workflowName = options.workflowName.substr(0, n4);
 
     // 10, 100                                                               memShorteningDivision, ioShorteningCoef
-    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, options.workflowName, options.inputSize, imaginedCluster, 1, 10);
-    // print_graph_to_cout(graphMemTopology);
+    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, options.workflowName, options.inputSize, imaginedCluster, 1, 10, options);
+    //print_graph_to_cout(graphMemTopology);
 
+   /* int low=0, mod=0, high=0;
+    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+       if(u->swapRateText=="low")
+           low++;
+       else if(u->swapRateText=="moderate")
+           mod++;
+       else if(u->swapRateText=="high")
+           high++;
+       else
+           throw std::runtime_error("BLABLA "+ u->swapRateText);
+    }
+
+   std::cout<<"low "<<low<<" moderate "<<mod<<" high "<<high<<"low to high "<<((low*1.0)/high)<<std::endl;
+*/
     if (options.scaleToFit) {
         fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);
     }
@@ -104,10 +120,10 @@ int main(const int argc, char* argv[])
 
     events.deleteAll();
     std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
-    std::cout << "makespan_1 " << d << "\t";
+    std::cout << "makespan_dynamic " << d << "\t";
 
     delete actualCluster;
-    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options.memoryMultiplicator, options.readWritePenalty, options.offloadPenalty, options.speedMultiplicator);
+    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
 
     clearGraph(graphMemTopology);
     start = std::chrono::system_clock::now();
@@ -116,7 +132,7 @@ int main(const int argc, char* argv[])
     end = std::chrono::system_clock::now();
     elapsed_seconds = end - start;
     std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
-    std::cout << "makespan_2 " << d << '\n';
+    std::cout << "makespan_static " << d << '\n';
 
     delete graphMemTopology;
     delete imaginedCluster;

@@ -91,4 +91,7 @@ void handleBiggestEvict(bool real, SchedulingResult& result, const std::vector<E
 void handleAllEvict(SchedulingResult& result, double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
     double startTimeForAllEvicted, double readyTimeComput);
 
+
+double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p);
+
 #endif // RESHI_TXT_DYNSCHED_HPP

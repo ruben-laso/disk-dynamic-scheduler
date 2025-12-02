@@ -78,13 +78,13 @@ strict digraph "EagerWorkflow-synthetic-instance" {
  dedup_00000010 -> genotyping_freebayes_00000025 ;
  dedup_00000010 -> genotyping_pileupcaller_00000027 ;
  dedup_00000010 -> multiqc_00000031 ;
- mtnucratio_00000043 [label="mtnucratio_00000043"];
+ mtnucratio_00000043 [label="mtnucratio_00000043", swaps=moderate];
  dedup_00000010 -> mtnucratio_00000043 ;
  sexdeterrmine_prep_00000048 [label="sexdeterrmine_prep_00000048", swaps=low];
  dedup_00000010 -> sexdeterrmine_prep_00000048 ;
  nuclear_contamination_00000055 [label="nuclear_contamination_00000055", swaps=high];
  dedup_00000010 -> nuclear_contamination_00000055 ;
- bedtools_00000056 [label="bedtools_00000056", swaps=mopderate];
+ bedtools_00000056 [label="bedtools_00000056", swaps=moderate];
  dedup_00000010 -> bedtools_00000056 ;
  markduplicates_00000011 [label="markduplicates_00000011", swaps=high];
  markduplicates_00000011 -> genotyping_ug_00000008 ;
@@ -350,7 +350,7 @@ strict digraph "EagerWorkflow-synthetic-instance" {
  kraken_00000077 -> multiqc_00000067 ;
  kraken_parse_00000097 [label="kraken_parse_00000097", swaps=low];
  kraken_00000077 -> kraken_parse_00000097 ;
- bedtools_00000078 [label="bedtools_00000078", swaps=mopderate];
+ bedtools_00000078 [label="bedtools_00000078", swaps=moderate];
  kraken_merge_00000079 [label="kraken_merge_00000079", swaps=low];
  bwa_00000080 [label="bwa_00000080", swaps=high];
  bwa_00000080 -> preseq_00000064 ;
@@ -446,7 +446,7 @@ strict digraph "EagerWorkflow-synthetic-instance" {
  markduplicates_00000096 -> additional_library_merge_00000093 ;
  markduplicates_00000096 -> genotyping_hc_00000094 ;
  markduplicates_00000096 -> mapdamage_rescaling_00000099 ;
- mtnucratio_00000100 [label="mtnucratio_00000100"];
+ mtnucratio_00000100 [label="mtnucratio_00000100", swaps=moderate];
  markduplicates_00000096 -> mtnucratio_00000100 ;
  markduplicates_00000096 -> bam_trim_00000102 ;
  markduplicates_00000096 -> genotyping_angsd_00000108 ;
@@ -617,7 +617,7 @@ strict digraph "EagerWorkflow-synthetic-instance" {
  kraken_00000136 -> multiqc_00000126 ;
  kraken_parse_00000156 [label="kraken_parse_00000156", swaps=low];
  kraken_00000136 -> kraken_parse_00000156 ;
- bedtools_00000137 [label="bedtools_00000137", swaps=mopderate];
+ bedtools_00000137 [label="bedtools_00000137", swaps=moderate];
  kraken_merge_00000138 [label="kraken_merge_00000138", swaps=low];
  bwa_00000139 [label="bwa_00000139", swaps=high];
  bwa_00000139 -> preseq_00000123 ;
@@ -713,7 +713,7 @@ strict digraph "EagerWorkflow-synthetic-instance" {
  markduplicates_00000155 -> additional_library_merge_00000152 ;
  markduplicates_00000155 -> genotyping_hc_00000153 ;
  markduplicates_00000155 -> mapdamage_rescaling_00000158 ;
- mtnucratio_00000159 [label="mtnucratio_00000159"];
+ mtnucratio_00000159 [label="mtnucratio_00000159", swaps=moderate];
  markduplicates_00000155 -> mtnucratio_00000159 ;
  markduplicates_00000155 -> bam_trim_00000161 ;
  markduplicates_00000155 -> genotyping_angsd_00000167 ;

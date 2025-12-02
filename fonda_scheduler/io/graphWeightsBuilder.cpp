@@ -23,7 +23,7 @@ enum MACHINE_COLUMNS {
     WRITE_IOPS = 9,
 };
 
-Cluster* buildClusterFromCsv(const std::string& file, const int memoryMultiplicator, const double readWritePenalty, const double offloadPenalty, const int speedMultiplicator)
+Cluster* buildClusterFromCsv(const std::string& file, const fonda::Options& options)
 {
     csv2::Reader<csv2::delimiter<','>,
         csv2::quote_character<'"'>,
@@ -57,19 +57,18 @@ Cluster* buildClusterFromCsv(const std::string& file, const int memoryMultiplica
                     proc_count = stoi(cell_value);
                     break;
                 case PROCESSOR_SPEED:
-                    p->setProcessorSpeed(stod(cell_value) * speedMultiplicator);
+                    p->setProcessorSpeed(stod(cell_value) * options.speedMultiplicator);
                     break;
                 case MEMORY_AMOUNT:
-                    p->setMemorySize(stod(cell_value) * memoryMultiplicator);
+                    p->setMemorySize(stod(cell_value) * options.memoryMultiplicator);
                     p->setAvailableMemory(p->getMemorySize());
                     p->setAfterAvailableMemory(p->getMemorySize());
                     break;
                 case READ_IOPS:
-                    p->readSpeedDisk = stod(cell_value) * readWritePenalty;
+                    p->readSpeedDisk = stod(cell_value) * options.readWritePenalty;
                     break;
                 case WRITE_IOPS:
-                    p->writeSpeedDisk = stod(cell_value) * readWritePenalty;
-                    p->memoryOffloadingPenalty = stod(cell_value) * offloadPenalty;
+                    p->writeSpeedDisk = stod(cell_value) * options.readWritePenalty;
                     break;
                 default:
                     // Nothing to do
@@ -99,10 +98,11 @@ enum WORKFLOW_COLUMNS {
     AVG_TINPS = 7,
 };
 
+void setSwapRateFromText(vertex_t* v, const fonda::Options& options);
 void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
     std::unordered_map<std::string, std::vector<std::vector<std::string>>> workflow_rows,
     const std::string& workflow_name, const long inputSize, Cluster* cluster,
-    const int memShorteningDivision, const double ioShorteningCoef)
+    const int memShorteningDivision, const double ioShorteningCoef, const fonda::Options& options)
 {
 
     double minMem = std::numeric_limits<double>::max(), minTime = std::numeric_limits<double>::max(), minWchar = std::numeric_limits<double>::max(),
@@ -174,6 +174,8 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
         v->wchar = avgwchar; // avgwchar==0? 1: avgwchar;
         v->taskinputsize = avgtinps; // avgtinps==0? 1: avgtinps;
 
+        setSwapRateFromText(v, options);
+
         minMem = std::min(minMem, avgMem);
         minTime = std::min(minTime, avgTime);
         minWchar = std::min(minWchar, avgwchar);
@@ -186,9 +188,23 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
             v->memoryRequirement = minMem;
             v->wchar = minWchar;
             v->taskinputsize = mintt;
+            setSwapRateFromText(v, options);
         }
     }
     retrieveEdgeWeights(graphMemTopology);
+}
+void setSwapRateFromText(vertex_t* v, const fonda::Options& options)
+{
+    if (v->swapRateText == "low") {
+        v->swapRate= options.lowSwapRate;
+    } else if (v->swapRateText == "moderate") {
+        v->swapRate= options.moderateSwapRate;
+    } else if (v->swapRateText == "high") {
+        v->swapRate= options.highSwapRate;
+    } else //throw std::runtime_error("INVALID SWAP RATE: "+v->swapRateText + " ON VERTEX "+v->name);
+    {
+        std::cout<<"INVALID SWAP RATE: "<<v->swapRateText << " ON VERTEX "<<v->name<<", substituting with moderate swap ratio."<<std::endl;
+    }
 }
 
 void retrieveEdgeWeights(const graph_t* graphMemTopology)

@@ -15,7 +15,10 @@ struct Options {
     double memoryMultiplicator = static_cast<double>(1 << 30); // Default to 1 GiB
     double speedMultiplicator = 100.0; // Default to 100.0
     double readWritePenalty = 1.0; // Default read/write penalty
-    double offloadPenalty = 1e5; // Default offload penalty
+
+    double lowSwapRate =0.01;
+    double moderateSwapRate =0.1;
+    double highSwapRate=0.25;
 
     // Select algorithm: HEFT (0), HEFT-BL (1), HEFT-BLC (2), HEFT-MM (3)
     int algoNumber = 0; // Default to HEFT (0)
@@ -36,7 +39,7 @@ struct Options {
     // 3 - no deviation
     // 4 - everything x2 (times x2)
     // 5 - 30% deviation
-    int deviationModel = 0; // Default deviation model
+    int deviationModel = 3; // Default deviation model
 };
 
 // List of options
@@ -44,7 +47,6 @@ static const struct option long_options[] = {
     { "memory-multiplicator", required_argument, nullptr, 'm' },
     { "speed-multiplicator", required_argument, nullptr, 's' },
     { "read-write-penalty", required_argument, nullptr, 'r' },
-    { "offload-penalty", required_argument, nullptr, 'o' },
     { "workflow-name", required_argument, nullptr, 'w' },
     { "input-size", required_argument, nullptr, 'i' },
     { "algorithm", required_argument, nullptr, 'a' },
@@ -61,7 +63,6 @@ static const char* short_options = "" //
                                    "m:" // memory-multiplicator
                                    "s:" // speed-multiplicator
                                    "r:" // read-write-penalty
-                                   "o:" // offload-penalty
                                    "w:" // workflow-name
                                    "i:" // input-size
                                    "a:" // algorithm
@@ -79,7 +80,6 @@ inline void printHelp(const char* program_name)
               << "  -m, --memory-multiplicator <value>   Set memory multiplicator. Default: 1073741824\n"
               << "  -s, --speed-multiplicator <value>    Set speed multiplicator. Default: 100.0\n"
               << "  -r, --read-write-penalty <value>     Set read/write penalty. Default: 1.0\n"
-              << "  -o, --offload-penalty <value>        Set offload penalty. Default: 1.0\n"
               << "  -w, --workflow-name <name>           Set workflow name. Required\n"
               << "  -i, --input-size <size>              Set input size. Required\n"
               << "  -a, --algorithm <number>             Set algorithm. Default: heft. Options: heft, heft-bl, heft-blc, heft-mm\n"
@@ -126,8 +126,8 @@ inline Options parseOptions(int argc, char* argv[])
             parseArg("read-write-penalty", optarg, options.readWritePenalty, [](const char* arg) { return std::stod(arg); });
             break;
         case 'o':
-            parseArg("offload-penalty", optarg, options.offloadPenalty, [](const char* arg) { return std::stod(arg); });
-            break;
+           // parseArg("offload-penalty", optarg, options.offloadPenalty, [](const char* arg) { return std::stod(arg); });
+           throw std::runtime_error("No more offload penalty!");
         case 'w':
             options.workflowName = optarg;
             options.workflowName = fonda_scheduler::trimQuotes(options.workflowName);

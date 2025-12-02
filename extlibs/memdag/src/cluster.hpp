@@ -45,9 +45,6 @@ public:
     std::string name = {};
     bool isBusy = false;
 
-    double softReadyTimeWrite = 0;
-
-    double memoryOffloadingPenalty = 0;
     std::vector<edge_t*> writingQueue = {};
 
 protected:

@@ -12,14 +12,15 @@
 #include <unordered_map>
 
 #include "cluster.hpp"
+#include "fonda_scheduler/options.hpp"
 
 namespace Fonda {
 void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
     std::unordered_map<std::string, std::vector<std::vector<std::string>>> workflow_rows,
     const std::string& workflow_name, long inputSize, Cluster* cluster,
-    int memShorteningDivision, double ioShorteningCoef);
+    int memShorteningDivision, double ioShorteningCoef, const fonda::Options& options);
 void retrieveEdgeWeights(const graph_t* graphMemTopology);
-Cluster* buildClusterFromCsv(const std::string& file, int memoryMultiplicator, double readWritePenalty, double offloadPenalty, int speedMultiplicator);
+Cluster* buildClusterFromCsv(const std::string& file, const fonda::Options& options);
 }
 
 #endif

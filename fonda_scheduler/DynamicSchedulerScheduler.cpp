@@ -125,7 +125,8 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
         // cout<<" overflow! ";
         double amountToOffload = -Res;
 
-        double timeToFinishNoEvicted = startTime + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffload / ourModifiedProc->memoryOffloadingPenalty;
+        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(startTime,  Res, vertex->time, vertex, ourModifiedProc);
+            // startTime + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffload / ourModifiedProc->memoryOffloadingPenalty;
         assert(timeToFinishNoEvicted > startTime);
         if (sumOut > ourModifiedProc->getAvailableMemory()) {
             // cout<<"cant"<<endl;
@@ -155,8 +156,10 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
                                                                                           : 0;
             double finishTimeToWrite = startTimeToWriteBiggestEdge + biggestFileWeight / ourModifiedProc->writeSpeedDisk;
             startTimeFor1Evicted = std::max(startTime, finishTimeToWrite);
-            timeToFinishBiggestEvicted = startTimeFor1Evicted
-                + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / ourModifiedProc->memoryOffloadingPenalty;
+            timeToFinishBiggestEvicted =
+                finishTimeWithMemorySwapping(startTimeFor1Evicted, amountToOffloadWithoutBiggestFile, vertex->time, vertex, ourModifiedProc);
+               // startTimeFor1Evicted
+               // + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / ourModifiedProc->memoryOffloadingPenalty;
             assert(timeToFinishBiggestEvicted > startTimeFor1Evicted);
 
             const double availableMemWithoutBiggest = ourModifiedProc->getAvailableMemory() + biggestFileWeight;
@@ -182,7 +185,9 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
             // finishTimeToWrite = ourModifiedProc->getExpectedOrActualReadyTimeWrite() +
             //                    timeToWriteAllPending;
             startTimeForAllEvicted = std::max(startTimeForAllEvicted, finishTimeToWrite);
-            timeToFinishAllEvicted = startTimeForAllEvicted + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffloadWithoutAllFiles / ourModifiedProc->memoryOffloadingPenalty;
+            timeToFinishAllEvicted =
+                finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, vertex->time, vertex, ourModifiedProc);
+                //startTimeForAllEvicted + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffloadWithoutAllFiles / ourModifiedProc->memoryOffloadingPenalty;
             assert(timeToFinishAllEvicted > startTimeForAllEvicted);
         }
 
@@ -301,15 +306,21 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
         }
     }
 
-    finishTime = eventStartTask->getExpectedTimeFire() + vertex->time / ourModifiedProc->getProcessorSpeed();
-    if (resultingVar == 1) {
-        assert(Res < 0);
-        finishTime += std::abs(Res) / ourModifiedProc->memoryOffloadingPenalty;
-    } else if (resultingVar == 2) {
-        finishTime += amountToOffloadWithoutBiggestFile / ourModifiedProc->memoryOffloadingPenalty;
-    } else if (resultingVar == 3) {
-        finishTime += amountToOffloadWithoutAllFiles / ourModifiedProc->memoryOffloadingPenalty;
-    }
+    finishTime =
+        resultingVar<0? ( eventStartTask->getExpectedTimeFire() + vertex->time / ourModifiedProc->getProcessorSpeed()):
+        finishTimeWithMemorySwapping(eventStartTask->getExpectedTimeFire() , resultingVar==1 ? std::abs(Res) :
+            resultingVar==2 ? amountToOffloadWithoutBiggestFile  :amountToOffloadWithoutAllFiles,  vertex->time, vertex, ourModifiedProc );
+
+    //assert(resultingVar<4 && resultingVar>0);
+    //finishTime = eventStartTask->getExpectedTimeFire() + vertex->time / ourModifiedProc->getProcessorSpeed();
+   // if (resultingVar == 1) {
+  //      assert(Res < 0);
+   //     finishTime += std::abs(Res) / ourModifiedProc->memoryOffloadingPenalty;
+   // } else if (resultingVar == 2) {
+  //      finishTime += amountToOffloadWithoutBiggestFile / ourModifiedProc->memoryOffloadingPenalty;
+   // } else if (resultingVar == 3) {
+   //     finishTime += amountToOffloadWithoutAllFiles / ourModifiedProc->memoryOffloadingPenalty;
+   // }
     if (vertex->time == 0) {
         finishTime = finishTime + 0.0001;
     }

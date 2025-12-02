@@ -221,7 +221,8 @@ void tentativeAssignment(const vertex_t* v, const bool real, SchedulingResult& r
         // try finish times with and without memory overflow
         const double amountToOffload = -Res;
 
-        double timeToFinishNoEvicted = result.startTime + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffload / result.processorOfAssignment->memoryOffloadingPenalty;
+        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(result.startTime, timeToRun, amountToOffload, v, result.processorOfAssignment);
+            //result.startTime + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffload / result.processorOfAssignment->memoryOffloadingPenalty;
         assert(timeToFinishNoEvicted > result.startTime);
         if (sumOut > result.processorOfAssignment->getAvailableMemory()) {
             // cout<<"cant"<<endl;
@@ -250,8 +251,11 @@ void tentativeAssignment(const vertex_t* v, const bool real, SchedulingResult& r
             changedEdgesOne.emplace_back(biggestPendingEdge, Location(LocationType::OnDisk, std::nullopt, finishTimeToWrite));
 
             startTimeFor1Evicted = std::max(result.startTime, finishTimeToWrite);
-            timeToFinishBiggestEvicted = startTimeFor1Evicted
-                + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / result.processorOfAssignment->memoryOffloadingPenalty;
+            timeToFinishBiggestEvicted =
+                finishTimeWithMemorySwapping(startTimeFor1Evicted, timeToRun, amountToOffloadWithoutBiggestFile, v, result.processorOfAssignment);
+
+            //startTimeFor1Evicted
+               // + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / result.processorOfAssignment->memoryOffloadingPenalty;
             assert(timeToFinishBiggestEvicted > startTimeFor1Evicted);
 
             const double availableMemWithoutBiggest = result.processorOfAssignment->getAvailableMemory() + biggestFileWeight;
@@ -278,7 +282,10 @@ void tentativeAssignment(const vertex_t* v, const bool real, SchedulingResult& r
             //  finishTimeToWrite = result.processorOfAssignment->getReadyTimeWrite() +
             //                     timeToWriteAllPending;
             startTimeForAllEvicted = std::max(startTimeForAllEvicted, finishTimeToWrite);
-            timeToFinishAllEvicted = startTimeForAllEvicted + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutAllFiles / result.processorOfAssignment->memoryOffloadingPenalty;
+            timeToFinishAllEvicted =
+                finishTimeWithMemorySwapping(startTimeForAllEvicted, timeToRun, amountToOffloadWithoutAllFiles, v, result.processorOfAssignment);
+
+                //startTimeForAllEvicted + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutAllFiles / result.processorOfAssignment->memoryOffloadingPenalty;
             assert(timeToFinishAllEvicted > startTimeForAllEvicted);
         }
 
@@ -412,7 +419,10 @@ void tentativeAssignmentHEFT(const vertex_t* v, const bool real, SchedulingResul
         // try finish times with and without memory overflow
         const double amountToOffload = -Res;
 
-        resultCorrect.finishTime = resultCorrect.startTime + timeToRun / resultCorrect.processorOfAssignment->getProcessorSpeed() + amountToOffload / resultCorrect.processorOfAssignment->memoryOffloadingPenalty;
+        resultCorrect.finishTime =
+            finishTimeWithMemorySwapping(resultCorrect.startTime, amountToOffload, timeToRun,v, resultCorrect.processorOfAssignment);
+            //resultCorrect.startTime + timeToRun / resultCorrect.processorOfAssignment->getProcessorSpeed() +
+        // amountToOffload / resultCorrect.processorOfAssignment->memoryOffloadingPenalty;
         assert(resultCorrect.finishTime > resultCorrect.startTime);
 
         if (result.finishTime == std::numeric_limits<double>::max()) {
@@ -701,6 +711,21 @@ void handleAllEvict(SchedulingResult& result, const double timeToWriteAllPending
     result.edgesToChangeStatus = changedEdgesAll;
     // penMemsAsVector.resize(0);
 }
+
+
+double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p){
+    //std::cout<<"swap rate "<<task->swapRate<<std::endl;
+    double result = startTime + timeToRun / p->getProcessorSpeed();
+
+    result += (1 +task->swapRate) * (std::abs(amountToOffload)/task->memoryRequirement) *
+        (std::abs(amountToOffload )/ p->writeSpeedDisk);
+
+    if(result<startTime){
+        std::cout<<"bad computed result with memory swapping on vertex "<<task->name<<std::endl;
+    }
+    return result;
+}
+
 
 graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>& noMemToWithMem)
 {
