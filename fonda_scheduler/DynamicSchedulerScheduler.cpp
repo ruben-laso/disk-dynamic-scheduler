@@ -8,7 +8,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
     double bestStartTime = std::numeric_limits<double>::max();
     double bestFinishTime = std::numeric_limits<double>::max();
     double bestReallyUsedMem = std::numeric_limits<double>::max();
-
+    int bestResultingVar =-2;
     std::vector<std::shared_ptr<Event>> bestEvents;
 
     for (auto& [id, processor] : cluster->getProcessors()) {
@@ -39,17 +39,16 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
             bestProcessorToAssign = ourModifiedProc;
             bestEvents = newEvents;
             bestReallyUsedMem = reallyUsedMem;
+            bestResultingVar= resultingEvictionVariant;
         }
     }
     // cout << "!!!END BEST"<<endl;
-    // cout<<"Best for task "<<vertex->name<<" is on proc "<<bestProcessorToAssign->id<<endl;
-    //  for (auto &item: bestEvents) {
-    //     events.insert(item);
-    //  }
-    //  cout << " new events " << endl;
-    //  cout<< " for "<< vertex->name<<" best "<<bestStartTime<<" "<<bestFinishTime<<" on proc "<<bestProcessorToAssign->id<<endl;//<<" with av mem "<<bestProcessorToAssign->availableMemory<<endl;
-
-    // checkBestEvents(bestEvents);
+  //  std::cout  << vertex->name << " best " <<
+   //     " "<< bestStartTime << " --- "
+    //          << bestFinishTime << " on "
+   //           << bestProcessorToAssign->id
+   //           << " variant " << bestResultingVar<<std::endl;
+            //  <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()<<std::endl;
 
     // Assert that the best processor is not empty and has enough memory
     assert(bestProcessorToAssign != nullptr);

@@ -109,6 +109,9 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
 
 void Event::fireTaskStart()
 {
+
+    //std::cout << "firing task start for " << this->id << " at " << this->getActualTimeFire() << std::endl;
+
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
         // cout << "BAD because #preds " << this->predecessors.size() << " esp " << (*this->predecessors.begin())->id
@@ -188,7 +191,7 @@ void Event::fireTaskStart()
 void Event::fireTaskFinish()
 {
     const vertex_t* thisTask = this->task;
-    //  cout << "firing task Finish for " << this->id << " at " << this->getActualTimeFire() << endl;
+  //    std::cout << "firing task Finish for " << this->id << " at " << this->getActualTimeFire() << std::endl;
     //  cout<<this->actualTimeFire<<" on "<<this->processor->id<<endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
@@ -220,10 +223,11 @@ void Event::fireTaskFinish()
 
     for (auto out_edge : thisTask->out_edges) {
         vertex_t* childTask = out_edge->head;
-        // cout << "deal with child " << childTask->name << endl;
+      //  std::cout << "deal with child " << childTask->name << std::endl;
         bool isReady = true;
         for (const auto& in_edge : childTask->in_edges) {
             if (in_edge->tail->status == Status::Unscheduled) {
+              //  std::cout<<"unscheduled parent "<<in_edge->tail->name<<"\n";
                 isReady = false;
             }
         }
@@ -231,7 +235,7 @@ void Event::fireTaskFinish()
         std::vector<std::shared_ptr<Event>> pred, succ;
 
         if (isReady && childTask->status != Status::Scheduled) {
-            // cout<<"inserting into ready "<<childTask->name<<endl;
+          //  std::cout<<"inserting child task "<<childTask->name<<" into ready "<<std::endl;
             readyQueue.readyTasks.insert(childTask);
         }
 
@@ -249,7 +253,7 @@ void Event::fireTaskFinish()
         vertex_t* mostReadyVertex = *readyQueue.readyTasks.begin();
         std::vector<std::shared_ptr<Processor>> bestModifiedProcs;
         std::shared_ptr<Processor> bestProcessorToAssign;
-        // cout<<"assigning vertex "<<mostReadyVertex->name<<" ";
+       // std::cout<<"assigning most ready vertex "<<mostReadyVertex->name<<" \n";
         auto start = std::chrono::system_clock::now();
         std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(mostReadyVertex, bestModifiedProcs, bestProcessorToAssign,
             this->actualTimeFire);
@@ -320,7 +324,7 @@ std::shared_ptr<Processor> findPredecessorsProcessor(const edge_t* incomingEdge,
 
 void Event::fireReadStart()
 {
-    // cout << "firing read start for " << this->id << " at " << this->actualTimeFire << endl;
+   //  std::cout << "firing read start for " << this->id << " at " << this->actualTimeFire <<std:: endl;
     // assert(finishRead->getActualTimeFire()> this->getActualTimeFire());
     const auto canRun = dealWithPredecessors(shared_from_this());
 
@@ -354,8 +358,8 @@ void Event::fireReadStart()
 
 void Event::fireReadFinish()
 {
-    //  cout << "firing read finish for " << this->id << " at " << this->getActualTimeFire() << " on "
-    //      << this->processor->id << endl;
+   // std::cout << "firing read finish for " << this->id << " at " << this->getActualTimeFire() << " on "
+   //       << this->processor->id << std::endl;
 
     std::shared_ptr<Event> startRead = events.findByEventId(buildEdgeName(this->edge) + "-r-s");
 
@@ -382,7 +386,7 @@ void Event::fireReadFinish()
 
 void Event::fireWriteStart()
 {
-    // cout << "firing write start for " << this->id << " at " << this->getActualTimeFire() << endl;
+ //   std::cout << "firing write start for " << this->id << " at " << this->getActualTimeFire() << std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
@@ -424,8 +428,8 @@ void Event::fireWriteStart()
 
 void Event::fireWriteFinish()
 {
-    //  cout << "firing write finish for " << this->id << " at " << this->getActualTimeFire() << " on "
-    //      << this->processor->id << endl;
+ //   std::cout << "firing write finish for " << this->id << " at " << this->getActualTimeFire() << " on "
+  //        << this->processor->id << std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {

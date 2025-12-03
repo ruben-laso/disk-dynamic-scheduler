@@ -68,18 +68,19 @@ double medih(graph_t* graph, int algoNum, double& runtime)
             std::cout << "Invalid assignment of " << vertex->name;
             return -1;
         } else {
-            /* cout  << vertex->name << " best " <<
-            " "<< bestSchedulingResult.startTime << " "
+            /* std::cout  << vertex->name << " best " <<
+             " "<< bestSchedulingResult.startTime << " --- "
                  << bestSchedulingResult.finishTime << " on "
                   << bestSchedulingResult.processorOfAssignment->id
                   << " variant " << bestSchedulingResult.resultingVar
-                 <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()<<endl;
-
-             cout << " for " << vertex->name << " best real " << bestSchedulingResultOnReal.startTime << " "
+                 <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()
+                      <<std::endl;
+             std::cout << " for " << vertex->name << " best real " << bestSchedulingResultOnReal.startTime << " --- "
                   << bestSchedulingResultOnReal.finishTime << " on proc "
-                  << bestSchedulingResultOnReal.processorOfAssignment->id
+                 << bestSchedulingResultOnReal.processorOfAssignment->id
                   << " variant " << bestSchedulingResultOnReal.resultingVar
-                  <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()<<endl; */
+                 <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
+                       <<std::endl; */
         }
 
         //  cout << "imagine" << endl;
@@ -169,8 +170,13 @@ void bestTentativeAssignmentMEDHI(const vertex_t* vertex, SchedulingResult& resu
         tentativeAssignment(vertex, false, tentativeResult);
         checkIfPendingMemoryCorrect(tentativeResult.processorOfAssignment);
 
+        bool putOnLessMemProcessorIfTimeEquals=
+            result.finishTime == tentativeResult.finishTime &&
+            result.processorOfAssignment &&
+            tentativeResult.processorOfAssignment->getMemorySize() > result.processorOfAssignment->getMemorySize();
+
         if (tentativeResult.finishTime < result.finishTime
-            || (result.finishTime == tentativeResult.finishTime && result.processorOfAssignment && tentativeResult.processorOfAssignment->getMemorySize() > result.processorOfAssignment->getMemorySize())) {
+            || putOnLessMemProcessorIfTimeEquals) {
             assert(!tentativeResult.modifiedProcs.empty());
             result = tentativeResult;
         }

@@ -895,8 +895,12 @@ struct CompareByRank {
     {
         assert(a->rank != -1);
         assert(b->rank != -1);
-        return a->rank > b->rank;
+
+        if (a->rank != b->rank)
+            return a->rank > b->rank; // primary: higher rank comes first
+        return a->id < b->id;                 // tiebreaker
     }
+
 };
 
 class ReadyQueue {
