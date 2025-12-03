@@ -81,7 +81,7 @@ inline void scaleToFit(const graph_t* graphMemTopology, double biggestMem)
 {
     static constexpr auto MEMORY_EPSILON = 1000;
     static constexpr auto MEMORY_DIVISION_FACTOR = 4;
-    static constexpr auto N_TRIALS = 2;
+    static constexpr auto N_TRIALS = 3;
 
     vertex_t* pv = graphMemTopology->first_vertex;
 
@@ -92,7 +92,7 @@ inline void scaleToFit(const graph_t* graphMemTopology, double biggestMem)
             }
         }
         if (memReqFunc(pv) > biggestMem) {
-            throw std::runtime_error(std::string("(") + direction + ") Memory requirement of vertex " + std::string(pv->name) + " exceeds the biggest memory available in the cluster.");
+           throw std::runtime_error(std::string("(") + direction + ") Memory requirement"+ std::to_string(memReqFunc(pv) ) + "of vertex " + std::string(pv->name) + " exceeds the biggest memory available in the cluster, "+ std::to_string(biggestMem));
         }
     };
 
