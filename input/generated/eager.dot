@@ -10,7 +10,7 @@ strict digraph "" {
 	0 -> 15;
 	31	 [label=mask_reference_for_pmdtools, swaps=moderate];
 	0 -> 31;
-	44	 [label= multivcfanalyzer, swaps=moderate];
+	44	 [label=multivcfanalyzer, swaps=moderate];
 	0 -> 44;
 	35	 [label=qualimap, swaps=moderate];
 	0 -> 35;
