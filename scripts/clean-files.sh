@@ -37,5 +37,9 @@ for dir in "$parent_dir"/*; do
     fi
 done
 
- mkdir -p merged
+mkdir merged
 cp *merged* merged/
+
+for f in *~*; do
+    mv "$f" "${f%%~*}.txt"
+done
