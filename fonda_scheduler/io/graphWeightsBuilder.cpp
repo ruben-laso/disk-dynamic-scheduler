@@ -203,7 +203,7 @@ void setSwapRateFromText(vertex_t* v, const fonda::Options& options)
         v->swapRate= options.highSwapRate;
     } else //throw std::runtime_error("INVALID SWAP RATE: "+v->swapRateText + " ON VERTEX "+v->name);
     {
-        std::cout<<"INVALID SWAP RATE: "<<v->swapRateText << " ON VERTEX "<<v->name<<", substituting with moderate swap ratio."<<std::endl;
+        std::cerr<<"INVALID SWAP RATE: "<<v->swapRateText << " ON VERTEX "<<v->name<<", substituting with moderate swap ratio."<<std::endl;
     }
 }
 

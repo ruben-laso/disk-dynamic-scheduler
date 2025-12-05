@@ -50,6 +50,9 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
    //           << " variant " << bestResultingVar<<std::endl;
             //  <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()<<std::endl;
 
+    if(bestProcessorToAssign== nullptr){
+        throw std::runtime_error("No suitable processor found for "+ vertex->name);
+    }
     // Assert that the best processor is not empty and has enough memory
     assert(bestProcessorToAssign != nullptr);
     assert(bestProcessorToAssign->getAvailableMemory() >= vertex->actuallyUsedMemory);
