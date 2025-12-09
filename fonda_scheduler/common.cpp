@@ -155,7 +155,7 @@ void delocateFromThisProcessorToDisk(edge_t* edge, int id, const bool imaginary,
         [id](const Location& location) {
             return location.locationType == LocationType::OnProcessor && location.processorId == id;
         });
-    // cout<<"delocating "; print_edge(edge);
+    // std::cout<<"delocating "; print_edge(edge);
     // assert(locationOnThisProcessor  != edge->locations.end());
     if (locationOnThisProcessor == edge->locations.end()) {
         locations.erase(locationOnThisProcessor);

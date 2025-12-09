@@ -223,6 +223,12 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
                     newEvents.emplace_back(writeEvents.first);
                     newEvents.emplace_back(writeEvents.second);
                 }
+            } else{
+                if(ourModifiedProc->getPendingMemories().find(biggestPendingEdge)!=ourModifiedProc->getPendingMemories().end() ){
+                    //edge scheduled for writing, still needs to be removed from pending memories now
+                    ourModifiedProc->removePendingMemory(biggestPendingEdge);
+                    assert(!eventFinishFromQueue || eventFinishFromQueue->getExpectedTimeFire()<= startTimeFor1Evicted);
+                }
             }
 
             resultingVar = 2;

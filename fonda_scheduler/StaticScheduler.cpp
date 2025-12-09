@@ -10,6 +10,14 @@ Cluster* actualCluster;
 double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj)
 {
     assert(!pj->getIsKeptValid() || pj->getAvailableMemory() >= 0);
+
+    double sumPend=0;
+    for (const auto& item : pj->getPendingMemories()){
+        sumPend+=item->weight;
+    }
+
+    assert(std::abs(sumPend+pj->getAvailableMemory()-pj->getMemorySize())<0.1);
+
     double Res = pj->getAvailableMemory() - peakMemoryRequirementOfVertex(v);
     for (auto inEdge : v->in_edges) {
         if (pj->getPendingMemories().find(inEdge) != pj->getPendingMemories().end()) {
@@ -68,19 +76,18 @@ double medih(graph_t* graph, int algoNum, double& runtime)
             std::cout << "Invalid assignment of " << vertex->name;
             return -1;
         } else {
-            /* std::cout  << vertex->name << " best " <<
+         /*    std::cout  << vertex->name << " best " <<
              " "<< bestSchedulingResult.startTime << " --- "
                  << bestSchedulingResult.finishTime << " on "
                   << bestSchedulingResult.processorOfAssignment->id
                   << " variant " << bestSchedulingResult.resultingVar
-                 <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()
-                      <<std::endl;
-             std::cout << " for " << vertex->name << " best real " << bestSchedulingResultOnReal.startTime << " --- "
-                  << bestSchedulingResultOnReal.finishTime << " on proc "
-                 << bestSchedulingResultOnReal.processorOfAssignment->id
-                  << " variant " << bestSchedulingResultOnReal.resultingVar
-                 <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
-                       <<std::endl; */
+                      <<std::endl; */
+             std::cout << vertex->name <<" "<< bestSchedulingResultOnReal.startTime //<< " --- "
+                   <<" "  << bestSchedulingResultOnReal.finishTime //<< " on proc "
+                   <<" "  << bestSchedulingResultOnReal.processorOfAssignment->id
+                 // << " variant " << bestSchedulingResultOnReal.resultingVar
+                // <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
+                       <<std::endl;
         }
 
         //  cout << "imagine" << endl;
@@ -89,18 +96,9 @@ double medih(graph_t* graph, int algoNum, double& runtime)
         end = std::chrono::system_clock::now();
         elapsed_seconds = end - start;
         runtime += elapsed_seconds.count();
-        // try {
-        // cout << "real" << endl;
-        putChangeOnCluster(vertex, bestSchedulingResultOnReal, actualCluster, numberWithEvictedCases2, true, isHeft);
-        //}
-        // catch(...){
-        //    cout<<"some error"<<endl;
-        //   }
 
-        /*  for (const auto &item: actualCluster->getProcessorById(5)->getPendingMemories()){
-              cout<<buildEdgeName(item)<<endl;
-          }
-          cout<<"<<<<<<<<<"<<endl; */
+        putChangeOnCluster(vertex, bestSchedulingResultOnReal, actualCluster, numberWithEvictedCases2, true, isHeft);
+
         start = std::chrono::system_clock::now();
         if (!isHeft) {
             for (const auto& [proc_id, processor] : imaginedCluster->getProcessors()) {
@@ -227,7 +225,7 @@ void tentativeAssignment(const vertex_t* v, const bool real, SchedulingResult& r
         // try finish times with and without memory overflow
         const double amountToOffload = -Res;
 
-        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(result.startTime, timeToRun, amountToOffload, v, result.processorOfAssignment);
+        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(result.startTime, amountToOffload, timeToRun, v, result.processorOfAssignment);
             //result.startTime + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffload / result.processorOfAssignment->memoryOffloadingPenalty;
         assert(timeToFinishNoEvicted > result.startTime);
         if (sumOut > result.processorOfAssignment->getAvailableMemory()) {
@@ -258,7 +256,7 @@ void tentativeAssignment(const vertex_t* v, const bool real, SchedulingResult& r
 
             startTimeFor1Evicted = std::max(result.startTime, finishTimeToWrite);
             timeToFinishBiggestEvicted =
-                finishTimeWithMemorySwapping(startTimeFor1Evicted, timeToRun, amountToOffloadWithoutBiggestFile, v, result.processorOfAssignment);
+                finishTimeWithMemorySwapping(startTimeFor1Evicted, amountToOffloadWithoutBiggestFile, timeToRun, v, result.processorOfAssignment);
 
             //startTimeFor1Evicted
                // + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / result.processorOfAssignment->memoryOffloadingPenalty;
@@ -289,7 +287,7 @@ void tentativeAssignment(const vertex_t* v, const bool real, SchedulingResult& r
             //                     timeToWriteAllPending;
             startTimeForAllEvicted = std::max(startTimeForAllEvicted, finishTimeToWrite);
             timeToFinishAllEvicted =
-                finishTimeWithMemorySwapping(startTimeForAllEvicted, timeToRun, amountToOffloadWithoutAllFiles, v, result.processorOfAssignment);
+                finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, timeToRun, v, result.processorOfAssignment);
 
                 //startTimeForAllEvicted + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutAllFiles / result.processorOfAssignment->memoryOffloadingPenalty;
             assert(timeToFinishAllEvicted > startTimeForAllEvicted);

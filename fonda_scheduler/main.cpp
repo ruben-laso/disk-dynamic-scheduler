@@ -84,7 +84,7 @@ int main(const int argc, char* argv[])
     options.workflowName = options.workflowName.substr(0, n4);
 
     // 10, 100                                                               memShorteningDivision, ioShorteningCoef
-    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, options.workflowName, options.inputSize, imaginedCluster, 1, 10, options);
+    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, options.workflowName, options.inputSize, imaginedCluster, 1, 1, options);
     //print_graph_to_cout(graphMemTopology);
 
    /* int low=0, mod=0, high=0;
@@ -113,10 +113,21 @@ int main(const int argc, char* argv[])
     std::clog << std::setprecision(15);
 
     start = std::chrono::system_clock::now();
+
     double runtimeDynamic = 0;
-    double d = dynMedih(graphMemTopology, actualCluster /* cluster */, options.algoNumber, options.deviationModel, true /* usePreemptiveWrites */, runtimeDynamic);
+    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+        assert(u->status==Unscheduled);
+    }
+    double d = 0;
+
+    d = dynMedih(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, true, runtimeDynamic);
     end = std::chrono::system_clock::now();
     elapsed_seconds = end - start;
+
+
+    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+        assert(u->status==Finished);
+    }
 
     events.deleteAll();
     std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
@@ -133,6 +144,20 @@ int main(const int argc, char* argv[])
     elapsed_seconds = end - start;
     std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
     std::cout << "makespan_static " << d << '\n';
+
+
+
+  /*  delete actualCluster;
+    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+    clearGraph(graphMemTopology);
+    start = std::chrono::system_clock::now();
+    d = medih(graphMemTopology, 0, runtimeStatic);//0 is default for heft
+    end = std::chrono::system_clock::now();
+    elapsed_seconds = end - start;
+    std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
+    std::cout << "makespan heft " << d << '\n'; */
 
     delete graphMemTopology;
     delete imaginedCluster;

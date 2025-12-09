@@ -114,15 +114,11 @@ void Event::fireTaskStart()
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
-        // cout << "BAD because #preds " << this->predecessors.size() << " esp " << (*this->predecessors.begin())->id
-        //      << endl;
-        // this->setActualTimeFire(
-        //       this->getActualTimeFire()  +std::numeric_limits<double>::epsilon() * this->getActualTimeFire());
         events.insert(shared_from_this());
         return;
     }
 
-    // cout << "DONE" << endl;
+    //std::cout<<this->task->name<<" start "<<this->actualTimeFire<<" "<<this->processor->id<<"\n";
     removeFromDependencies();
     this->task->status = Status::Running;
     const auto ourFinishEvent = events.findByEventId(this->task->name + "-f");
@@ -196,13 +192,11 @@ void Event::fireTaskFinish()
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
-        //     cout << "BAD because #preds " << this->predecessors.size() << " esp " << (*this->predecessors.begin())->id
-        //       << endl;
         events.insert(shared_from_this());
         return;
     }
 
-    // cout << "DONE " << endl;
+    //std::cout<<this->task->name<<" finish "<<this->actualTimeFire<<" "<<this->processor->id<<"\n";
     removeFromDependencies();
 
     // set its status to finished

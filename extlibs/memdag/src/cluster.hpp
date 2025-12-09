@@ -355,22 +355,24 @@ public:
     {
 
         for (const auto& [key, value] : this->processors) {
-            std::cout << "Processor " << value->id << "with memory " << value->getMemorySize() << ", speed " << value->getProcessorSpeed()
-                      << " and busy? " << value->isBusy //<< " assigned " << (value->isBusy?value->getAssignedTaskId(): -1)
-                      << " ready time compute " << value->getReadyTimeCompute()
-                      << " ready time read " << value->getReadyTimeRead()
-                      << " ready time write " << value->getReadyTimeWrite()
-                      //<< " ready time write soft " << value->softReadyTimeWrite
-                      //<< " avail memory " << value->availableMemory
-                      << " writing queue size " << value->writingQueue.size()
-                      << " pending in memory " << value->getPendingMemories().size() << " pcs: "
+            if(value->getReadyTimeCompute()!=0) {
+                std::cout << "Processor " << value->id << "with memory " << value->getMemorySize() << ", speed " << value->getProcessorSpeed()
+                          << " and busy? " << value->isBusy //<< " assigned " << (value->isBusy?value->getAssignedTaskId(): -1)
+                          << " ready time compute " << value->getReadyTimeCompute()
+                          << " ready time read " << value->getReadyTimeRead()
+                          << " ready time write " << value->getReadyTimeWrite()
+                          //<< " ready time write soft " << value->softReadyTimeWrite
+                          //<< " avail memory " << value->availableMemory
+                          << " writing queue size " << value->writingQueue.size()
+                          << " pending in memory " << value->getPendingMemories().size() << " pcs: "
 
-                ;
+                    ;
 
-            for (const auto& item : value->getPendingMemories()) {
-                std::cout << buildEdgeName(item) << ", ";
+                for (const auto& item : value->getPendingMemories()) {
+                    std::cout << buildEdgeName(item) << ", ";
+                }
+                std::cout << '\n';
             }
-            std::cout << '\n';
         }
     }
 

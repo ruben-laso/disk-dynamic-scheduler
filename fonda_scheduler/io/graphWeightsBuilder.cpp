@@ -133,10 +133,18 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
         for (const auto& row : workflow_rows[nameToSearch]) {
             int col_idx = 0;
             std::string proc_name;
+            bool abort_row = false;
+
             for (const auto& cell : row) {
                 switch (col_idx) {
                 case PROC_NAME:
                     proc_name = cell;
+                    try{
+                        cluster->getOneProcessorByName(proc_name);
+                    }
+                    catch (...){
+                        abort_row = true;
+                    }
                     break;
                 case PROC_SPEED_SCALE:
                     avgTime += stod(cell) * cluster->getOneProcessorByName(proc_name)->getProcessorSpeed();
@@ -154,7 +162,7 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
                     // Nothing to do
                     break;
                 }
-
+                if (abort_row) break;
                 col_idx++;
             }
         }
