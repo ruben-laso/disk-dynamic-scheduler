@@ -81,13 +81,13 @@ double medih(graph_t* graph, int algoNum, double& runtime)
                  << bestSchedulingResult.finishTime << " on "
                   << bestSchedulingResult.processorOfAssignment->id
                   << " variant " << bestSchedulingResult.resultingVar
-                      <<std::endl; */
+                      <<std::endl; 
              std::cout << vertex->name <<" "<< bestSchedulingResultOnReal.startTime //<< " --- "
                    <<" "  << bestSchedulingResultOnReal.finishTime //<< " on proc "
                    <<" "  << bestSchedulingResultOnReal.processorOfAssignment->id
                  // << " variant " << bestSchedulingResultOnReal.resultingVar
                 // <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
-                       <<std::endl;
+                       <<std::endl; */
         }
 
         //  cout << "imagine" << endl;
