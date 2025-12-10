@@ -147,12 +147,14 @@ int main(const int argc, char* argv[])
 
 
 
-  /*  delete actualCluster;
+ /*  delete actualCluster;
+   delete imaginedCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
     imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
     std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
     clearGraph(graphMemTopology);
     start = std::chrono::system_clock::now();
+    runtimeStatic=0;
     d = medih(graphMemTopology, 0, runtimeStatic);//0 is default for heft
     end = std::chrono::system_clock::now();
     elapsed_seconds = end - start;

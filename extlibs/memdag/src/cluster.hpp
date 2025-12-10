@@ -355,7 +355,7 @@ public:
     {
 
         for (const auto& [key, value] : this->processors) {
-            if(value->getReadyTimeCompute()!=0) {
+
                 std::cout << "Processor " << value->id << "with memory " << value->getMemorySize() << ", speed " << value->getProcessorSpeed()
                           << " and busy? " << value->isBusy //<< " assigned " << (value->isBusy?value->getAssignedTaskId(): -1)
                           << " ready time compute " << value->getReadyTimeCompute()
@@ -372,7 +372,7 @@ public:
                     std::cout << buildEdgeName(item) << ", ";
                 }
                 std::cout << '\n';
-            }
+
         }
     }
 

@@ -71,6 +71,11 @@ void processIncomingEdges(const vertex_t* v, bool realAsNotImaginary, bool realA
     std::vector<std::shared_ptr<Processor>>& modifiedProcs,
     double& earliestStartingTimeToComputeVertex);
 
+void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool realAsNotImaginary, const bool realAsRealRuntimes, const bool isHeft,
+    const std::shared_ptr<Processor>& ourModifiedProc,
+    std::vector<std::shared_ptr<Processor>>& modifiedProcs,
+    double& earliestStartingTimeToComputeVertex);
+
 void checkIfPendingMemoryCorrect(const std::shared_ptr<Processor>& p);
 
 bool hasDuplicates(const std::vector<std::shared_ptr<Processor>>& vec);

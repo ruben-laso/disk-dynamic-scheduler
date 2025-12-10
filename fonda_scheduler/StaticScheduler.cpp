@@ -81,13 +81,13 @@ double medih(graph_t* graph, int algoNum, double& runtime)
                  << bestSchedulingResult.finishTime << " on "
                   << bestSchedulingResult.processorOfAssignment->id
                   << " variant " << bestSchedulingResult.resultingVar
-                      <<std::endl; */
+                      <<std::endl;
              std::cout << vertex->name <<" "<< bestSchedulingResultOnReal.startTime //<< " --- "
                    <<" "  << bestSchedulingResultOnReal.finishTime //<< " on proc "
                    <<" "  << bestSchedulingResultOnReal.processorOfAssignment->id
                  // << " variant " << bestSchedulingResultOnReal.resultingVar
                 // <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
-                       <<std::endl;
+                       <<std::endl; */
         }
 
         //  cout << "imagine" << endl;
@@ -351,7 +351,6 @@ void tentativeAssignmentHEFT(const vertex_t* v, const bool real, SchedulingResul
     const double timeToRun = real ? v->time * v->factorForRealExecution : v->time;
 
     double sumOut = getSumOut(v);
-    assert(sumOut == outMemoryRequirement(v));
     if (result.processorOfAssignment->getMemorySize() < outMemoryRequirement(v) || result.processorOfAssignment->getMemorySize() < inMemoryRequirement(v)) {
         //  cout<<"too large outs absolutely"<<endl;
         result.finishTime = std::numeric_limits<double>::max();
@@ -366,7 +365,7 @@ void tentativeAssignmentHEFT(const vertex_t* v, const bool real, SchedulingResul
     modifiedProcsCorrect.emplace_back(resultCorrect.processorOfAssignment);
 
     processIncomingEdges(v, false, false, true, result.processorOfAssignment, modifiedProcs, result.startTime);
-    processIncomingEdges(v, true, real, true, resultCorrect.processorOfAssignment, modifiedProcsCorrect,
+    processIncomingEdgesByNotGoingIntoPast(v, true, real, true, resultCorrect.processorOfAssignment, modifiedProcsCorrect,
         resultCorrect.startTime);
 
     assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
@@ -381,9 +380,7 @@ void tentativeAssignmentHEFT(const vertex_t* v, const bool real, SchedulingResul
         // only the correct result knows about kicking
 
         double stillNeedsToBeEvictedToRun = sumOut - resultCorrect.processorOfAssignment->getAvailableMemory();
-        double writeTime = resultCorrect.startTime > resultCorrect.processorOfAssignment->getReadyTimeCompute()
-            ? resultCorrect.startTime
-            : result.processorOfAssignment->getReadyTimeCompute();
+        double writeTime = resultCorrect.startTime;
 
         for (auto it = resultCorrect.processorOfAssignment->getPendingMemories().begin();
             it != resultCorrect.processorOfAssignment->getPendingMemories().end() && stillNeedsToBeEvictedToRun > 0;) {
@@ -657,6 +654,76 @@ void processIncomingEdges(const vertex_t* v, const bool realAsNotImaginary, cons
 
                 double whichMakespan = realAsRealRuntimes ? predecessor->makespan : predecessor->makespanPerceived;
                 const double timeToStartWriting = std::max(whichMakespan, addedProc->getReadyTimeWrite());
+                addedProc->setReadyTimeWrite(timeToStartWriting + edgeWeightToUse / addedProc->writeSpeedDisk);
+                const double startTimeOfRead = std::max(addedProc->getReadyTimeWrite(), ourModifiedProc->getReadyTimeRead());
+
+                double endTimeOfRead = startTimeOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk;
+                ourModifiedProc->setReadyTimeRead(endTimeOfRead);
+
+                earliestStartingTimeToComputeVertex = std::max(earliestStartingTimeToComputeVertex, endTimeOfRead);
+                // int addpl  = addedProc->pendingMemories.size();
+                addedProc->removePendingMemory(incomingEdge);
+                // assert(addpl> addedProc->pendingMemories.size());
+                checkIfPendingMemoryCorrect(addedProc);
+            }
+        }
+    }
+}
+
+void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool realAsNotImaginary, const bool realAsRealRuntimes, const bool isHeft,
+    const std::shared_ptr<Processor>& ourModifiedProc,
+    std::vector<std::shared_ptr<Processor>>& modifiedProcs,
+    double& earliestStartingTimeToComputeVertex){
+
+    const bool shouldUseImaginary = isHeft & !realAsNotImaginary;
+    earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeCompute();
+    for (const auto incomingEdge : v->in_edges) {
+        const vertex_t* predecessor = incomingEdge->tail;
+
+        const double edgeWeightToUse = realAsRealRuntimes ? incomingEdge->weight * incomingEdge->factorForRealExecution
+                                                          : incomingEdge->weight;
+
+        if (predecessor->assignedProcessorId == ourModifiedProc->id) {
+            if (!isLocatedOnThisProcessor(incomingEdge, ourModifiedProc->id, shouldUseImaginary)) {
+                assert(isLocatedOnDisk(incomingEdge, shouldUseImaginary));
+                ourModifiedProc->setReadyTimeRead(
+                    std::max(ourModifiedProc->getReadyTimeRead(), earliestStartingTimeToComputeVertex) + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
+                earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeRead() > earliestStartingTimeToComputeVertex ? ourModifiedProc->getReadyTimeRead() : earliestStartingTimeToComputeVertex;
+            }
+
+        } else {
+            if (isLocatedOnDisk(incomingEdge, shouldUseImaginary)) {
+                // we need to schedule read
+                const double startOfRead = std::max(std::max(ourModifiedProc->getReadyTimeRead(), getLocationOnDisk(incomingEdge, shouldUseImaginary).afterWhen.value()), earliestStartingTimeToComputeVertex);
+                ourModifiedProc->setReadyTimeRead(
+                    startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
+                earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeRead() > earliestStartingTimeToComputeVertex ? ourModifiedProc->getReadyTimeRead() : earliestStartingTimeToComputeVertex;
+
+            } else {
+                auto predecessorsProcessorsId = predecessor->assignedProcessorId;
+                assert(isLocatedOnThisProcessor(incomingEdge, predecessorsProcessorsId, shouldUseImaginary));
+                std::shared_ptr<Processor> addedProc;
+                auto it = // modifiedProcs.size()==1?
+                          //   modifiedProcs.begin():
+                    std::find_if(modifiedProcs.begin(), modifiedProcs.end(),
+                        [predecessorsProcessorsId](const std::shared_ptr<Processor>& p) {
+                            return p->id == predecessorsProcessorsId;
+                        });
+
+                if (it == modifiedProcs.end()) {
+                    Cluster* cluster = realAsNotImaginary ? actualCluster : imaginedCluster;
+                    addedProc = std::make_shared<Processor>(*cluster->getProcessorById(predecessorsProcessorsId));
+                    // cout<<"adding modified proc "<<addedProc->id<<endl;
+                    modifiedProcs.emplace_back(addedProc);
+                    checkIfPendingMemoryCorrect(addedProc);
+                } else {
+                    addedProc = *it;
+                }
+
+                assert(!hasDuplicates(modifiedProcs));
+
+                double whichMakespan = realAsRealRuntimes ? predecessor->makespan : predecessor->makespanPerceived;
+                const double timeToStartWriting = std::max(std::max(whichMakespan, addedProc->getReadyTimeWrite()), earliestStartingTimeToComputeVertex);
                 addedProc->setReadyTimeWrite(timeToStartWriting + edgeWeightToUse / addedProc->writeSpeedDisk);
                 const double startTimeOfRead = std::max(addedProc->getReadyTimeWrite(), ourModifiedProc->getReadyTimeRead());
 
