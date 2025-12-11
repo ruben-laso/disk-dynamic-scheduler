@@ -268,28 +268,35 @@ void tentativeAssignment(const vertex_t* v, const bool real, SchedulingResult& r
 
             double sumWeightsOfAllPending = 0;
             finishTimeToWrite = result.processorOfAssignment->getReadyTimeWrite();
-            for (const auto& item : result.processorOfAssignment->getPendingMemories()) {
-                if (item->head->name != v->name) {
+
+            double stillNeedsToBeEvictedToRun = amountToOffload;
+
+            for (auto it = result.processorOfAssignment->getPendingMemories().begin();
+                it != result.processorOfAssignment->getPendingMemories().end() && stillNeedsToBeEvictedToRun > 0;) {
+                if ((*it)->head->name != v->name) {
                     const double startTimeWrite = std::max(finishTimeToWrite,
-                        (real ? item->tail->makespan : item->tail->makespanPerceived));
-                    const double itemWeightToWrite = real ? item->weight * item->factorForRealExecution : item->weight;
+                        (real ? (*it)->tail->makespan : (*it)->tail->makespanPerceived));
+                    const double itemWeightToWrite = real ? (*it)->weight * (*it)->factorForRealExecution : (*it)->weight;
+
                     timeToWriteAllPending += itemWeightToWrite / result.processorOfAssignment->writeSpeedDisk;
                     finishTimeToWrite = startTimeWrite + itemWeightToWrite / result.processorOfAssignment->writeSpeedDisk;
-                    changedEdgesAll.emplace_back(item, Location(LocationType::OnDisk, std::nullopt, finishTimeToWrite));
-                    sumWeightsOfAllPending += item->weight;
+                    changedEdgesAll.emplace_back((*it), Location(LocationType::OnDisk, std::nullopt, finishTimeToWrite));
+                    sumWeightsOfAllPending += (*it)->weight;
+                    stillNeedsToBeEvictedToRun -= (*it)->weight;
+                    ++it;
+                } else {
+                    ++it;
                 }
             }
 
             const double amountToOffloadWithoutAllFiles = (amountToOffload - sumWeightsOfAllPending > 0) ? amountToOffload - sumWeightsOfAllPending : 0;
 
-            assert(amountToOffloadWithoutAllFiles >= 0);
             //  finishTimeToWrite = result.processorOfAssignment->getReadyTimeWrite() +
             //                     timeToWriteAllPending;
             startTimeForAllEvicted = std::max(startTimeForAllEvicted, finishTimeToWrite);
-            timeToFinishAllEvicted =
-                finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, timeToRun, v, result.processorOfAssignment);
+            timeToFinishAllEvicted = finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, timeToRun, v, result.processorOfAssignment);
 
-                //startTimeForAllEvicted + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutAllFiles / result.processorOfAssignment->memoryOffloadingPenalty;
+            // startTimeForAllEvicted + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutAllFiles / result.processorOfAssignment->memoryOffloadingPenalty;
             assert(timeToFinishAllEvicted > startTimeForAllEvicted);
         }
 
@@ -476,37 +483,45 @@ void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult&
         checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         break;
     }
-    case 3:
+    case 3: {
         // cout<<"best with all kick"<<endl;
         assert(bestSchedulingResult.edgesToChangeStatus.size() > 1);
+
         for (auto it = bestSchedulingResult.processorOfAssignment->getPendingMemories().begin();
-            it != bestSchedulingResult.processorOfAssignment->getPendingMemories().end();) {
-            // cout << buildEdgeName(nextEdge) << endl;
-            if (edge_t* nextEdge = *it; nextEdge->head->name != pVertex->name) {
+             it != bestSchedulingResult.processorOfAssignment->getPendingMemories().end();) {
 
-                const auto findEdgeInChanges1 = std::find_if(
-                    bestSchedulingResult.edgesToChangeStatus.begin(),
-                    bestSchedulingResult.edgesToChangeStatus.end(), [nextEdge](const EdgeChange& e) {
-                        return nextEdge == e.edge;
-                    });
-                assert(findEdgeInChanges1 != bestSchedulingResult.edgesToChangeStatus.end());
+             edge_t* nextEdge = *it;
+           //  std:: cout << buildEdgeName(nextEdge) << std::endl;
+             if ( nextEdge->head->name != pVertex->name) {
 
-                it = canAlreadyBeEvicted ? bestSchedulingResult.processorOfAssignment->delocateToDiskOptionally(nextEdge,
-                                               shouldUseImaginary,
-                                               findEdgeInChanges1->newLocation.afterWhen.value())
-                                         : bestSchedulingResult.processorOfAssignment->delocateToDisk(nextEdge,
-                                               shouldUseImaginary,
-                                               findEdgeInChanges1->newLocation.afterWhen.value());
-                assert(isLocatedOnDisk(nextEdge, shouldUseImaginary));
-            } else {
-                ++it;
-            }
-        }
-        assert(bestSchedulingResult.processorOfAssignment->getPendingMemories().empty()
-            || (*bestSchedulingResult.processorOfAssignment->getPendingMemories().begin())->head->name == pVertex->name);
-        numberWithEvictedCases++;
+                 const auto findEdgeInChanges1 = std::find_if(
+                     bestSchedulingResult.edgesToChangeStatus.begin(),
+                     bestSchedulingResult.edgesToChangeStatus.end(), [nextEdge](const EdgeChange& e) {
+                         return nextEdge == e.edge;
+                     });
+
+                 if (findEdgeInChanges1 != bestSchedulingResult.edgesToChangeStatus.end()) {
+
+                     it = canAlreadyBeEvicted ? bestSchedulingResult.processorOfAssignment->delocateToDiskOptionally(nextEdge,
+                                                    shouldUseImaginary,
+                                                    findEdgeInChanges1->newLocation.afterWhen.value())
+                                              : bestSchedulingResult.processorOfAssignment->delocateToDisk(nextEdge,
+                                                    shouldUseImaginary,
+                                                    findEdgeInChanges1->newLocation.afterWhen.value());
+                     assert(isLocatedOnDisk(nextEdge, shouldUseImaginary));
+                 }
+                 else {
+                     ++it;
+                 }
+
+             } else {
+                 ++it;
+             }
+         }
+       numberWithEvictedCases++;
         checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         break;
+    }
     default:
         throw std::runtime_error("");
     }
