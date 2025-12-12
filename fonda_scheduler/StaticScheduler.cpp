@@ -41,6 +41,14 @@ double medih(graph_t* graph, int algoNum, double& runtime)
     std::chrono::duration<double> elapsed_seconds = end - start;
     runtime += elapsed_seconds.count();
 
+    double averageSpreadPredecessors=0;
+    int numProcComputedSpread=0;
+
+    std::map<int, double> processorLoads;
+
+    std::map<int, std::vector<std::tuple<double, double>>> processorWorkTimes;
+
+
     sort(ranks.begin(), ranks.end(),
         [](const std::pair<vertex_t*, double>& a, const std::pair<vertex_t*, double>& b) {
             return a.second > b.second;
@@ -49,6 +57,11 @@ double medih(graph_t* graph, int algoNum, double& runtime)
     int numberWithEvictedCases = 0, numberWithEvictedCases2 = 0;
     for (auto& [vertex, rank] : ranks) {
         // cout<<"deal w "<<vertex->name<<endl;
+
+        if (vertex->in_edges.size()>1 ) {
+            averageSpreadPredecessors+=  vertex->in_edges.size() /  uniquePredecessorProcs(vertex);
+            numProcComputedSpread++;
+        }
 
         SchedulingResult bestSchedulingResult(nullptr);
         SchedulingResult bestSchedulingResultCorrectForHeftOnly(nullptr);
@@ -115,6 +128,9 @@ double medih(graph_t* graph, int algoNum, double& runtime)
             }
         }
 
+        processorLoads[bestSchedulingResultOnReal.processorOfAssignment->id] += bestSchedulingResultOnReal.finishTime-bestSchedulingResultOnReal.startTime;
+        processorWorkTimes[bestSchedulingResultOnReal.processorOfAssignment->id].emplace_back(bestSchedulingResultOnReal.startTime, bestSchedulingResultOnReal.finishTime);
+
         end = std::chrono::system_clock::now();
         elapsed_seconds = end - start;
         runtime += elapsed_seconds.count();
@@ -129,7 +145,18 @@ double medih(graph_t* graph, int algoNum, double& runtime)
         if (makespanPerceived < bestSchedulingResult.finishTime)
             makespanPerceived = bestSchedulingResult.finishTime;
     }
+
+    averageSpreadPredecessors/=numProcComputedSpread;
+
+    double cv_of_processor_loads = CVOfProcessorLoads(processorLoads);
+    double idleToWork = idleTimePercentage(processorWorkTimes);
+    double idleToWorkOn30s = idleTimePercentageOn30s(processorWorkTimes);
     std::cout << // " #eviction " << numberWithEvictedCases << " " <<
+        " avg spread "<< averageSpreadPredecessors<<
+        " cv_proc_load "<< cv_of_processor_loads <<
+        " num_used_procs "<<processorLoads.size()<<
+        " idle_to_work "<<idleToWork<<
+        " idle_to_work_30s "<<idleToWorkOn30s<<
         " ms perceived " << makespanPerceived << " ";
     return makespan;
 }
@@ -1037,4 +1064,96 @@ std::shared_ptr<Processor> findProcessorThatHoldsEdge(edge_t* incomingEdge, Clus
         }
     }
     return nullptr;
+}
+
+double uniquePredecessorProcs(vertex_t* vertex)
+{
+    std::set<int> uniqueProcessorIds;
+    for (const auto& in_edge : vertex->in_edges) {
+        int processorId = in_edge->tail->assignedProcessorId;
+        assert(processorId!=-1);
+        uniqueProcessorIds.insert(processorId);
+    }
+    return uniqueProcessorIds.size();
+}
+double CVOfProcessorLoads( const std::map<int, double>& processorLoads)
+{
+    if (processorLoads.size() <= 1) {
+        return 0.0;
+    }
+
+    std::vector<double> loads;
+    for (const auto& pair : processorLoads) {
+        loads.push_back(pair.second);
+    }
+
+    size_t N = loads.size();
+
+    // Calculate the Mean (Average Load)
+    double sum = std::accumulate(loads.begin(), loads.end(), 0.0);
+    double mean = sum / N;
+
+    // Avoid division by zero if all tasks somehow had 0 compute time (not typical)
+    if (mean < 1e-9) {
+        return 0.0;
+    }
+
+    // 3. CALCULATE VARIANCE AND STANDARD DEVIATION (σ)
+    double variance = 0.0;
+    for (double load : loads) {
+        variance += std::pow(load - mean, 2);
+    }
+    // Population variance (divided by N) is appropriate for this descriptive statistic
+    variance /= N;
+
+    double stdDev = std::sqrt(variance);
+
+    // 4. CALCULATE COEFFICIENT OF VARIATION (CV)
+    double cv = stdDev / mean;
+
+    return cv;
+
+}
+
+double idleTimePercentage( const std::map<int, std::vector<std::tuple<double, double>>> &processorsWorkTimes)
+{
+
+    double averageRatio=0;
+
+    for (std::pair processor_work_times : processorsWorkTimes) {
+
+        double allWorkTime=0;
+        for (std::tuple interval : processor_work_times.second) {
+            allWorkTime += std::get<1>(interval) - std::get<0>(interval);
+        }
+
+        double allTime = std::get<1>(processor_work_times.second.back());
+        double allIdleTime = allTime - allWorkTime;
+        assert(allIdleTime>=0);
+        averageRatio += allIdleTime/allWorkTime;
+    }
+    averageRatio/=processorsWorkTimes.size();
+    return averageRatio;
+
+}
+
+double idleTimePercentageOn30s( const std::map<int, std::vector<std::tuple<double, double>>> &processorsWorkTimes)
+{
+    double averageRatio=0;
+
+    for (std::pair processor_work_times : processorsWorkTimes) {
+        if (processor_work_times.first>29) {
+            double allWorkTime=0;
+            for (std::tuple interval : processor_work_times.second) {
+                allWorkTime += std::get<1>(interval) - std::get<0>(interval);
+            }
+
+            double allIdleTime = std::get<1>(processor_work_times.second.back()) - allWorkTime;
+            assert(allIdleTime>0);
+            averageRatio +=  allIdleTime/allWorkTime;
+        }
+    }
+    averageRatio/=processorsWorkTimes.size();
+    return averageRatio;
+
 }

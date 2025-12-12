@@ -84,7 +84,7 @@ int main(const int argc, char* argv[])
     options.workflowName = options.workflowName.substr(0, n4);
 
     // 10, 100                                                               memShorteningDivision, ioShorteningCoef
-    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, options.workflowName, options.inputSize, imaginedCluster, 1, 1, options);
+    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, imaginedCluster, 1, 1, options);
     //print_graph_to_cout(graphMemTopology);
 
    /* int low=0, mod=0, high=0;

@@ -2,7 +2,7 @@
 pwd
 
 BINARY="./build/fonda_scheduler"
-COMMON_ARGS="-m 1000000 -s 100 -r 1 -a heft-bl -f input/machines.csv -d 2 -S"
+COMMON_ARGS="-m 100000000 -s 100 -r 1 -a heft-bl -p ./ d 3 -S -f input/machines.csv"
 
 # Run experiments with different workloads
 WORKLOADS=(

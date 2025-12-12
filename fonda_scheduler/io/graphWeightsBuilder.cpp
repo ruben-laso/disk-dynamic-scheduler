@@ -101,8 +101,7 @@ enum WORKFLOW_COLUMNS {
 void setSwapRateFromText(vertex_t* v, const fonda::Options& options);
 void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
     std::unordered_map<std::string, std::vector<std::vector<std::string>>> workflow_rows,
-    const std::string& workflow_name, const long inputSize, Cluster* cluster,
-    const int memShorteningDivision, const double ioShorteningCoef, const fonda::Options& options)
+     Cluster* cluster, const int memShorteningDivision, const double ioShorteningCoef, const fonda::Options& options)
 {
 
     double minMem = std::numeric_limits<double>::max(), minTime = std::numeric_limits<double>::max(), minWchar = std::numeric_limits<double>::max(),
@@ -113,13 +112,13 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
         std::string lowercase_name = v->name;
         std::regex pattern("_\\d+");
         lowercase_name = std::regex_replace(lowercase_name, pattern, "");
-        std::string workflow_name1 = std::regex_replace(workflow_name, pattern, "");
+        std::string workflow_name1 = std::regex_replace(options.workflowName, pattern, "");
         std::transform(lowercase_name.begin(),
             lowercase_name.end(),
             lowercase_name.begin(),
             tolower);
 
-        std::string nameToSearch = workflow_name1.append(" ").append(lowercase_name).append(" ").append(std::to_string(inputSize));
+        std::string nameToSearch = workflow_name1.append(" ").append(lowercase_name).append(" ").append(std::to_string(options.inputSize));
 
         if (workflow_rows.find(nameToSearch) == workflow_rows.end()) {
             continue;

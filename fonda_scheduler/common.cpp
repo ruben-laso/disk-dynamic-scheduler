@@ -191,7 +191,7 @@ void locateToThisProcessorFromDisk(edge_t* edge, int id, const bool imaginary, d
     std::vector<Location>& locations = imaginary ? edge->imaginedLocations : edge->locations;
     //  cout<<"locating to proc "<<id <<" edge "; print_edge(edge);
     if (!isLocatedOnDisk(edge, imaginary)) {
-        std::cout << "NOT located on disk yet! Write&Read? " << buildEdgeName(edge) << '\n';
+       // std::cout << "NOT located on disk yet! Write&Read? " << buildEdgeName(edge) << '\n';
     }
     // assert(isLocatedOnDisk(edge));
     if (!isLocatedOnThisProcessor(edge, id, imaginary))

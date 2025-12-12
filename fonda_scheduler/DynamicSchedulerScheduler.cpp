@@ -4,6 +4,13 @@
 std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, std::vector<std::shared_ptr<Processor>>& bestModifiedProcs,
     std::shared_ptr<Processor>& bestProcessorToAssign, const double notEarlierThan)
 {
+
+    if (vertex->in_edges.size()>1 ) {
+        averageSpreadPredecessors+=  vertex->in_edges.size() /  uniquePredecessorProcs(vertex);
+        numTasksComputedPredecessors++;
+    }
+
+
     // cout << "!!!START BEST tent assign for " << vertex->name << endl;
     double bestStartTime = std::numeric_limits<double>::max();
     double bestFinishTime = std::numeric_limits<double>::max();
@@ -77,6 +84,11 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
         assert( // vertex->in_edges[j]->tail->makespan==-1 ||
             bestFinishTime > in_edge->tail->makespan);
     }
+
+    processorLoads[bestProcessorToAssign->id] += bestFinishTime-bestStartTime;
+    processorWorkTimes[bestProcessorToAssign->id].emplace_back(bestStartTime,
+        bestFinishTime);
+
 
     // cout << "resulting var " << resultingVar<<" on "<<bestProcessorToAssign->id << endl;
     return bestEvents;
@@ -810,7 +822,7 @@ void buildPendingMemoriesAfter(const std::shared_ptr<Processor>& ourModifiedProc
         try {
             ourModifiedProc->addPendingMemoryAfter(item);
         } catch (...) {
-            std::cout << "memor temporaroly wrong!" << '\n';
+           // std::cout << "memor temporaroly wrong!" << '\n';
             wasMemWrong = true;
         }
     }

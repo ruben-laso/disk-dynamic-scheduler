@@ -103,7 +103,18 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
         //  cout<<"events now "; events.printAll();
     }
     runtime = runtimeOfScheduler;
+    averageSpreadPredecessors/=numTasksComputedPredecessors;
 
+    double cv_of_processor_loads = CVOfProcessorLoads(processorLoads);
+    double idleToWork = idleTimePercentage(processorWorkTimes);
+    double idleToWorkOn30s = idleTimePercentageOn30s(processorWorkTimes);
+
+    std::cout << "avg spread "<<averageSpreadPredecessors<<
+    " cv_proc_load "<< cv_of_processor_loads <<
+    " num_used_procs "<<processorLoads.size()<<
+    " idle_to_work "<<idleToWork<<
+           " idle_to_work_30s "<<idleToWorkOn30s
+    <<" ";
     return resMakespan;
 }
 

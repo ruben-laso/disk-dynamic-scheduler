@@ -13,6 +13,13 @@ extern Cluster* cluster;
 extern EventManager events;
 extern ReadyQueue readyQueue;
 
+inline extern double averageSpreadPredecessors=0;
+inline extern int numTasksComputedPredecessors=0;
+
+inline extern std::map<int, double> processorLoads= std::map<int, double>{};
+inline  extern std::map<int, std::vector<std::tuple<double, double>>> processorWorkTimes=std::map<int, std::vector<std::tuple<double, double>>>{};
+
+
 double dynMedih(graph_t* graph, Cluster* cluster, int algoNum, int deviationNumber, bool upw, double& runtime);
 
 double applyDeviationTo(double& in);

@@ -17,8 +17,7 @@
 namespace Fonda {
 void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
     std::unordered_map<std::string, std::vector<std::vector<std::string>>> workflow_rows,
-    const std::string& workflow_name, long inputSize, Cluster* cluster,
-    int memShorteningDivision, double ioShorteningCoef, const fonda::Options& options);
+    Cluster* cluster, int memShorteningDivision, double ioShorteningCoef, const fonda::Options& options);
 void retrieveEdgeWeights(const graph_t* graphMemTopology);
 Cluster* buildClusterFromCsv(const std::string& file, const fonda::Options& options);
 }

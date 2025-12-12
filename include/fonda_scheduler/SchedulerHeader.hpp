@@ -99,4 +99,14 @@ void handleAllEvict(SchedulingResult& result, double timeToWriteAllPending, cons
 
 double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p);
 
+
+double uniquePredecessorProcs(vertex_t* vertex);
+
+double CVOfProcessorLoads( const std::map<int, double>& processorLoads);
+
+double idleTimePercentage(const std::map<int, std::vector<std::tuple<double, double>>> &processorsWorkTimes);
+
+double idleTimePercentageOn30s(const std::map<int, std::vector<std::tuple<double, double>>> &processorsWorkTimes);
+
+
 #endif // RESHI_TXT_DYNSCHED_HPP
