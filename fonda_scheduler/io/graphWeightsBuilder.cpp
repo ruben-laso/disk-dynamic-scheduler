@@ -119,6 +119,7 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
             tolower);
 
         std::string nameToSearch = workflow_name1.append(" ").append(lowercase_name).append(" ").append(std::to_string(options.inputSize));
+        std::cout<<"nameToSearch = "<<nameToSearch<<std::endl;
 
         if (workflow_rows.find(nameToSearch) == workflow_rows.end()) {
             continue;
