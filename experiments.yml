@@ -3,7 +3,7 @@ instances:
     items:
       - name: atacseq_2223941232
         files: [ ]
-        extra_args: [ '-w atacseq.dot', '-i 2223941232' ]
+        extra_args: [ '-w atacseq', '-i 2223941232' ]
       - name: atacseq_1000_2223941232
         files: [ ]
         extra_args: [ '-w atacseq_1000.dot', '-i 2223941232' ]
@@ -24,7 +24,7 @@ instances:
         extra_args: [ '-w atacseq_8000.dot', '-i 2223941232' ]
       - name: atacseq_3908761308
         files: [ ]
-        extra_args: [ '-w atacseq.dot', '-i 3908761308' ]
+        extra_args: [ '-w atacseq', '-i 3908761308' ]
       - name: atacseq_10000_3908761308
         files: [ ]
         extra_args: [ '-w atacseq_10000.dot', '-i 3908761308' ]
@@ -54,7 +54,7 @@ instances:
         extra_args: [ '-w atacseq_8000.dot', '-i 3908761308' ]
       - name: atacseq_11187378708
         files: [ ]
-        extra_args: [ '-w atacseq.dot', '-i 11187378708' ]
+        extra_args: [ '-w atacseq', '-i 11187378708' ]
       - name: atacseq_10000_11187378708
         files: [ ]
         extra_args: [ '-w atacseq_10000.dot', '-i 11187378708' ]
@@ -87,7 +87,7 @@ instances:
         extra_args: [ '-w atacseq_8000.dot', '-i 11187378708' ]
       - name: atacseq_11809629756
         files: [ ]
-        extra_args: [ '-w atacseq.dot', '-i 11809629756' ]
+        extra_args: [ '-w atacseq', '-i 11809629756' ]
       - name: atacseq_10000_11809629756
         files: [ ]
         extra_args: [ '-w atacseq_10000.dot', '-i 11809629756' ]
@@ -120,7 +120,7 @@ instances:
         extra_args: [ '-w atacseq_8000.dot', '-i 11809629756' ]
       - name: atacseq_14091675276
         files: [ ]
-        extra_args: [ '-w atacseq.dot', '-i 14091675276' ]
+        extra_args: [ '-w atacseq', '-i 14091675276' ]
       - name: atacseq_10000_14091675276
         files: [ ]
         extra_args: [ '-w atacseq_10000.dot', '-i 14091675276' ]
@@ -153,13 +153,13 @@ instances:
         extra_args: [ '-w atacseq_8000.dot', '-i 14091675276' ]
       - name: bacass_3637252230
         files: [ ]
-        extra_args: [ '-w bacass.dot', '-i 3637252230' ]
+        extra_args: [ '-w bacass', '-i 3637252230' ]
       - name: bacass_4352562006
         files: [ ]
-        extra_args: [ '-w bacass.dot', '-i 4352562006' ]
+        extra_args: [ '-w bacass', '-i 4352562006' ]
       - name: chipseq_3793245764
         files: [ ]
-        extra_args: [ '-w chipseq.dot', '-i 3793245764' ]
+        extra_args: [ '-w chipseq', '-i 3793245764' ]
       - name: chipseq_10000_3793245764
         files: [ ]
         extra_args: [ '-w chipseq_10000.dot', '-i 3793245764' ]
@@ -192,7 +192,7 @@ instances:
         extra_args: [ '-w chipseq_8000.dot', '-i 3793245764' ]
       - name: chipseq_4605965334
         files: [ ]
-        extra_args: [ '-w chipseq.dot', '-i 4605965334' ]
+        extra_args: [ '-w chipseq', '-i 4605965334' ]
       - name: chipseq_10000_4605965334
         files: [ ]
         extra_args: [ '-w chipseq_10000.dot', '-i 4605965334' ]
