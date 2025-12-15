@@ -151,12 +151,6 @@ instances:
       - name: atacseq_8000_14091675276
         files: [ ]
         extra_args: [ '-w atacseq_8000.dot', '-i 14091675276' ]
-      - name: bacass_3637252230
-        files: [ ]
-        extra_args: [ '-w bacass', '-i 3637252230' ]
-      - name: bacass_4352562006
-        files: [ ]
-        extra_args: [ '-w bacass', '-i 4352562006' ]
       - name: chipseq_3793245764
         files: [ ]
         extra_args: [ '-w chipseq', '-i 3793245764' ]
