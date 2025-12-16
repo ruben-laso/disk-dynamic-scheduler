@@ -3,6 +3,7 @@
 #include "fonda_scheduler/options.hpp"
 
 #include <iterator>
+#include <queue>
 
 Cluster* imaginedCluster;
 Cluster* actualCluster;
@@ -48,6 +49,20 @@ double medih(graph_t* graph, int algoNum, double& runtime)
 
     std::map<int, std::vector<std::tuple<double, double>>> processorWorkTimes;
 
+    std::unordered_map<vertex_t*, int> remaining_preds;
+    std::priority_queue<
+        vertex_t*,
+        std::vector<vertex_t*>,
+        BottomLevelComparator> readyQ;
+
+    for (auto v : graph->vertices_by_id) {
+        remaining_preds[v.second] = v.second->in_edges.size();
+        if (remaining_preds[v.second] == 0) {
+            readyQ.push(v.second);
+        }
+    }
+
+    int numProcessedVertices=0;
 
     sort(ranks.begin(), ranks.end(),
         [](const std::pair<vertex_t*, double>& a, const std::pair<vertex_t*, double>& b) {
@@ -55,8 +70,11 @@ double medih(graph_t* graph, int algoNum, double& runtime)
         });
     double makespan = 0, makespanPerceived = 0;
     int numberWithEvictedCases = 0, numberWithEvictedCases2 = 0;
-    for (auto& [vertex, rank] : ranks) {
-        // cout<<"deal w "<<vertex->name<<endl;
+    while (!readyQ.empty()) {
+        vertex_t* vertex = readyQ.top();
+        readyQ.pop();
+       //  std::cout<<"deal w "<<vertex->name<<std::endl;
+        numProcessedVertices++;
 
         if (vertex->in_edges.size()>1 ) {
             averageSpreadPredecessors+=  vertex->in_edges.size() /  uniquePredecessorProcs(vertex);
@@ -144,6 +162,14 @@ double medih(graph_t* graph, int algoNum, double& runtime)
             makespan = bestSchedulingResultOnReal.finishTime;
         if (makespanPerceived < bestSchedulingResult.finishTime)
             makespanPerceived = bestSchedulingResult.finishTime;
+
+        for (const auto& out_edge : vertex->out_edges) {
+            vertex_t* succ = out_edge->head;
+            remaining_preds[succ]--;
+            if (remaining_preds[succ] == 0) {
+                readyQ.push(succ);
+            }
+        }
     }
 
     averageSpreadPredecessors/=numProcComputedSpread;
@@ -158,6 +184,7 @@ double medih(graph_t* graph, int algoNum, double& runtime)
         " idle_to_work "<<idleToWork<<
         " idle_to_work_30s "<<idleToWorkOn30s<<
         " ms perceived " << makespanPerceived << " ";
+    assert(numProcessedVertices==graph->vertices_by_id.size());
     return makespan;
 }
 

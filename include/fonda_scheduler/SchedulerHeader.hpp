@@ -49,6 +49,21 @@ public:
     }
 };
 
+struct BottomLevelComparator {
+    bool operator()(const vertex_t* a, const vertex_t* b) const {
+        if (a->bottom_level != b->bottom_level)
+            return a->bottom_level < b->bottom_level; // higher BL first
+
+        if (a->time != b->time)
+            return a->time < b->time; // longer task first
+
+        if (a->out_edges.size() != b->out_edges.size())
+            return a->out_edges.size() < b->out_edges.size(); // more successors first
+
+        return a->id > b->id; // deterministic fallback
+    }
+};
+
 double calculateSimpleBottomUpRank(vertex_t* task);
 
 double calculateBLCBottomUpRank(const vertex_t* task);
