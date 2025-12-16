@@ -126,9 +126,9 @@ int main(const int argc, char* argv[])
     for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
         assert(u->status==Unscheduled);
     }
-    double d = 0;
+    double dynamic = 0;
 
-    d = dynMedih(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, true, runtimeDynamic);
+    dynamic = dynMedih(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, true, runtimeDynamic);
     end = std::chrono::system_clock::now();
     elapsed_seconds = end - start;
 
@@ -139,7 +139,7 @@ int main(const int argc, char* argv[])
 
     events.deleteAll();
     std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
-    std::cout << "makespan_dynamic " << d << "\t";
+    std::cout << "makespan_dynamic " << dynamic << "\t";
 
     delete actualCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
@@ -147,13 +147,13 @@ int main(const int argc, char* argv[])
     clearGraph(graphMemTopology);
     start = std::chrono::system_clock::now();
     double runtimeStatic = 0;
-    d = medih(graphMemTopology, options.algoNumber, runtimeStatic);
+    double stat  = medih(graphMemTopology, options.algoNumber, runtimeStatic);
     end = std::chrono::system_clock::now();
     elapsed_seconds = end - start;
     std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
-    std::cout << "makespan_static " << d << '\n';
+    std::cout << "makespan_static " << stat << '\n';
 
-
+    std::cout<<" dyn/stat "<<(dynamic/stat)<<"\n";
 
  /*  delete actualCluster;
    delete imaginedCluster;

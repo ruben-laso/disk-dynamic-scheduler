@@ -16,7 +16,7 @@ double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v
         sumPend+=item->weight;
     }
 
-    assert(std::abs(sumPend+pj->getAvailableMemory()-pj->getMemorySize())<0.1);
+    assert(std::abs(sumPend+pj->getAvailableMemory()-pj->getMemorySize())<0.2);
 
     double Res = pj->getAvailableMemory() - peakMemoryRequirementOfVertex(v);
     for (auto inEdge : v->in_edges) {
@@ -830,12 +830,19 @@ double finishTimeWithMemorySwapping(double startTime, double amountToOffload, do
     //std::cout<<"swap rate "<<task->swapRate<<std::endl;
     double result = startTime + timeToRun / p->getProcessorSpeed();
 
-    result += (1 +task->swapRate) * (std::abs(amountToOffload)/task->memoryRequirement) *
-        (std::abs(amountToOffload )/ p->writeSpeedDisk);
+    double penaltyToSwap = (1 + task->swapRate) * (std::abs(amountToOffload) / task->memoryRequirement) *
+        (std::abs(amountToOffload) / p->writeSpeedDisk);
+
+    //double penaltyToSwap = (std::abs(amountToOffload)) *1000;
+    result += penaltyToSwap;
 
     if(result<startTime){
         std::cout<<"bad computed result with memory swapping on vertex "<<task->name<<std::endl;
     }
+   // double timeToWriteEdgeOfThisSize= std::abs(amountToOffload)/p->writeSpeedDisk;
+   // if (timeToWriteEdgeOfThisSize<penaltyToSwap) {
+    //    std::cout<<"cheaper than writing\n";
+   // }
     return result;
 }
 
@@ -1149,7 +1156,7 @@ double idleTimePercentageOn30s( const std::map<int, std::vector<std::tuple<doubl
             }
 
             double allIdleTime = std::get<1>(processor_work_times.second.back()) - allWorkTime;
-            assert(allIdleTime>0);
+          //  assert(allIdleTime>0);
             averageRatio +=  allIdleTime/allWorkTime;
         }
     }

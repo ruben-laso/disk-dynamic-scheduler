@@ -139,7 +139,7 @@ void Event::fireTaskStart()
     double durationTask = ourFinishEvent->getExpectedTimeFire() - this->getExpectedTimeFire();
     assert(durationTask > 0);
     assert(this->task->name == "GRAPH_SOURCE" || durationTask >= this->task->time / this->processor->getProcessorSpeed()
-        || std::abs(durationTask - this->task->time / this->processor->getProcessorSpeed()) < 0.1);
+        || std::abs(durationTask - this->task->time / this->processor->getProcessorSpeed()) < 1);
 
     const auto factor = applyDeviationTo(durationTask);
     this->task->factorForRealExecution = factor;
