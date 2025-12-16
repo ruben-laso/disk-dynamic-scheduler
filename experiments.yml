@@ -841,12 +841,12 @@ variants:
      #   extra_args: [ '-m 100000000', '-s 0.01', '-r 1', '-o 0.00001' ]
      # - name: 'final'
      #   extra_args: [ '-m 100000000', '-s 100', '-r 1', '-o 0.00001' ]
-     - name: 'mem_8_sp_2'
-       extra_args: [ '-m 100000000', '-s 100', '-r 1']
+   #  - name: 'mem_8_sp_2'
+   #    extra_args: [ '-m 100000000', '-s 100', '-r 1']
      - name: 'mem_8_r_10'
        extra_args: [ '-m 100000000', '-s 100', '-r 10' ]
-     - name: 'mem_8_r_100'
-       extra_args: [ '-m 100000000', '-s 100', '-r 100' ]
+    # - name: 'mem_8_r_100'
+     #  extra_args: [ '-m 100000000', '-s 100', '-r 100' ]
 
 
 experiments:
