@@ -39,14 +39,6 @@
 // 100000000 100 1 0.001 eager 8330435694 1 no ../ machines.csv 3
 int main(const int argc, char* argv[])
 {
-
-
-    for (int i = 0; i < argc; ++i) {
-        std::cout << argv[i];
-        if (i + 1 < argc) std::cout << " ";
-    }
-    std::cout << std::endl;
-
     auto start = std::chrono::system_clock::now();
 
     fonda::Options options = fonda::parseOptions(argc, argv);
