@@ -53,7 +53,7 @@ double medih(graph_t* graph, int algoNum, double& runtime)
     std::priority_queue<
         vertex_t*,
         std::vector<vertex_t*>,
-        BottomLevelComparator> readyQ;
+        PriorityRankComparator> readyQ;
 
     for (auto v : graph->vertices_by_id) {
         remaining_preds[v.second] = v.second->in_edges.size();
@@ -73,7 +73,7 @@ double medih(graph_t* graph, int algoNum, double& runtime)
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
         readyQ.pop();
-       //  std::cout<<"deal w "<<vertex->name<<std::endl;
+        // std::cout<<"deal w "<<vertex->name<<std::endl;
         numProcessedVertices++;
 
         if (vertex->in_edges.size()>1 ) {
@@ -178,11 +178,11 @@ double medih(graph_t* graph, int algoNum, double& runtime)
     double idleToWork = idleTimePercentage(processorWorkTimes);
     double idleToWorkOn30s = idleTimePercentageOn30s(processorWorkTimes);
     std::cout << // " #eviction " << numberWithEvictedCases << " " <<
-        " avg spread "<< averageSpreadPredecessors<<
-        " cv_proc_load "<< cv_of_processor_loads <<
-        " num_used_procs "<<processorLoads.size()<<
-        " idle_to_work "<<idleToWork<<
-        " idle_to_work_30s "<<idleToWorkOn30s<<
+       // " avg spread "<< averageSpreadPredecessors<<
+       //" cv_proc_load "<< cv_of_processor_loads <<
+       // " num_used_procs "<<processorLoads.size()<<
+       // " idle_to_work "<<idleToWork<<
+       // " idle_to_work_30s "<<idleToWorkOn30s<<
         " ms perceived " << makespanPerceived << " ";
     assert(numProcessedVertices==graph->vertices_by_id.size());
     return makespan;
@@ -928,11 +928,12 @@ double calculateSimpleBottomUpRank(vertex_t* task)
     // cout<<endl;
     const double retur = (task->time + maxCost);
     task->bottom_level = retur;
+    task->rank= retur;
     // cout<<"result "<<retur<<endl;
     return retur;
 }
 
-double calculateBLCBottomUpRank(const vertex_t* task)
+double calculateBLCBottomUpRank(vertex_t* task)
 {
 
     double maxCost = 0.0;
@@ -949,7 +950,8 @@ double calculateBLCBottomUpRank(const vertex_t* task)
         double communicationCost = in_edge->weight;
         maxInputCost = std::max(maxInputCost, communicationCost);
     }
-    const double retur = simpleBl + maxInputCost;
+    double retur = simpleBl + maxInputCost;
+    task->rank = retur;
     return retur;
 }
 
@@ -1006,6 +1008,7 @@ std::vector<std::pair<vertex_t*, double>> calculateMMBottomUpRank(graph_t* graph
     // Convert each pair from (vertex_t*, int) to (vertex_t*, double)
     for (const auto& [vertex, rank] : scheduleOnOriginal) {
         double_vector.emplace_back(vertex, static_cast<double>(rank));
+        vertex->rank = static_cast<double>(rank);
     }
 
     return double_vector;

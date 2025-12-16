@@ -326,7 +326,5 @@ public:
     bool isFeasible();
 };
 
-struct workflowElement {
-    std::variant<edge_t, vertex_t> element;
-};
+
 #endif

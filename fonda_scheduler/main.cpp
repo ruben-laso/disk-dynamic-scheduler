@@ -145,7 +145,7 @@ int main(const int argc, char* argv[])
     std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
     std::cout << "makespan_static " << stat << '\n';
 
-    std::cout<<" dyn/stat "<<(dynamic/stat)<<"\n";
+    //std::cout<<" dyn/stat "<<(dynamic/stat)<<"\n";
 
  /*  delete actualCluster;
    delete imaginedCluster;

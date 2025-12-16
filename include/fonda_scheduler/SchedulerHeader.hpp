@@ -49,24 +49,28 @@ public:
     }
 };
 
-struct BottomLevelComparator {
+struct PriorityRankComparator {
     bool operator()(const vertex_t* a, const vertex_t* b) const {
-        if (a->bottom_level != b->bottom_level)
-            return a->bottom_level < b->bottom_level; // higher BL first
+        assert(a->rank!=-1);
+        assert(b->rank!=-1);
 
+        if (a->rank != b->rank)
+            return a->rank < b->rank; // max-heap
+
+        // tie-breakers
         if (a->time != b->time)
-            return a->time < b->time; // longer task first
+            return a->time < b->time;
 
         if (a->out_edges.size() != b->out_edges.size())
-            return a->out_edges.size() < b->out_edges.size(); // more successors first
+            return a->out_edges.size() < b->out_edges.size();
 
-        return a->id > b->id; // deterministic fallback
+        return a->id > b->id;
     }
 };
 
 double calculateSimpleBottomUpRank(vertex_t* task);
 
-double calculateBLCBottomUpRank(const vertex_t* task);
+double calculateBLCBottomUpRank( vertex_t* task);
 
 std::vector<std::pair<vertex_t*, double>> calculateMMBottomUpRank(graph_t* graphWMems);
 

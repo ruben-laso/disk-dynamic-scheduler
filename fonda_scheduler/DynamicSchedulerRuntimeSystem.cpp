@@ -109,12 +109,12 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
     double idleToWork = idleTimePercentage(processorWorkTimes);
     double idleToWorkOn30s = idleTimePercentageOn30s(processorWorkTimes);
 
-    std::cout << "avg spread "<<averageSpreadPredecessors<<
+ /*   std::cout << "avg spread "<<averageSpreadPredecessors<<
     " cv_proc_load "<< cv_of_processor_loads <<
     " num_used_procs "<<processorLoads.size()<<
     " idle_to_work "<<idleToWork<<
            " idle_to_work_30s "<<idleToWorkOn30s
-    <<" ";
+    <<" "; */
     return resMakespan;
 }
 
@@ -211,7 +211,7 @@ void Event::fireTaskFinish()
     removeFromDependencies();
 
     // set its status to finished
-    this->task->status = Status::Finished;
+    this->task->status = Finished;
     this->isDone = true;
     this->task->makespan = this->actualTimeFire;
 
@@ -383,7 +383,7 @@ void Event::fireReadFinish()
         const auto ptr = events.findByEventId(buildEdgeName(this->edge) + "-w-f");
         assert(ptr != nullptr);
         auto ptr1 = events.findByEventId(buildEdgeName(this->edge) + "-r-s");
-        assert(ptr->getActualTimeFire() < this->getActualTimeFire());
+        assert(ptr1->getActualTimeFire() < this->getActualTimeFire());
     }
     locateToThisProcessorFromDisk(this->edge, this->processor->id, false, this->getActualTimeFire());
     this->isDone = true;
