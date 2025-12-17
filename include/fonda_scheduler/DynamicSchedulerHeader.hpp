@@ -28,7 +28,7 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
     double& finTime, double& startTime, int& resultingVar, std::vector<std::shared_ptr<Event>>& newEvents,
     double& actuallyUsedMemory, double notEarlierThan = -1);
 std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, std::vector<std::shared_ptr<Processor>>& bestModifiedProcs,
-    std::shared_ptr<Processor>& bestProcessorToAssign, double notEarlierThan);
+    std::shared_ptr<Processor>& bestProcessorToAssign, double notEarlierThan, int &bestResultingVar);
 std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>> scheduleARead(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, std::vector<std::shared_ptr<Event>>& createdEvents, double startTimeOfTask,
     const std::shared_ptr<Processor>& ourModifiedProc, edge_t* incomingEdge, double& atThisTime);
 std::shared_ptr<Processor> findPredecessorsProcessor(const edge_t* incomingEdge, std::vector<std::shared_ptr<Processor>>& modifiedProcs);

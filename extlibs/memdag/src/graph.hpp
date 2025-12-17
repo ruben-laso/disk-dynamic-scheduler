@@ -155,6 +155,8 @@ struct edge_t {
     void* generic_pointer = nullptr;
     std::vector<Location> locations;
     std::vector<Location> imaginedLocations;
+
+    bool accountedFor=false;
     ///\endcond} edge_t;
 
     bool operator==(const edge_t& other) const
@@ -276,7 +278,7 @@ int add_edges_to_cope_with_limited_memory(graph_t* graph, double memory_bound, e
 
 vertex_t* findVertexByName(const graph_t* graph, const std::string& toFind);
 vertex_t* findVertexById(const graph_t* graph, int idToFind);
-void print_edge(edge_t* v);
+void print_edge(const edge_t* v);
 double peakMemoryRequirementOfVertex(const vertex_t* v);
 double inMemoryRequirement(const vertex_t* v);
 double outMemoryRequirement(const vertex_t* v);

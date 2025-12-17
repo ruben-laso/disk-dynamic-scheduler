@@ -128,7 +128,28 @@ int main(const int argc, char* argv[])
     for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
         assert(u->status==Finished);
     }
+    for (const edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
+     if (e->accountedFor) {
+      //   std::cout<<" accounted for!  ";print_edge(e);
+     }
+        else {
+            if (e->locations.size()>0 && e->locations.at(0).locationType==LocationType::OnProcessor && e->locations.at(0).processorId==e->head->assignedProcessorId){}
+            else {
+                std::cout<<" unaccounted for ";print_edge(e);
+                if (e->locations.at(0).locationType==LocationType::OnDisk) {
+                    std::cout<<"on disk"<<std::endl;
+                }
+                if (e->locations.at(0).locationType==LocationType::OnProcessor) {
+                    std::cout<<"on proc "<<e->locations.at(0).processorId.value()<<std::endl;
+                }
+                if (e->locations.at(0).locationType==LocationType::Nowhere) {
+                    std::cout<<"on nowhere "<<std::endl;
+                }
 
+                std::cout<< e->locations.size()<<std::endl;
+            }
+        }
+    }
     events.deleteAll();
     std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
     std::cout << "makespan_dynamic " << dynamic << "\t";

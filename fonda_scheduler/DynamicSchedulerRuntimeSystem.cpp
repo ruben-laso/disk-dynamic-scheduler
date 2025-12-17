@@ -64,7 +64,8 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
             //  cout << "starting task " << vertex->name << endl;
             std::vector<std::shared_ptr<Processor>> bestModifiedProcs;
             std::shared_ptr<Processor> bestProcessorToAssign;
-            std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(vertex, bestModifiedProcs, bestProcessorToAssign, 0);
+            int bestResultingVar;
+            std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(vertex, bestModifiedProcs, bestProcessorToAssign, 0, bestResultingVar);
 
             for (auto& item : newEvents) {
                 events.insert(item);
@@ -260,8 +261,9 @@ void Event::fireTaskFinish()
         std::shared_ptr<Processor> bestProcessorToAssign;
        // std::cout<<"assigning most ready vertex "<<mostReadyVertex->name<<" \n";
         auto start = std::chrono::system_clock::now();
+        int bestResultingVar;
         std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(mostReadyVertex, bestModifiedProcs, bestProcessorToAssign,
-            this->actualTimeFire);
+            this->actualTimeFire, bestResultingVar);
 
         auto end = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed_seconds = end - start;
@@ -387,6 +389,7 @@ void Event::fireReadFinish()
     }
     locateToThisProcessorFromDisk(this->edge, this->processor->id, false, this->getActualTimeFire());
     this->isDone = true;
+    this->edge->accountedFor=true;
 }
 
 void Event::fireWriteStart()

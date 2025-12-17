@@ -686,7 +686,7 @@ vertex_t* findVertexById(const graph_t* graph, const int idToFind)
     return nullptr;
 }
 
-void print_edge(edge_t* v)
+void print_edge(const edge_t* v)
 {
     std::cout << buildEdgeName(v) << '\n'; // v->tail->name<<" -> "<<v->head->name<<", "<<v->weight<<'\n';
 }

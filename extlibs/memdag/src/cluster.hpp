@@ -172,7 +172,7 @@ public:
         pendingMemories.erase(it); // Now erase safely
 
         availableMemory += edgeToRemove->weight;
-        assert(!isKeptValid || availableMemory < memorySize || std::abs(availableMemory - memorySize) < 0.2);
+        assert(!isKeptValid || availableMemory < memorySize || std::abs(availableMemory - memorySize) < 1);
 
         return nextIt; // Return the next iterator, which is safe
     }

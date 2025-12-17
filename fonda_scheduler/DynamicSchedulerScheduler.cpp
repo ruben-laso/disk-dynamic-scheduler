@@ -2,7 +2,7 @@
 #include "fonda_scheduler/SchedulerHeader.hpp"
 
 std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, std::vector<std::shared_ptr<Processor>>& bestModifiedProcs,
-    std::shared_ptr<Processor>& bestProcessorToAssign, const double notEarlierThan)
+    std::shared_ptr<Processor>& bestProcessorToAssign, const double notEarlierThan, int &bestResultingVar)
 {
 
     if (vertex->in_edges.size()>1 ) {
@@ -15,7 +15,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
     double bestStartTime = std::numeric_limits<double>::max();
     double bestFinishTime = std::numeric_limits<double>::max();
     double bestReallyUsedMem = std::numeric_limits<double>::max();
-    int bestResultingVar =-2;
+    bestResultingVar =-2;
     std::vector<std::shared_ptr<Event>> bestEvents;
 
     for (auto& [id, processor] : cluster->getProcessors()) {
@@ -108,8 +108,6 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
     transferAfterMemoriesToBefore(ourModifiedProc);
 
     startTime = std::max(notEarlierThan, ourModifiedProc->getExpectedOrActualReadyTimeCompute());
-
-    const auto preds = events.findByEventId(vertex->name);
 
     auto eventStartTask = Event::createEvent(vertex, nullptr, OnTaskStart, ourModifiedProc,
         startTime, startTime, false,
@@ -428,10 +426,19 @@ processIncomingEdges(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, 
                 scheduleWriteAndRead(v, ourEvent, createdEvents, ourEvent->getExpectedTimeFire(), ourModifiedProc, incomingEdge, modifiedProcs);
             }
         } else if (isLocatedOnThisProcessor(incomingEdge, ourModifiedProc->id, false)) {
-            //   cout << "edge " << buildEdgeName(incomingEdge) << " already on proc" << endl;
+            //   std::cout << "edge " << buildEdgeName(incomingEdge) << " already on proc" << std::endl;
+
+                //there may be a scheduled write of this edge, we need to re-read it into the memory of our processor
+                std::shared_ptr<Event> eventStartFromQueue = events.findByEventId(buildEdgeName(incomingEdge) + "-w-s");
+                std::shared_ptr<Event> eventFinishFromQueue = events.findByEventId(buildEdgeName(incomingEdge) + "-w-f");
+            if (eventStartFromQueue != nullptr || eventFinishFromQueue != nullptr) {
+                // the write has already started, no other option but to finish it schedule only a read
+                organizeAReadAndPredecessorWrite(v, incomingEdge, ourEvent, ourModifiedProc, createdEvents, eventFinishFromQueue->getExpectedTimeFire());
+            }
         } else if (isLocatedOnDisk(incomingEdge, false)) {
             // schedule a read
             double atThisTime = ourEvent->getExpectedTimeFire();
+            assert(incomingEdge->locations.at(0).afterWhen<=atThisTime);
             scheduleARead(v, ourEvent, createdEvents, ourEvent->getExpectedTimeFire(), ourModifiedProc, incomingEdge, atThisTime);
             if (atThisTime > ourEvent->getExpectedTimeFire()) {
                 std::unordered_set<std::shared_ptr<Event>> visited;
@@ -488,10 +495,10 @@ void organizeAReadAndPredecessorWrite(const vertex_t* v, edge_t* incomingEdge, c
     const std::shared_ptr<Processor>& ourModifiedProc,
     std::vector<std::shared_ptr<Event>>& createdEvents, const double afterWhen)
 {
-    double atWhatTIme = -1;
+    double atWhatTime = -1;
     const auto readEvents = scheduleARead(v, ourEvent, createdEvents, afterWhen,
         ourModifiedProc,
-        incomingEdge, atWhatTIme);
+        incomingEdge, atWhatTime);
     const std::shared_ptr<Event>& eventFinishThisEdgeWrite = events.findByEventId(
         buildEdgeName(incomingEdge) + "-w-f");
     if (eventFinishThisEdgeWrite != nullptr) {

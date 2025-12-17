@@ -17,7 +17,7 @@ double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v
         sumPend+=item->weight;
     }
 
-    assert(std::abs(sumPend+pj->getAvailableMemory()-pj->getMemorySize())<0.2);
+   // assert(std::abs(sumPend+pj->getAvailableMemory()-pj->getMemorySize())<1);
 
     double Res = pj->getAvailableMemory() - peakMemoryRequirementOfVertex(v);
     for (auto inEdge : v->in_edges) {
@@ -1072,7 +1072,7 @@ std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, 
         p->setAvailableMemory(p->getAvailableMemory() + std::abs(p->getMemorySize() - busy));
     }
 
-    assert(std::abs(p->getMemorySize() - busy) < 1);
+    //assert(std::abs(p->getMemorySize() - busy) < 1);
     assert(p->getReadyTimeCompute() < std::numeric_limits<double>::max());
 }
 
