@@ -122,7 +122,7 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
 void Event::fireTaskStart()
 {
 
-    //std::cout << "firing task start for " << this->id << " at " << this->getActualTimeFire() << std::endl;
+   // std::cout << "On "<< this->processor->id <<" task start " << this->task->name << " at " << this->getActualTimeFire() << std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
@@ -199,8 +199,7 @@ void Event::fireTaskStart()
 void Event::fireTaskFinish()
 {
     const vertex_t* thisTask = this->task;
-  //    std::cout << "firing task Finish for " << this->id << " at " << this->getActualTimeFire() << std::endl;
-    //  cout<<this->actualTimeFire<<" on "<<this->processor->id<<endl;
+   // std::cout << "On "<<this->processor->id <<" task finish " << this->task->name << " at " << this->getActualTimeFire() << std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
@@ -331,7 +330,7 @@ std::shared_ptr<Processor> findPredecessorsProcessor(const edge_t* incomingEdge,
 
 void Event::fireReadStart()
 {
-   //  std::cout << "firing read start for " << this->id << " at " << this->actualTimeFire <<std:: endl;
+    //std::cout << "On "<<this->processor->id <<" read start " << buildEdgeName(this->edge) << " at " << this->getActualTimeFire() << std::endl;
     // assert(finishRead->getActualTimeFire()> this->getActualTimeFire());
     const auto canRun = dealWithPredecessors(shared_from_this());
 
@@ -365,8 +364,7 @@ void Event::fireReadStart()
 
 void Event::fireReadFinish()
 {
-   // std::cout << "firing read finish for " << this->id << " at " << this->getActualTimeFire() << " on "
-   //       << this->processor->id << std::endl;
+   // std::cout << "On "<<this->processor->id <<" read finish " << buildEdgeName(this->edge) << " at " << this->getActualTimeFire() << std::endl;
 
     std::shared_ptr<Event> startRead = events.findByEventId(buildEdgeName(this->edge) + "-r-s");
 
@@ -394,7 +392,7 @@ void Event::fireReadFinish()
 
 void Event::fireWriteStart()
 {
- //   std::cout << "firing write start for " << this->id << " at " << this->getActualTimeFire() << std::endl;
+  //  std::cout << "On "<<this->processor->id <<" write start " << buildEdgeName(this->edge) << " at " << this->getActualTimeFire() << std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
@@ -436,8 +434,7 @@ void Event::fireWriteStart()
 
 void Event::fireWriteFinish()
 {
- //   std::cout << "firing write finish for " << this->id << " at " << this->getActualTimeFire() << " on "
-  //        << this->processor->id << std::endl;
+  //  std::cout << "On "<<this->processor->id <<" write finish " << buildEdgeName(this->edge) << " at " << this->getActualTimeFire() << std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {

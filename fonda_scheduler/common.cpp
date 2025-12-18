@@ -347,6 +347,7 @@ void clearGraph(const graph_t* graphMemTopology)
     edge_t* edge = graphMemTopology->first_edge;
     while (edge != nullptr) {
         edge->locations.clear();
+        edge->imaginedLocations.clear();
         edge = edge->next;
     }
 }
