@@ -456,7 +456,7 @@ graph_t* read_dot_graph(const char* filename, const char* memory_label, const ch
         }
         if(swapRateLabel) {
             char * swap_rate =  agget(ag_node, (char*)swapRateLabel);
-            someV->swapRateText = swap_rate;
+            someV->swapRateText = swap_rate? swap_rate:"moderate";
         }
 
     }

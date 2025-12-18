@@ -473,7 +473,7 @@ void Event::fireWriteFinish()
     edge_t* edgeToWriteJustInCase = this->processor->writingQueue.at(0);
 
     if (events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-s") != nullptr || events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-f") != nullptr) {
-        // cout << "event for " << buildEdgeName(edgeToWriteJustInCase) << " already in queue" << endl;
+        //std:: cout << "event for " << buildEdgeName(edgeToWriteJustInCase) << " already in queue" << endl;
         this->processor->writingQueue.erase(this->processor->writingQueue.begin());
         return;
     }
@@ -495,7 +495,7 @@ void Event::fireWriteFinish()
 
     if (this->getActualTimeFire() + presumedLength < startOfNextWrite) {
         // can fit
-        // cout << "scheduling extra write for " << buildEdgeName(edgeToWriteJustInCase) << endl;
+        //std::cout << "scheduling extra write for " << buildEdgeName(edgeToWriteJustInCase) << std::endl;
         assert(events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-s") == nullptr);
         assert(events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-f") == nullptr);
         std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>> writeEvents;
@@ -677,6 +677,7 @@ bool dealWithPredecessors(const std::shared_ptr<Event>& us)
 
 void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModifiedProc)
 {
+    ourModifiedProc->availableMemoryDuringPreviousTask = ourModifiedProc->getAvailableMemory();
     ourModifiedProc->resetPendingMemories();
     ourModifiedProc->setAvailableMemory(ourModifiedProc->getMemorySize());
     for (auto& item : ourModifiedProc->getAfterPendingMemories()) {

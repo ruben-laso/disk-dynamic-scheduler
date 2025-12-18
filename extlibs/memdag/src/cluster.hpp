@@ -61,6 +61,8 @@ public:
 
     std::string assignment = {};
 
+    double availableMemoryDuringPreviousTask=0;
+
 private:
     std::weak_ptr<Event> lastReadEvent = {};
     std::weak_ptr<Event> lastWriteEvent = {};

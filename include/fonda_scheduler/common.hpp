@@ -891,7 +891,7 @@ public:
 };
 
 struct CompareByRank {
-    bool operator()(const vertex_t* a, const vertex_t* b) const
+    /*bool operator()(const vertex_t* a, const vertex_t* b) const
     {
         assert(a->rank != -1);
         assert(b->rank != -1);
@@ -899,6 +899,23 @@ struct CompareByRank {
         if (a->rank != b->rank)
             return a->rank > b->rank; // primary: higher rank comes first
         return a->id < b->id;                 // tiebreaker
+    } */
+
+    bool operator()(const vertex_t* a, const vertex_t* b) const {
+        assert(a->rank!=-1);
+        assert(b->rank!=-1);
+
+        if (a->rank != b->rank)
+            return a->rank < b->rank; // max-heap
+
+        // tie-breakers
+        if (a->time != b->time)
+            return a->time < b->time;
+
+        if (a->out_edges.size() != b->out_edges.size())
+            return a->out_edges.size() < b->out_edges.size();
+
+        return a->id > b->id;
     }
 
 };

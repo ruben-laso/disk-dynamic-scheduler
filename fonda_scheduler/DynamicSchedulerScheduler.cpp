@@ -454,7 +454,8 @@ processIncomingEdges(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, 
                 assert(plannedWriteFinishOfIncomingEdge != nullptr);
                 std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>> readEVents;
                 const double prev = plannedWriteFinishOfIncomingEdge->getVisibleTimeFireForPlanning();
-                if (plannedWriteFinishOfIncomingEdge->getVisibleTimeFireForPlanning() > ourEvent->getExpectedTimeFire() && plannedWriteFinishOfIncomingEdge->getVisibleTimeFireForPlanning() > ourModifiedProc->getExpectedOrActualReadyTimeRead()) {
+                if (plannedWriteFinishOfIncomingEdge->getVisibleTimeFireForPlanning() > ourEvent->getExpectedTimeFire()
+                    && plannedWriteFinishOfIncomingEdge->getVisibleTimeFireForPlanning() > ourModifiedProc->getExpectedOrActualReadyTimeRead()) {
                     double atWhatTime = plannedWriteFinishOfIncomingEdge->getVisibleTimeFireForPlanning();
                     readEVents = scheduleARead(v, ourEvent, createdEvents, ourEvent->getExpectedTimeFire(), ourModifiedProc, incomingEdge, atWhatTime);
 
@@ -535,7 +536,7 @@ scheduleARead(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, std::ve
     // if this start of the read is happening during the runtime  of the previous task
     // TODO WHAT IF BEFORE IT STARTS?
     assert(ourModifiedProc->getLastComputeEvent().expired() || std::abs(ourModifiedProc->getReadyTimeCompute() - ourModifiedProc->getLastComputeEvent().lock()->getActualTimeFire()) < 0.001);
-    if (estimatedStartOfRead < ourModifiedProc->getExpectedOrActualReadyTimeCompute() && ourModifiedProc->getAvailableMemory() < incomingEdge->weight) {
+    if (estimatedStartOfRead < ourModifiedProc->getExpectedOrActualReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
         estimatedStartOfRead = ourModifiedProc->getExpectedOrActualReadyTimeCompute();
     }
 
@@ -651,11 +652,19 @@ std::vector<std::shared_ptr<Event>> evictFilesUntilThisFits(const std::shared_pt
             }
 
             if (eventPreemptiveStart == nullptr && eventPreemptiveFinish == nullptr) {
-                assert(!isLocatedOnDisk(edgeToEvict, false));
-                std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>> writeEvents;
-                begin = scheduleWriteForEdge(thisProc, edgeToEvict, writeEvents);
-                newEvents.emplace_back(writeEvents.first);
-                newEvents.emplace_back(writeEvents.second);
+                if (isLocatedOnDisk(edgeToEvict, false)) {
+                    //it has been written out preemptively and can be simply removed from the pending memories
+                    delocateFromThisProcessorToNowhere(edgeToEvict, thisProc->id,imaginedCluster,thisProc->getExpectedOrActualReadyTimeWrite());
+                    begin= thisProc->removePendingMemory(edgeToEvict);
+                }
+                else {
+                    assert(!isLocatedOnDisk(edgeToEvict, false));
+                    std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>> writeEvents;
+                    begin = scheduleWriteForEdge(thisProc, edgeToEvict, writeEvents);
+                    newEvents.emplace_back(writeEvents.first);
+                    newEvents.emplace_back(writeEvents.second);
+                }
+
             } else {
                 ++begin;
             }
@@ -679,9 +688,10 @@ scheduleWriteForEdge(const std::shared_ptr<Processor>& thisProc, edge_t* edgeToE
     assert(events.findByEventId(buildEdgeName(edgeToEvict) + "-w-s") == nullptr);
     assert(events.findByEventId(buildEdgeName(edgeToEvict) + "-w-f") == nullptr);
 
+    double possibleStartWrite = std::max(thisProc->getExpectedOrActualReadyTimeWrite(), edgeToEvict->tail->makespan);
     const auto eventStartWrite = Event::createEvent(nullptr, edgeToEvict, OnWriteStart, thisProc,
-        thisProc->getExpectedOrActualReadyTimeWrite(),
-        thisProc->getExpectedOrActualReadyTimeWrite(),
+      possibleStartWrite ,
+       possibleStartWrite,
         {},
         {}, false,
         buildEdgeName(edgeToEvict) + "-w-s");
