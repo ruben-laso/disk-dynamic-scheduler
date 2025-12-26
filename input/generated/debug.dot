@@ -1,15 +1,15 @@
-digraph DebugDAG {
-    A [label="A", swaps=low];
-    B [label="B", swaps=high];
-    C [label="C", swaps=low];
-    D [label="D", swaps=low];
-    E [label="E", swaps=high];
-    F [label="F", swaps=moderate];
-    G [label="G", swaps=low];
-    H [label="H", swaps=low];
-    I [label="I", swaps=moderate];
-    J [label="J", swaps=high];
-    K [label="K", swaps=moderate];
+strict digraph DebugDAG {
+    A	[label=A, swaps=low];
+    B [label=B, swaps=high];
+    C [label=C, swaps=low];
+    D [label=D, swaps=low];
+    E [label=E, swaps=high];
+    F [label=F, swaps=moderate];
+    G [label=G, swaps=low];
+    H [label=H, swaps=low];
+    I [label=I, swaps=moderate];
+    J [label=J, swaps=high];
+    K [label=K, swaps=moderate];
     A -> B;
     A -> C;
     A -> D;
