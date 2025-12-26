@@ -160,6 +160,20 @@ int main(const int argc, char* argv[])
     clearGraph(graphMemTopology);
     start = std::chrono::system_clock::now();
     double runtimeStatic = 0;
+
+    //HEFT should not profit from earlier finishing times of tasks and edges in case of deviations
+    if (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT) {
+        for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+          if (u->factorForRealExecution<1) {
+              u->factorForRealExecution=1;
+          }
+        }
+        for (edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
+            if (e->factorForRealExecution<1) {
+                e->factorForRealExecution=1;
+            }
+        }
+    }
     double stat  = medih(graphMemTopology, options.algoNumber, runtimeStatic);
     end = std::chrono::system_clock::now();
     elapsed_seconds = end - start;

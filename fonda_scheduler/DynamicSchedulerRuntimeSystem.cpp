@@ -122,7 +122,7 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
 void Event::fireTaskStart()
 {
 
-   // std::cout << "On "<< this->processor->id <<" task start " << this->task->name << " at " << this->getActualTimeFire() << std::endl;
+   // std::cout << "On "<< this->processor->id <<" task start " << this->task->name << " at " << this->getActualTimeFire(); //<< std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {

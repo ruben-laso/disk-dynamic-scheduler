@@ -80,17 +80,17 @@ std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, 
 
 double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj);
 
-void tentativeAssignment(const vertex_t* v, bool real, SchedulingResult& result);
+void tentativeAssignment(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result);
 
-void tentativeAssignmentHEFT(const vertex_t* v, bool real, SchedulingResult& result, SchedulingResult& resultCorrect);
+void tentativeAssignmentHEFT(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result, SchedulingResult& resultCorrect);
 
 graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>& noMemToWithMem);
 
-void processIncomingEdges(const vertex_t* v, bool realAsNotImaginary, bool realAsRealRuntimes, bool isHeft, const std::shared_ptr<Processor>& ourModifiedProc,
+void processIncomingEdges(const vertex_t* v, bool shouldUseDeviatedTimes, const bool shouldUseImaginaryCluster, const std::shared_ptr<Processor>& ourModifiedProc,
     std::vector<std::shared_ptr<Processor>>& modifiedProcs,
     double& earliestStartingTimeToComputeVertex);
 
-void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool realAsNotImaginary, const bool realAsRealRuntimes, const bool isHeft,
+void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDeviatedTimes,
     const std::shared_ptr<Processor>& ourModifiedProc,
     std::vector<std::shared_ptr<Processor>>& modifiedProcs,
     double& earliestStartingTimeToComputeVertex);
