@@ -106,21 +106,21 @@ double medih(graph_t* graph, int algoNum, double& runtime)
         if (bestSchedulingResult.modifiedProcs.empty()) {
             std::cout << "Invalid assignment of " << vertex->name;
             return -1;
-        } else {
-         /*    std::cout  << vertex->name << " " <<
-             " "<< bestSchedulingResult.startTime << " --- "
-                 << bestSchedulingResult.finishTime << " on "
-                  << bestSchedulingResult.processorOfAssignment->id
-                  << " variant " << bestSchedulingResult.resultingVar
-                      <<std::endl;
-             std::cout << "REAL "<< vertex->name <<" "<< bestSchedulingResultOnReal.startTime //<< " --- "
-                   <<" "  << bestSchedulingResultOnReal.finishTime //<< " on proc "
-                   <<" "  << bestSchedulingResultOnReal.processorOfAssignment->id
-                   << " duration "<<bestSchedulingResultOnReal.finishTime - bestSchedulingResultOnReal.startTime
-                 // << " variant " << bestSchedulingResultOnReal.resultingVar
-                // <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
-                       <<std::endl; */
         }
+        /*    std::cout  << vertex->name << " " <<
+                     " "<< bestSchedulingResult.startTime << " --- "
+                         << bestSchedulingResult.finishTime << " on "
+                          << bestSchedulingResult.processorOfAssignment->id
+                          << " variant " << bestSchedulingResult.resultingVar
+                              <<std::endl;*/
+       /* std::cout << "REAL " << vertex->name << " " << bestSchedulingResultOnReal.startTime //<< " --- "
+                  << " " << bestSchedulingResultOnReal.finishTime //<< " on proc "
+                  << " " << bestSchedulingResultOnReal.processorOfAssignment->id
+                  << " duration " << bestSchedulingResultOnReal.finishTime - bestSchedulingResultOnReal.startTime
+                  << " variant " << bestSchedulingResultOnReal.resultingVar
+                  // <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
+                  << std::endl; */
+
 
         //  cout << "imagine" << endl;
         start = std::chrono::system_clock::now();
@@ -288,14 +288,16 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
             timeToFinishNoEvicted = std::numeric_limits<double>::max();
         }
 
-        double timeToFinishBiggestEvicted = std::numeric_limits<double>::max(),
-               timeToFinishAllEvicted = std::numeric_limits<double>::max();
+        double timeToTaskFinishBiggestEvicted = std::numeric_limits<double>::max(),
+               timeToTaskFinishAllEvicted = std::numeric_limits<double>::max();
         double timeToWriteAllPending = 0;
         std::vector<EdgeChange> changedEdgesOne, changedEdgesAll;
 
         double startTimeFor1Evicted = result.processorOfAssignment->getReadyTimeWrite() > result.startTime ? result.processorOfAssignment->getReadyTimeWrite() : result.startTime;
         double startTimeForAllEvicted = startTimeFor1Evicted;
 
+        double finishTimeWrite1Evict, finishTimeWriteAllEvict;
+        double availableMem1Evict, availableMemAllEvict;
         auto biggestPendingEdge = result.processorOfAssignment->getBiggestPendingEdgeThatIsNotIncomingOfAndLocatedOnProc(
             v);
         if (!result.processorOfAssignment->getPendingMemories().empty() && biggestPendingEdge != nullptr) {
@@ -303,39 +305,40 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
 
             const auto biggestFileWeight = biggestPendingEdge->weight;
             const double amountToOffloadWithoutBiggestFile = (amountToOffload - biggestFileWeight) > 0 ? (amountToOffload - biggestFileWeight) : 0;
+            availableMem1Evict= result.processorOfAssignment->getAvailableMemory() - amountToOffload + biggestFileWeight;
             const double biggestWeightToWrite = shouldUseDeviatedTimes ? biggestPendingEdge->weight * biggestPendingEdge->factorForRealExecution : biggestPendingEdge->weight;
             const double startTimeToWriteBiggestEdge = std::max(result.processorOfAssignment->getReadyTimeWrite(),
                 shouldUseDeviatedTimes ? biggestPendingEdge->tail->makespan : biggestPendingEdge->tail->makespanPerceived);
-            double finishTimeToWrite = startTimeToWriteBiggestEdge + biggestWeightToWrite / result.processorOfAssignment->writeSpeedDisk;
-            changedEdgesOne.emplace_back(biggestPendingEdge, Location(LocationType::OnDisk, std::nullopt, finishTimeToWrite));
+            finishTimeWrite1Evict = startTimeToWriteBiggestEdge + biggestWeightToWrite / result.processorOfAssignment->writeSpeedDisk;
+            changedEdgesOne.emplace_back(biggestPendingEdge, Location(LocationType::OnDisk, std::nullopt, finishTimeWrite1Evict));
 
-            startTimeFor1Evicted = std::max(result.startTime, finishTimeToWrite);
-            timeToFinishBiggestEvicted =
+            startTimeFor1Evicted = std::max(result.startTime, finishTimeWrite1Evict);
+            timeToTaskFinishBiggestEvicted =
                 finishTimeWithMemorySwapping(startTimeFor1Evicted, amountToOffloadWithoutBiggestFile, v->time, v, result.processorOfAssignment);
 
             //startTimeFor1Evicted
                // + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / result.processorOfAssignment->memoryOffloadingPenalty;
-            assert(timeToFinishBiggestEvicted > startTimeFor1Evicted);
+            assert(timeToTaskFinishBiggestEvicted > startTimeFor1Evicted);
 
             const double availableMemWithoutBiggest = result.processorOfAssignment->getAvailableMemory() + biggestFileWeight;
             if (sumOut > availableMemWithoutBiggest)
-                timeToFinishBiggestEvicted = std::numeric_limits<double>::max();
+                timeToTaskFinishBiggestEvicted = std::numeric_limits<double>::max();
 
             double sumWeightsOfAllPending = 0;
-            finishTimeToWrite = result.processorOfAssignment->getReadyTimeWrite();
+            finishTimeWriteAllEvict = result.processorOfAssignment->getReadyTimeWrite();
 
             double stillNeedsToBeEvictedToRun = amountToOffload;
 
             for (auto it = result.processorOfAssignment->getPendingMemories().begin();
                 it != result.processorOfAssignment->getPendingMemories().end() && stillNeedsToBeEvictedToRun > 0;) {
                 if ((*it)->head->name != v->name) {
-                    const double startTimeWrite = std::max(finishTimeToWrite,
+                    const double startTimeWrite = std::max(finishTimeWriteAllEvict,
                         (shouldUseDeviatedTimes ? (*it)->tail->makespan : (*it)->tail->makespanPerceived));
                     const double itemWeightToWrite = shouldUseDeviatedTimes ? (*it)->weight * (*it)->factorForRealExecution : (*it)->weight;
 
                     timeToWriteAllPending += itemWeightToWrite / result.processorOfAssignment->writeSpeedDisk;
-                    finishTimeToWrite = startTimeWrite + itemWeightToWrite / result.processorOfAssignment->writeSpeedDisk;
-                    changedEdgesAll.emplace_back((*it), Location(LocationType::OnDisk, std::nullopt, finishTimeToWrite));
+                    finishTimeWriteAllEvict = startTimeWrite + itemWeightToWrite / result.processorOfAssignment->writeSpeedDisk;
+                    changedEdgesAll.emplace_back((*it), Location(LocationType::OnDisk, std::nullopt, finishTimeWriteAllEvict));
                     sumWeightsOfAllPending += (*it)->weight;
                     stillNeedsToBeEvictedToRun -= (*it)->weight;
                     ++it;
@@ -345,17 +348,18 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
             }
 
             const double amountToOffloadWithoutAllFiles = (amountToOffload - sumWeightsOfAllPending > 0) ? amountToOffload - sumWeightsOfAllPending : 0;
+            availableMemAllEvict= result.processorOfAssignment->getAvailableMemory() - amountToOffload + sumWeightsOfAllPending;
 
             //  finishTimeToWrite = result.processorOfAssignment->getReadyTimeWrite() +
             //                     timeToWriteAllPending;
-            startTimeForAllEvicted = std::max(startTimeForAllEvicted, finishTimeToWrite);
-            timeToFinishAllEvicted = finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, v->time, v, result.processorOfAssignment);
+            startTimeForAllEvicted = std::max(startTimeForAllEvicted, finishTimeWriteAllEvict);
+            timeToTaskFinishAllEvicted = finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, v->time, v, result.processorOfAssignment);
 
             // startTimeForAllEvicted + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutAllFiles / result.processorOfAssignment->memoryOffloadingPenalty;
-            assert(timeToFinishAllEvicted > startTimeForAllEvicted);
+            assert(timeToTaskFinishAllEvicted > startTimeForAllEvicted);
         }
 
-        const double minTTF = std::min(timeToFinishNoEvicted, std::min(timeToFinishBiggestEvicted, timeToFinishAllEvicted));
+        const double minTTF = std::min(timeToFinishNoEvicted, std::min(timeToTaskFinishBiggestEvicted, timeToTaskFinishAllEvicted));
         if (minTTF == std::numeric_limits<double>::max()) {
             std::cout << "minTTF inf" << '\n';
             result.finishTime = std::numeric_limits<double>::max();
@@ -366,16 +370,16 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
             assert(shouldUseDeviatedTimes);
 
             if (result.resultingVar == 2) {
-                double duration = timeToFinishBiggestEvicted - startTimeFor1Evicted;
+                double duration = timeToTaskFinishBiggestEvicted - startTimeFor1Evicted;
                 duration= duration* v->factorForRealExecution;
-                timeToFinishBiggestEvicted = startTimeFor1Evicted+ duration;
-                handleBiggestEvict(shouldUseDeviatedTimes, result, changedEdgesOne, startTimeFor1Evicted, biggestPendingEdge, timeToFinishBiggestEvicted);
+                timeToTaskFinishBiggestEvicted = startTimeFor1Evicted+ duration;
+                handleBiggestEvict(shouldUseDeviatedTimes, result, changedEdgesOne, startTimeFor1Evicted, biggestPendingEdge, timeToTaskFinishBiggestEvicted, finishTimeWrite1Evict);
             } else if (result.resultingVar == 3) {
 
-                double duration = timeToFinishAllEvicted - startTimeForAllEvicted;
+                double duration = timeToTaskFinishAllEvicted - startTimeForAllEvicted;
                 duration= duration* v->factorForRealExecution;
-                timeToFinishAllEvicted = startTimeForAllEvicted+ duration;
-                handleAllEvict(result, timeToWriteAllPending, changedEdgesAll, startTimeForAllEvicted, timeToFinishAllEvicted);
+                timeToTaskFinishAllEvicted = startTimeForAllEvicted+ duration;
+                handleAllEvict(result, timeToWriteAllPending, changedEdgesAll, startTimeForAllEvicted, timeToTaskFinishAllEvicted, finishTimeWriteAllEvict);
                 // assert(minTTF==timeToFinishAllEvicted);
             } else {
                 //  assert(minTTF==timeToFinishNoEvicted);
@@ -390,23 +394,26 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
                 assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
             }
         } else {
-            if (timeToFinishBiggestEvicted == minTTF) {
-                handleBiggestEvict(shouldUseDeviatedTimes, result, changedEdgesOne, startTimeFor1Evicted, biggestPendingEdge, minTTF);
-            } else if (timeToFinishAllEvicted == minTTF) {
-                handleAllEvict(result, timeToWriteAllPending, changedEdgesAll, startTimeForAllEvicted, minTTF);
+            if (timeToTaskFinishBiggestEvicted == minTTF) {
+                handleBiggestEvict(shouldUseDeviatedTimes, result, changedEdgesOne, startTimeFor1Evicted, biggestPendingEdge, minTTF, finishTimeWrite1Evict);
+                result.processorOfAssignment->availableMemoryDuringPreviousTask=availableMem1Evict;
+            } else if (timeToTaskFinishAllEvicted == minTTF) {
+                handleAllEvict(result, timeToWriteAllPending, changedEdgesAll, startTimeForAllEvicted, minTTF, finishTimeWriteAllEvict);
+                result.processorOfAssignment->availableMemoryDuringPreviousTask=availableMemAllEvict;
             } else {
                 result.resultingVar = 1;
                 assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
                 result.processorOfAssignment->setReadyTimeCompute(minTTF);
                 result.finishTime = result.processorOfAssignment->getReadyTimeCompute();
                 assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
+                result.processorOfAssignment->availableMemoryDuringPreviousTask=Res;
             }
         }
 
     } else {
         // startTime =  ourModifiedProc->readyTimeCompute;
         //  printInlineDebug("should be successful");
-
+        result.processorOfAssignment->availableMemoryDuringPreviousTask=Res;
         if (result.resultingVar != -1) {
 
             assert(shouldUseDeviatedTimes);
@@ -495,7 +502,9 @@ void tentativeAssignmentHEFT(const vertex_t* v, const bool shouldUseDeviatedTime
             if ((*it)->head->name != v->name) {
                 const double weightForTime = shouldUseDeviatedTimes ? (*it)->weight * (*it)->factorForRealExecution : (*it)->weight;
                 stillNeedsToBeEvictedToRun -= (*it)->weight;
-                const double startWriteTime = std::max(writeTime, shouldUseDeviatedTimes ? (*it)->tail->makespan : (*it)->tail->makespanPerceived);
+                double startWriteTime = std::max(writeTime, shouldUseDeviatedTimes ? (*it)->tail->makespan : (*it)->tail->makespanPerceived);
+               startWriteTime = std::max( startWriteTime, getLocationOnProcessor((*it), resultCorrect.processorOfAssignment->id, !shouldUseDeviatedTimes).afterWhen.value());
+
                 writeTime = startWriteTime + weightForTime / resultCorrect.processorOfAssignment->writeSpeedDisk;
                 //   cout<<"tent on proc "<<resultCorrect.processorOfAssignment->id<<" ";
                 resultCorrect.edgesToChangeStatus.emplace_back((*it), Location(LocationType::OnDisk, std::nullopt, writeTime));
@@ -571,7 +580,7 @@ void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult&
     case 1:
         break;
     case 2: {
-        //    cout<<"best with 1 kick"<<endl;
+       // std::cout<<"best with 1 kick "<<buildEdgeName(bestSchedulingResult.edgesToChangeStatus.at(0).edge)<<std::endl;
         assert(edgeToKick != nullptr);
         assert(bestSchedulingResult.edgesToChangeStatus.size() == 1);
 
@@ -592,7 +601,7 @@ void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult&
         break;
     }
     case 3: {
-        // cout<<"best with all kick"<<endl;
+     //   std::cout<<"best with all kick"<<std::endl;
         assert(bestSchedulingResult.edgesToChangeStatus.size() > 1);
 
         for (auto it = bestSchedulingResult.processorOfAssignment->getPendingMemories().begin();
@@ -736,15 +745,24 @@ void processIncomingEdges(const vertex_t* v, const bool shouldUseDeviatedTimes, 
         if (predecessor->assignedProcessorId == ourModifiedProc->id) {
             if (!isLocatedOnThisProcessor(incomingEdge, ourModifiedProc->id, shouldUseImaginaryCluster)) {
                 assert(isLocatedOnDisk(incomingEdge, shouldUseImaginaryCluster));
+
+                double startOfRead = std::max(ourModifiedProc->getReadyTimeRead(), getLocationOnDisk(incomingEdge, shouldUseImaginaryCluster).afterWhen.value());
+                if (startOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
+                    startOfRead = ourModifiedProc->getReadyTimeCompute();
+                }
+
                 ourModifiedProc->setReadyTimeRead(
-                    ourModifiedProc->getReadyTimeRead() + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
+                    startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
                 earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeRead() > earliestStartingTimeToComputeVertex ? ourModifiedProc->getReadyTimeRead() : earliestStartingTimeToComputeVertex;
             }
 
         } else {
             if (isLocatedOnDisk(incomingEdge, shouldUseImaginaryCluster)) {
                 // we need to schedule read
-                const double startOfRead = std::max(ourModifiedProc->getReadyTimeRead(), getLocationOnDisk(incomingEdge, shouldUseImaginaryCluster).afterWhen.value());
+                double startOfRead = std::max(ourModifiedProc->getReadyTimeRead(), getLocationOnDisk(incomingEdge, shouldUseImaginaryCluster).afterWhen.value());
+                if (startOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
+                    startOfRead = ourModifiedProc->getReadyTimeCompute();
+                }
                 ourModifiedProc->setReadyTimeRead(
                     startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
                 earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeRead() > earliestStartingTimeToComputeVertex ? ourModifiedProc->getReadyTimeRead() : earliestStartingTimeToComputeVertex;
@@ -775,7 +793,11 @@ void processIncomingEdges(const vertex_t* v, const bool shouldUseDeviatedTimes, 
                 double whichMakespan = shouldUseDeviatedTimes ? predecessor->makespan : predecessor->makespanPerceived;
                 const double timeToStartWriting = std::max(whichMakespan, addedProc->getReadyTimeWrite());
                 addedProc->setReadyTimeWrite(timeToStartWriting + edgeWeightToUse / addedProc->writeSpeedDisk);
-                const double startTimeOfRead = std::max(addedProc->getReadyTimeWrite(), ourModifiedProc->getReadyTimeRead());
+                double startTimeOfRead = std::max(addedProc->getReadyTimeWrite(), ourModifiedProc->getReadyTimeRead());
+
+                if (startTimeOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
+                    startTimeOfRead = ourModifiedProc->getReadyTimeCompute();
+                }
 
                 double endTimeOfRead = startTimeOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk;
                 ourModifiedProc->setReadyTimeRead(endTimeOfRead);
@@ -807,15 +829,25 @@ void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDev
         if (predecessor->assignedProcessorId == ourModifiedProc->id) {
             if (!isLocatedOnThisProcessor(incomingEdge, ourModifiedProc->id, shouldUseImaginary)) {
                 assert(isLocatedOnDisk(incomingEdge, shouldUseImaginary));
+                double startOfRead = std::max(std::max(ourModifiedProc->getReadyTimeRead(), getLocationOnDisk(incomingEdge, shouldUseImaginary).afterWhen.value()), earliestStartingTimeToComputeVertex);
+
+                if (startOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
+                    startOfRead = ourModifiedProc->getReadyTimeCompute();
+                }
+
                 ourModifiedProc->setReadyTimeRead(
-                    std::max(ourModifiedProc->getReadyTimeRead(), earliestStartingTimeToComputeVertex) + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
+                    startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
                 earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeRead() > earliestStartingTimeToComputeVertex ? ourModifiedProc->getReadyTimeRead() : earliestStartingTimeToComputeVertex;
             }
 
         } else {
             if (isLocatedOnDisk(incomingEdge, shouldUseImaginary)) {
                 // we need to schedule read
-                const double startOfRead = std::max(std::max(ourModifiedProc->getReadyTimeRead(), getLocationOnDisk(incomingEdge, shouldUseImaginary).afterWhen.value()), earliestStartingTimeToComputeVertex);
+                double startOfRead = std::max(std::max(ourModifiedProc->getReadyTimeRead(), getLocationOnDisk(incomingEdge, shouldUseImaginary).afterWhen.value()), earliestStartingTimeToComputeVertex);
+
+                if (startOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
+                    startOfRead = ourModifiedProc->getReadyTimeCompute();
+                }
                 ourModifiedProc->setReadyTimeRead(
                     startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
                 earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeRead() > earliestStartingTimeToComputeVertex ? ourModifiedProc->getReadyTimeRead() : earliestStartingTimeToComputeVertex;
@@ -846,8 +878,11 @@ void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDev
                 double whichMakespan = useDeviatedTimes ? predecessor->makespan : predecessor->makespanPerceived;
                 const double timeToStartWriting = std::max(std::max(whichMakespan, addedProc->getReadyTimeWrite()), earliestStartingTimeToComputeVertex);
                 addedProc->setReadyTimeWrite(timeToStartWriting + edgeWeightToUse / addedProc->writeSpeedDisk);
-                const double startTimeOfRead = std::max(addedProc->getReadyTimeWrite(), ourModifiedProc->getReadyTimeRead());
 
+                double startTimeOfRead = std::max(addedProc->getReadyTimeWrite(), ourModifiedProc->getReadyTimeRead());
+                if (startTimeOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
+                    startTimeOfRead = ourModifiedProc->getReadyTimeCompute();
+                }
                 double endTimeOfRead = startTimeOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk;
                 ourModifiedProc->setReadyTimeRead(endTimeOfRead);
 
@@ -862,11 +897,11 @@ void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDev
 }
 
 void handleBiggestEvict(const bool real, SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
-    const double startTimeFor1Evicted, edge_t* biggestPendingEdge, const double readyTimeComput)
+    const double startTimeForTask, edge_t* biggestPendingEdge, const double readyTimeCompute, double readyTimeWrite)
 {
     assert(biggestPendingEdge != nullptr);
     assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
-    result.processorOfAssignment->setReadyTimeCompute(readyTimeComput);
+    result.processorOfAssignment->setReadyTimeCompute(readyTimeCompute);
     result.finishTime = result.processorOfAssignment->getReadyTimeCompute();
     assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
 
@@ -875,23 +910,23 @@ void handleBiggestEvict(const bool real, SchedulingResult& result, const std::ve
     result.resultingVar = 2;
     const double biggestWeightToWrite = real ? biggestPendingEdge->weight * biggestPendingEdge->factorForRealExecution
                                              : biggestPendingEdge->weight;
-    result.processorOfAssignment->setReadyTimeWrite(result.processorOfAssignment->getReadyTimeWrite() + biggestWeightToWrite / result.processorOfAssignment->writeSpeedDisk);
+    result.processorOfAssignment->setReadyTimeWrite(readyTimeWrite);
     // ourModifiedProc->pendingMemories.erase()
     // penMemsAsVector.erase(penMemsAsVector.begin());
     result.edgesToChangeStatus = changedEdgesOne;
-    assert(result.startTime <= startTimeFor1Evicted);
-    result.startTime = startTimeFor1Evicted;
+    assert(result.startTime <= startTimeForTask);
+    result.startTime = startTimeForTask;
     assert(result.edgeToKick != nullptr);
     assert(!result.edgeToKick->locations.empty());
     assert(isLocatedOnThisProcessor(result.edgeToKick, result.processorOfAssignment->id, false));
 }
 
 void handleAllEvict(SchedulingResult& result, const double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
-    const double startTimeForAllEvicted, const double readyTimeComput)
+    const double startTimeForAllEvicted, const double readyTimeCompute, double readyTimeWrite)
 {
 
     assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
-    result.processorOfAssignment->setReadyTimeCompute(readyTimeComput);
+    result.processorOfAssignment->setReadyTimeCompute(readyTimeCompute);
     result.finishTime = result.processorOfAssignment->getReadyTimeCompute();
     assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
     result.resultingVar = 3;
@@ -901,6 +936,7 @@ void handleAllEvict(SchedulingResult& result, const double timeToWriteAllPending
     assert(result.startTime <= startTimeForAllEvicted);
     result.startTime = startTimeForAllEvicted;
     result.edgesToChangeStatus = changedEdgesAll;
+    result.processorOfAssignment->setReadyTimeWrite(readyTimeWrite);
     // penMemsAsVector.resize(0);
 }
 

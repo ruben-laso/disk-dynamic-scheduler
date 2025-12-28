@@ -50,16 +50,20 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
         }
     }
     // cout << "!!!END BEST"<<endl;
-  //  std::cout  << vertex->name << " best " <<
-   //     " "<< bestStartTime << " --- "
-    //          << bestFinishTime << " on "
-   //           << bestProcessorToAssign->id
-   //           << " variant " << bestResultingVar<<std::endl;
-            //  <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()<<std::endl;
 
     if(bestProcessorToAssign== nullptr){
         throw std::runtime_error("No suitable processor found for "+ vertex->name);
     }
+
+    /*std::cout  << vertex->name << " best " <<
+       " "<< bestStartTime << " --- "
+           << bestFinishTime
+              // << " duration "<< bestFinishTime
+             <<   " on "
+             << bestProcessorToAssign->id
+            << " variant " << bestResultingVar<<std::endl; */
+    //  <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()<<std::endl;
+
     // Assert that the best processor is not empty and has enough memory
     assert(bestProcessorToAssign != nullptr);
     assert(bestProcessorToAssign->getAvailableMemory() >= vertex->actuallyUsedMemory);
@@ -536,8 +540,11 @@ scheduleARead(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, std::ve
     // if this start of the read is happening during the runtime  of the previous task
     // TODO WHAT IF BEFORE IT STARTS?
     assert(ourModifiedProc->getLastComputeEvent().expired() || std::abs(ourModifiedProc->getReadyTimeCompute() - ourModifiedProc->getLastComputeEvent().lock()->getActualTimeFire()) < 0.001);
+
+    bool isDependentOnLastCompute=false;
     if (estimatedStartOfRead < ourModifiedProc->getExpectedOrActualReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
         estimatedStartOfRead = ourModifiedProc->getExpectedOrActualReadyTimeCompute();
+        isDependentOnLastCompute = true;
     }
 
    if (atThisTime != -1) {
@@ -583,6 +590,10 @@ scheduleARead(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, std::ve
         } else {
             std::cout << "no event finish predecessor - AND THE TAIL IS NOT FINISHED" << '\n';
         }
+    }
+
+    if (isDependentOnLastCompute && !ourModifiedProc->getLastComputeEvent().expired()) {
+        eventStartRead->addPredecessorInPlanning(ourModifiedProc->getLastComputeEvent().lock());
     }
 
     const double estimatedTimeOfFinishRead = eventStartRead->getExpectedTimeFire() + incomingEdge->weight / ourModifiedProc->readSpeedDisk;

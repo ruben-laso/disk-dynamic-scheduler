@@ -110,10 +110,10 @@ void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cl
 std::shared_ptr<Processor> findProcessorThatHoldsEdge(edge_t* incomingEdge, Cluster* clusterToLookIn);
 
 void handleBiggestEvict(bool real, SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
-    double startTimeFor1Evicted, edge_t* biggestPendingEdge, double readyTimeComput);
+    double startTimeForTask, edge_t* biggestPendingEdge, double readyTimeCompute, double readyTimeWrite);
 
 void handleAllEvict(SchedulingResult& result, double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
-    double startTimeForAllEvicted, double readyTimeComput);
+    double startTimeForAllEvicted, double readyTimeCompute, double readyTimeWrite);
 
 
 double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p);

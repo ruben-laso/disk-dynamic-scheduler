@@ -144,6 +144,7 @@ void Event::fireTaskStart()
 
     const auto factor = applyDeviationTo(durationTask);
     this->task->factorForRealExecution = factor;
+ //   std::cout << " duration "<<durationTask<< " factor "<< factor<<std::endl;
     assert(factor > 0);
     for (auto& succ : successors) {
         const auto& successor = succ.lock();
@@ -159,6 +160,12 @@ void Event::fireTaskStart()
     // cout << "on start  setting finish time from "<< ourFinishEvent->actualTimeFire <<" to " << d << endl;
     // ourFinishEvent->setActualTimeFire(d);
     events.update(ourFinishEvent->id, d);
+    for ( auto succ : ourFinishEvent->getSuccessors()) {
+        if (!succ.expired() && succ.lock()->getActualTimeFire() < ourFinishEvent->getActualTimeFire()) {
+            succ.lock()->setActualTimeFire(ourFinishEvent->getActualTimeFire());
+        }
+    }
+
 
     for (auto inEdge : this->task->in_edges) {
         const std::string& edgeName = buildEdgeName(inEdge);
@@ -359,6 +366,12 @@ void Event::fireReadStart()
 
     events.update(buildEdgeName(this->edge) + "-w-f", expectedTimeFireFinish);
 
+    for ( auto succ : finishRead->getSuccessors()) {
+        if (!succ.expired() && succ.lock()->getActualTimeFire() < finishRead->getActualTimeFire()) {
+            succ.lock()->setActualTimeFire(finishRead->getActualTimeFire());
+        }
+    }
+
     //  cout << endl;
 }
 
@@ -421,6 +434,13 @@ void Event::fireWriteStart()
     }
 
     events.update(buildEdgeName(this->edge) + "-w-f", actualTimeFireFinish);
+    assert(finishWrite->getActualTimeFire()==actualTimeFireFinish);
+    for ( auto succ : finishWrite->getSuccessors()) {
+        if (!succ.expired() && succ.lock()->getActualTimeFire() < finishWrite->getActualTimeFire()) {
+            succ.lock()->setActualTimeFire(finishWrite->getActualTimeFire());
+        }
+    }
+
     assert(!finishWrite->checkCycleFromEvent());
 
     std::string thisid = buildEdgeName(this->edge);

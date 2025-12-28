@@ -358,14 +358,15 @@ public:
 
         for (const auto& [key, value] : this->processors) {
 
-                std::cout << "Processor " << value->id << "with memory " << value->getMemorySize() << ", speed " << value->getProcessorSpeed()
-                          << " and busy? " << value->isBusy //<< " assigned " << (value->isBusy?value->getAssignedTaskId(): -1)
-                          << " ready time compute " << value->getReadyTimeCompute()
-                          << " ready time read " << value->getReadyTimeRead()
-                          << " ready time write " << value->getReadyTimeWrite()
+                std::cout << "Processor " << value->id
+                            //<< "with memory " << value->getMemorySize() << ", speed " << value->getProcessorSpeed()
+                          //<< " and busy? " << value->isBusy //<< " assigned " << (value->isBusy?value->getAssignedTaskId(): -1)
+                          << " ready time compute: " << value->getReadyTimeCompute()
+                          << " ready time read: " << value->getReadyTimeRead()
+                          << " ready time write: " << value->getReadyTimeWrite()
                           //<< " ready time write soft " << value->softReadyTimeWrite
                           //<< " avail memory " << value->availableMemory
-                          << " writing queue size " << value->writingQueue.size()
+                         // << " writing queue size " << value->writingQueue.size()
                           << " pending in memory " << value->getPendingMemories().size() << " pcs: "
 
                     ;
