@@ -8,29 +8,8 @@
 Cluster* imaginedCluster;
 Cluster* actualCluster;
 
-double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj)
-{
-    assert(!pj->getIsKeptValid() || pj->getAvailableMemory() >= 0);
 
-    double sumPend=0;
-    for (const auto& item : pj->getPendingMemories()){
-        sumPend+=item->weight;
-    }
-
-   // assert(std::abs(sumPend+pj->getAvailableMemory()-pj->getMemorySize())<1);
-
-    double Res = pj->getAvailableMemory() - peakMemoryRequirementOfVertex(v);
-    for (auto inEdge : v->in_edges) {
-        if (pj->getPendingMemories().find(inEdge) != pj->getPendingMemories().end()) {
-            // incoming edge occupied memory
-            Res += inEdge->weight;
-        }
-    }
-    return Res;
-}
-
-double medih(graph_t* graph, int algoNum, double& runtime)
-{
+double medih(graph_t* graph, int algoNum, double& runtime){
     const bool isHeft = (algoNum == fonda_scheduler::ALGORITHMS::HEFT);
     if (isHeft) {
         imaginedCluster->mayBecomeInvalid();
@@ -86,6 +65,7 @@ double medih(graph_t* graph, int algoNum, double& runtime)
         //  cout << "imagine" << endl;
         start = std::chrono::system_clock::now();
         bestTentativeAssignment(isHeft, vertex, bestSchedulingResult, bestSchedulingResultCorrectForHeftOnly);
+        checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         end = std::chrono::system_clock::now();
         elapsed_seconds = end - start;
         runtime += elapsed_seconds.count();
@@ -652,7 +632,7 @@ void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult&
 void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cluster* cluster, int& numberWithEvictedCases,
     const bool real, const bool isHeft)
 {
-
+    checkIfPendingMemoryCorrect(schedulingResult.processorOfAssignment);
     const bool shouldUseImaginary = !real;
     evictAccordingToBestDecision(numberWithEvictedCases, schedulingResult, vertex, isHeft, real);
 
@@ -807,8 +787,9 @@ void processIncomingEdges(const vertex_t* v, const bool shouldUseDeviatedTimes, 
 
                 double whichMakespan = shouldUseDeviatedTimes ? predecessor->makespan : predecessor->makespanPerceived;
                 const double timeToStartWriting = std::max(whichMakespan, addedProc->getReadyTimeWrite());
-                addedProc->setReadyTimeWrite(timeToStartWriting + edgeWeightToUse / addedProc->writeSpeedDisk);
-                double startTimeOfRead = std::max(addedProc->getReadyTimeWrite(), ourModifiedProc->getReadyTimeRead());
+                double timeToFinishWriting = timeToStartWriting + edgeWeightToUse / addedProc->writeSpeedDisk;
+                addedProc->setReadyTimeWrite(timeToFinishWriting);
+                double startTimeOfRead = std::max(timeToFinishWriting, ourModifiedProc->getReadyTimeRead());
 
                 if (startTimeOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
                     startTimeOfRead = ourModifiedProc->getReadyTimeCompute();
@@ -990,6 +971,27 @@ double finishTimeWithMemorySwapping(double startTime, double amountToOffload, do
     //    std::cout<<"cheaper than writing\n";
    // }
     return result;
+}
+
+double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj)
+{
+    assert(!pj->getIsKeptValid() || pj->getAvailableMemory() >= 0);
+
+    double sumPend=0;
+    for (const auto& item : pj->getPendingMemories()){
+        sumPend+=item->weight;
+    }
+
+    // assert(std::abs(sumPend+pj->getAvailableMemory()-pj->getMemorySize())<1);
+
+    double Res = pj->getAvailableMemory() - peakMemoryRequirementOfVertex(v);
+    for (auto inEdge : v->in_edges) {
+        if (pj->getPendingMemories().find(inEdge) != pj->getPendingMemories().end()) {
+            // incoming edge occupied memory
+            Res += inEdge->weight;
+        }
+    }
+    return Res;
 }
 
 
@@ -1181,15 +1183,12 @@ std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, 
 
 [[maybe_unused]] inline void checkIfPendingMemoryCorrect(const std::shared_ptr<Processor>& p)
 {
-    double sumOut = 0;
+    double allPending = 0;
     for (const auto pendingMemorie : p->getPendingMemories()) {
-        sumOut += pendingMemorie->weight;
+        allPending += pendingMemorie->weight;
     }
-    const double busy = p->getAvailableMemory() + sumOut;
-    if (std::abs(p->getMemorySize() - busy) > 0.1) {
-        // cout << "check " << p->getMemorySize() << " vs " << busy << endl;
-        p->setAvailableMemory(p->getAvailableMemory() + std::abs(p->getMemorySize() - busy));
-    }
+    const double accountedFor = p->getAvailableMemory() + allPending;
+    assert(std::abs(accountedFor-p->getMemorySize())<1);
 
     //assert(std::abs(p->getMemorySize() - busy) < 1);
     assert(p->getReadyTimeCompute() < std::numeric_limits<double>::max());
