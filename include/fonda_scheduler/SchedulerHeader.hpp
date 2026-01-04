@@ -35,6 +35,7 @@ public:
     int resultingVar;
     edge_t* edgeToKick;
     double peakMem;
+    double shouldBeFreeOnProcessorDuringTask=-1;
     std::vector<EdgeChange> edgesToChangeStatus;
 
     explicit SchedulingResult(const std::shared_ptr<Processor>& proc)

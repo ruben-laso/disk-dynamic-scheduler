@@ -52,7 +52,7 @@ double medih(graph_t* graph, int algoNum, double& runtime){
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
         readyQ.pop();
-        // std::cout<<"deal w "<<vertex->name<<std::endl;
+        std::cout<<"deal w "<<vertex->name<<std::endl;
         numProcessedVertices++;
 
         if (vertex->in_edges.size()>1 ) {
@@ -356,6 +356,7 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
                 duration= duration* v->factorForRealExecution;
                 timeToTaskFinishBiggestEvicted = startTimeFor1Evicted+ duration;
                 handleBiggestEvict(shouldUseDeviatedTimes, result, changedEdgesOne, startTimeFor1Evicted, biggestPendingEdge, timeToTaskFinishBiggestEvicted, finishTimeWrite1Evict);
+                result.shouldBeFreeOnProcessorDuringTask=std::max(availableMem1Evict, 0.0);
             } else if (result.resultingVar == 3) {
 
                 double duration = timeToTaskFinishAllEvicted - startTimeForAllEvicted;
@@ -363,6 +364,7 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
                 timeToTaskFinishAllEvicted = startTimeForAllEvicted+ duration;
                 handleAllEvict(result, timeToWriteAllPending, changedEdgesAll, startTimeForAllEvicted, timeToTaskFinishAllEvicted, finishTimeWriteAllEvict);
                 // assert(minTTF==timeToFinishAllEvicted);
+                result.shouldBeFreeOnProcessorDuringTask=std::max(availableMemAllEvict, 0.0);
             } else {
                 //  assert(minTTF==timeToFinishNoEvicted);
 
@@ -374,28 +376,29 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
                 result.processorOfAssignment->setReadyTimeCompute(timeToFinishNoEvicted);
                 result.finishTime = timeToFinishNoEvicted;
                 assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
+                result.shouldBeFreeOnProcessorDuringTask=std::max(Res, 0.0);
             }
         } else {
             if (timeToTaskFinishBiggestEvicted == minTTF) {
                 handleBiggestEvict(shouldUseDeviatedTimes, result, changedEdgesOne, startTimeFor1Evicted, biggestPendingEdge, minTTF, finishTimeWrite1Evict);
-                result.processorOfAssignment->availableMemoryDuringPreviousTask=availableMem1Evict;
+                result.shouldBeFreeOnProcessorDuringTask=std::max(availableMem1Evict, 0.0);;
             } else if (timeToTaskFinishAllEvicted == minTTF) {
                 handleAllEvict(result, timeToWriteAllPending, changedEdgesAll, startTimeForAllEvicted, minTTF, finishTimeWriteAllEvict);
-                result.processorOfAssignment->availableMemoryDuringPreviousTask=availableMemAllEvict;
+                result.shouldBeFreeOnProcessorDuringTask=std::max(availableMemAllEvict, 0.0);;
             } else {
                 result.resultingVar = 1;
                 assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
                 result.processorOfAssignment->setReadyTimeCompute(minTTF);
                 result.finishTime = result.processorOfAssignment->getReadyTimeCompute();
                 assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
-                result.processorOfAssignment->availableMemoryDuringPreviousTask=Res;
+                result.shouldBeFreeOnProcessorDuringTask=std::max(Res, 0.0);;
             }
         }
 
     } else {
         // startTime =  ourModifiedProc->readyTimeCompute;
         //  printInlineDebug("should be successful");
-        result.processorOfAssignment->availableMemoryDuringPreviousTask=Res;
+        result.shouldBeFreeOnProcessorDuringTask=Res;
         if (result.resultingVar != -1) {
 
             assert(shouldUseDeviatedTimes);
@@ -634,6 +637,9 @@ void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cl
 {
     checkIfPendingMemoryCorrect(schedulingResult.processorOfAssignment);
     const bool shouldUseImaginary = !real;
+
+    schedulingResult.processorOfAssignment->availableMemoryDuringPreviousTask= schedulingResult.shouldBeFreeOnProcessorDuringTask;
+
     evictAccordingToBestDecision(numberWithEvictedCases, schedulingResult, vertex, isHeft, real);
 
     for (auto& modifiedProc : schedulingResult.modifiedProcs) {
