@@ -198,36 +198,57 @@ void locateToThisProcessorFromDisk(edge_t* edge, int id, const bool imaginary, d
         locations.emplace_back(LocationType::OnProcessor, id, afterWhen);
 }
 
-Location& getLocationOnProcessor(edge_t* edge, int id, const bool imaginary)
+Location* getLocationOnProcessor(edge_t* edge, int id, const bool imaginary)
 {
-    std::vector<Location>& locations = imaginary ? edge->imaginedLocations : edge->locations;
-    return *std::find_if(locations.begin(), locations.end(),
+    auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
+
+    auto it = std::find_if(locations.begin(), locations.end(),
         [id](const Location& location) {
-            return location.locationType == LocationType::OnProcessor && location.processorId == id;
+            return location.locationType == LocationType::OnProcessor &&
+                   location.processorId == id;
         });
+
+    if (it == locations.end())
+        return nullptr;
+
+    return &*it;
 }
 
-/*Location &getLocationOnDisk(edge_t* edge, bool imaginary){
-    vector<Location> &locations = imaginary? edge->imaginedLocations: edge->locations;
-    return *std::find_if(locations.begin(), locations.end(),
-                         [](Location location) {
-                             return location.locationType == LocationType::OnDisk;
-                         });
-} */
-Location& getLocationOnDisk(edge_t* edge, const bool imaginary)
+Location* getLocationOnAnyProcessor(edge_t* edge, bool imaginary)
 {
-    std::vector<Location>& locations = imaginary ? edge->imaginedLocations : edge->locations;
+    auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
 
-    const auto it = std::find_if(locations.begin(), locations.end(),
-        [](const Location& location) { // Pass by reference ✅
+    auto it = std::find_if(
+        locations.begin(),
+        locations.end(),
+        [](const Location& location) {
+            return location.locationType == LocationType::OnProcessor;
+        }
+    );
+
+    if (it == locations.end())
+        return nullptr;
+
+    return &*it;   // pointer to Location inside vector
+}
+
+
+Location* getLocationOnDisk(edge_t* edge, bool imaginary)
+{
+    auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
+
+    auto it = std::find_if(
+        locations.begin(),
+        locations.end(),
+        [](const Location& location) {
             return location.locationType == LocationType::OnDisk;
-        });
+        }
+    );
 
-    if (it == locations.end()) {
-        throw std::runtime_error("No OnDisk location found");
-    }
+    if (it == locations.end())
+        return nullptr;
 
-    return *it; // ✅ Safe: Returns reference to actual Location in vector
+    return &*it;
 }
 
 void locateToThisProcessorFromNowhere(edge_t* edge, int id, const bool imaginary, double afterWhen)

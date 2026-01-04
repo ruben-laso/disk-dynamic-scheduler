@@ -69,7 +69,6 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
 
             for (auto& item : newEvents) {
                 events.insert(item);
-                item->processor->addEvent(item);
             }
             vertex->status = Status::Scheduled;
         }
@@ -122,7 +121,7 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
 void Event::fireTaskStart()
 {
 
-   // std::cout << "On "<< this->processor->id <<" task start " << this->task->name << " at " << this->getActualTimeFire(); //<< std::endl;
+   // std::cout << "On "<< this->processor->id <<" task start " << this->task->name << " at " << this->getActualTimeFire()<< std::endl;
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
@@ -144,7 +143,7 @@ void Event::fireTaskStart()
 
     const auto factor = applyDeviationTo(durationTask);
     this->task->factorForRealExecution = factor;
- //   std::cout << " duration "<<durationTask<< " factor "<< factor<<std::endl;
+    //std::cout << " duration "<<durationTask<< " factor "<< factor<<std::endl;
     assert(factor > 0);
     for (auto& succ : successors) {
         const auto& successor = succ.lock();
@@ -278,6 +277,21 @@ void Event::fireTaskFinish()
         mostReadyVertex->status = Status::Scheduled;
         readyQueue.readyTasks.erase(mostReadyVertex);
 
+        for (auto in_edge : mostReadyVertex->in_edges) {
+            if (isLocatedOnAnyProcessor(in_edge, false)) {
+                auto location = getLocationOnAnyProcessor(in_edge, false);
+                auto p = cluster->getProcessorById((*location).processorId.value());
+
+                const auto edgeInWritingQueue = std::find(p->writingQueue.begin(), p->writingQueue.end(),
+            in_edge);
+                if (edgeInWritingQueue != p->writingQueue.end()) {
+                    // cluster->getProcessorById(this->processor->id)->writingQueue.erase(edgeInWritingQueue);
+                    p->writingQueue.erase(edgeInWritingQueue);
+                }
+            }
+
+        }
+
         if (bestProcessorToAssign->id == this->processor->id) {
             foundSomeTaskForOurProcessor = true;
         }
@@ -364,7 +378,7 @@ void Event::fireReadStart()
         throw std::runtime_error("NO read finish found for " + this->id);
     }
 
-    events.update(buildEdgeName(this->edge) + "-w-f", expectedTimeFireFinish);
+    events.update(finishRead->id, expectedTimeFireFinish);
 
     for ( auto succ : finishRead->getSuccessors()) {
         if (!succ.expired() && succ.lock()->getActualTimeFire() < finishRead->getActualTimeFire()) {
@@ -433,7 +447,7 @@ void Event::fireWriteStart()
         throw std::runtime_error("NO write finish found for " + this->id);
     }
 
-    events.update(buildEdgeName(this->edge) + "-w-f", actualTimeFireFinish);
+    events.update(finishWrite->id, actualTimeFireFinish);
     assert(finishWrite->getActualTimeFire()==actualTimeFireFinish);
     for ( auto succ : finishWrite->getSuccessors()) {
         if (!succ.expired() && succ.lock()->getActualTimeFire() < finishWrite->getActualTimeFire()) {
@@ -489,7 +503,8 @@ void Event::fireWriteFinish()
 
     edge_t* edgeToWriteJustInCase = this->processor->writingQueue.at(0);
 
-    if (events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-s") != nullptr || events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-f") != nullptr) {
+    if (events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-s") != nullptr || events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-f") != nullptr
+        || this->processor->getPendingMemories().find(edgeToWriteJustInCase) == this->processor->getPendingMemories().end()) {
         //std:: cout << "event for " << buildEdgeName(edgeToWriteJustInCase) << " already in queue" << endl;
         this->processor->writingQueue.erase(this->processor->writingQueue.begin());
         return;
@@ -624,19 +639,6 @@ void Cluster::printProcessorsEvents()
      } */
 }
 
-void Processor::addEvent(const std::shared_ptr<Event>& event)
-{
-    /*auto foundIterator = this->eventsOnProc.find(event.get()->id);
-    if (foundIterator != eventsOnProc.end() && !foundIterator->second.expired()) {
-        //  cout << "event already exists on Processor " << this->id << endl;
-        if (event->getActualTimeFire() != foundIterator->second.lock()->getActualTimeFire()) {
-            //         cout << "Updating time fire " << endl;
-            foundIterator->second.lock()->setBothTimesFire(event->getActualTimeFire());
-        }
-    } else {
-        this->eventsOnProc[event->id] = event;
-    } */
-}
 
 // bool dealWithPredecessors(const std::shared_ptr<Event>& us)
 // {

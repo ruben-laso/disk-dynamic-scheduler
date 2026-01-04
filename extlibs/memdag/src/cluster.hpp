@@ -46,6 +46,7 @@ public:
     bool isBusy = false;
 
     std::vector<edge_t*> writingQueue = {};
+    double procRelativeSpeedNoCoefficient = 1;
 
 protected:
     double availableMemory = 0;
@@ -165,9 +166,8 @@ public:
         if (it == pendingMemories.end()) {
             if (isKeptValid) {
                 throw std::runtime_error("not found edge in pending " + buildEdgeName(edgeToRemove));
-            } else {
-                return pendingMemories.end();
             }
+            return pendingMemories.end();
         }
 
         const auto nextIt = std::next(it); // Get the next iterator before erasing
@@ -218,7 +218,7 @@ public:
 
         auto it = afterPendingMemories.find(edgeToRemove);
         if (it == afterPendingMemories.end()) {
-            throw std::runtime_error("not found edge in pending " + buildEdgeName(edgeToRemove));
+            throw std::runtime_error("not found edge in pending after" + buildEdgeName(edgeToRemove));
         }
 
         auto nextIt = std::next(it); // Get the next iterator before erasing
@@ -230,7 +230,7 @@ public:
         return nextIt; // Return the next iterator, which is safe
     }
 
-    void addEvent(const std::shared_ptr<Event>& event);
+
 
     // std::unordered_map<string, std::weak_ptr<Event>>  getEvents(){
     //     return this->eventsOnProc;

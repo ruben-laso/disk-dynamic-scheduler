@@ -58,6 +58,7 @@ Cluster* buildClusterFromCsv(const std::string& file, const fonda::Options& opti
                     break;
                 case PROCESSOR_SPEED:
                     p->setProcessorSpeed(stod(cell_value) * options.speedMultiplicator);
+                    p->procRelativeSpeedNoCoefficient= stod(cell_value);
                     break;
                 case MEMORY_AMOUNT:
                     p->setMemorySize(stod(cell_value) * options.memoryMultiplicator);
@@ -146,7 +147,7 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
                     }
                     break;
                 case PROC_SPEED_SCALE:
-                    avgTime += stod(cell) * cluster->getOneProcessorByName(proc_name)->getProcessorSpeed();
+                    avgTime += stod(cell) * cluster->getOneProcessorByName(proc_name)->procRelativeSpeedNoCoefficient;
                     break;
                 case AVG_MEMORY:
                     avgMem += stod(cell) / memShorteningDivision;
@@ -210,7 +211,7 @@ void setSwapRateFromText(vertex_t* v, const fonda::Options& options)
         v->swapRate= options.highSwapRate;
     } else //throw std::runtime_error("INVALID SWAP RATE: "+v->swapRateText + " ON VERTEX "+v->name);
     {
-        std::cerr<<"INVALID SWAP RATE: "<<v->swapRateText << " ON VERTEX "<<v->name<<", substituting with moderate swap ratio."<<std::endl;
+        std::cout<<"INVALID SWAP RATE: "<<v->swapRateText << " ON VERTEX "<<v->name<<", substituting with moderate swap ratio."<<std::endl;
     }
 }
 

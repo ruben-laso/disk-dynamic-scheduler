@@ -88,7 +88,7 @@ graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>
 
 void processIncomingEdges(const vertex_t* v, bool shouldUseDeviatedTimes, const bool shouldUseImaginaryCluster, const std::shared_ptr<Processor>& ourModifiedProc,
     std::vector<std::shared_ptr<Processor>>& modifiedProcs,
-    double& earliestStartingTimeToComputeVertex);
+    double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents);
 
 void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDeviatedTimes,
     const std::shared_ptr<Processor>& ourModifiedProc,

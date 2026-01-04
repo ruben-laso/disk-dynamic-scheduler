@@ -250,8 +250,9 @@ void locateToThisProcessorFromDisk(edge_t* edge, int id, bool imaginary, double 
 void locateToThisProcessorFromNowhere(edge_t* edge, int id, bool imaginary, double afterWhen);
 void locateToDisk(edge_t* edge, bool imaginary, double afterWhen);
 
-Location& getLocationOnProcessor(edge_t* edge, int id, bool imaginary);
-Location& getLocationOnDisk(edge_t* edge, bool imaginary);
+Location* getLocationOnProcessor(edge_t* edge, int id, bool imaginary);
+Location* getLocationOnDisk(edge_t* edge, bool imaginary);
+Location* getLocationOnAnyProcessor(edge_t* edge, const bool imaginary);
 
 std::string buildEdgeName(const edge_t* edge);
 
