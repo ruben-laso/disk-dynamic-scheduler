@@ -52,7 +52,7 @@ double medih(graph_t* graph, int algoNum, double& runtime){
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
         readyQ.pop();
-        std::cout<<"deal w "<<vertex->name<<std::endl;
+        //std::cout<<"deal w "<<vertex->name<<std::endl;
         numProcessedVertices++;
 
         if (vertex->in_edges.size()>1 ) {
