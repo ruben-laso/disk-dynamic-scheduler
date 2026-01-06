@@ -150,7 +150,7 @@ int main(const int argc, char* argv[])
             }
         }
     }
-    events.deleteAll();
+    events.clear();
     std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
     std::cout << "makespan_dynamic " << dynamic << "\t";
 

@@ -13,6 +13,7 @@ bool usePreemptiveWrites;
 
 std::string lastEventName;
 double runtimeOfScheduler;
+double timeInSystem;
 
 double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, const bool upw, double& runtime)
 {
@@ -22,6 +23,7 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
     compute_bottom_and_top_levels(graph);
     devationVariant = deviationNumber;
     usePreemptiveWrites = upw;
+    timeInSystem=0;
 
     const auto start = std::chrono::system_clock::now();
     vertex_t* vertex = graph->first_vertex;
@@ -87,13 +89,15 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
         //     throw std::runtime_error(std::to_string(cntr) + " - Graph has inconsistent event dependencies");
         // }
 
-        const auto firstEvent = events.getEarliest();
+        const auto firstEvent = events.earliestReady();
 
         if (firstEvent->isDone) {
             throw std::runtime_error("Event " + firstEvent->id + " is already done, but it is in the queue.");
         }
 
         //  cout<<"finally event "<<firstEvent->id<<endl;
+        assert(timeInSystem<=firstEvent->getActualTimeFire());
+        timeInSystem= firstEvent->getActualTimeFire();
         firstEvent->fire();
         const bool removed = events.remove(firstEvent->id);
         assert(removed);
@@ -132,7 +136,7 @@ void Event::fireTaskStart()
     //std::cout<<this->task->name<<" start "<<this->actualTimeFire<<" "<<this->processor->id<<"\n";
     removeFromDependencies();
     this->task->status = Status::Running;
-    const auto ourFinishEvent = events.findByEventId(this->task->name + "-f");
+    const auto ourFinishEvent = events.find(this->task->name + "-f");
     if (ourFinishEvent == nullptr) {
         throw std::runtime_error("NOt found finish event to " + this->task->name);
     }
@@ -145,31 +149,37 @@ void Event::fireTaskStart()
     this->task->factorForRealExecution = factor;
     //std::cout << " duration "<<durationTask<< " factor "<< factor<<std::endl;
     assert(factor > 0);
-    for (auto& succ : successors) {
-        const auto& successor = succ.lock();
-        if (!successor) {
+
+    cleanupSuccessors();
+
+    for (auto& weak_succ : successors) {
+        if (auto succ = weak_succ.lock()) {
+            if (succ->task == nullptr) {
+                throw std::runtime_error("edge-based event depends on task start " + this->id);
+            }
+        }
+        else {
             throw std::runtime_error("Invalid (nullptr) successor to " + this->task->name);
         }
-        if (successor->task == nullptr) {
-            throw std::runtime_error("edge-based event depends on task start " + this->id);
-        }
     }
+
 
     const double d = this->getActualTimeFire() + durationTask;
     // cout << "on start  setting finish time from "<< ourFinishEvent->actualTimeFire <<" to " << d << endl;
     // ourFinishEvent->setActualTimeFire(d);
-    events.update(ourFinishEvent->id, d);
+    events.reschedule(ourFinishEvent->id, d);
+    cleanupSuccessors();
     for ( auto succ : ourFinishEvent->getSuccessors()) {
         if (!succ.expired() && succ.lock()->getActualTimeFire() < ourFinishEvent->getActualTimeFire()) {
-            succ.lock()->setActualTimeFire(ourFinishEvent->getActualTimeFire());
+            bool success = events.reschedule(succ.lock()->id, ourFinishEvent->getActualTimeFire());
+            assert(success);
         }
     }
 
-
     for (auto inEdge : this->task->in_edges) {
         const std::string& edgeName = buildEdgeName(inEdge);
-        std::shared_ptr<Event> startWrite = events.findByEventId(edgeName + "-w-s");
-        std::shared_ptr<Event> finishWrite = events.findByEventId(buildEdgeName(inEdge) + "-w-f");
+        std::shared_ptr<Event> startWrite = events.find(edgeName + "-w-s");
+        std::shared_ptr<Event> finishWrite = events.find(buildEdgeName(inEdge) + "-w-f");
         if (startWrite != nullptr) {
             events.remove(startWrite->id);
             events.remove(finishWrite->id);
@@ -185,7 +195,8 @@ void Event::fireTaskStart()
             propagateChainInPlanning(finishWrite,
                 startWrite->getActualTimeFire() - finishWrite->getActualTimeFire(), visited);
         } else if (finishWrite != nullptr) {
-            finishWrite->setActualTimeFire(this->getActualTimeFire());
+            bool success = events.reschedule(finishWrite->id, this->getActualTimeFire());
+            assert(success);
         }
 
         for (auto& [proc_id, processor] : cluster->getProcessors()) {
@@ -245,8 +256,8 @@ void Event::fireTaskFinish()
 
         std::vector<std::shared_ptr<Event>> pred, succ;
 
-        if (isReady && childTask->status != Status::Scheduled) {
-          //  std::cout<<"inserting child task "<<childTask->name<<" into ready "<<std::endl;
+        if (isReady && childTask->status == Status::Unscheduled) {
+           // std::cout<<"inserting child task "<<childTask->name<<" into ready "<<std::endl;
             readyQueue.readyTasks.insert(childTask);
         }
 
@@ -373,27 +384,27 @@ void Event::fireReadStart()
 
     this->isDone = true;
 
-    const std::shared_ptr<Event> finishRead = events.findByEventId(buildEdgeName(this->edge) + "-r-f");
+    const std::shared_ptr<Event> finishRead = events.find(buildEdgeName(this->edge) + "-r-f");
     if (finishRead == nullptr) {
         throw std::runtime_error("NO read finish found for " + this->id);
     }
 
-    events.update(finishRead->id, expectedTimeFireFinish);
+    events.reschedule(finishRead->id, expectedTimeFireFinish);
 
     for ( auto succ : finishRead->getSuccessors()) {
         if (!succ.expired() && succ.lock()->getActualTimeFire() < finishRead->getActualTimeFire()) {
-            succ.lock()->setActualTimeFire(finishRead->getActualTimeFire());
+            bool success = events.reschedule(succ.lock()->id, finishRead->getActualTimeFire());
+            assert(success);
         }
     }
 
-    //  cout << endl;
 }
 
 void Event::fireReadFinish()
 {
    // std::cout << "On "<<this->processor->id <<" read finish " << buildEdgeName(this->edge) << " at " << this->getActualTimeFire() << std::endl;
 
-    std::shared_ptr<Event> startRead = events.findByEventId(buildEdgeName(this->edge) + "-r-s");
+    std::shared_ptr<Event> startRead = events.find(buildEdgeName(this->edge) + "-r-s");
 
     const auto canRun = dealWithPredecessors(shared_from_this());
     if (!canRun) {
@@ -407,9 +418,9 @@ void Event::fireReadFinish()
 
     assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
     if (!isLocatedOnDisk(this->edge, false)) {
-        const auto ptr = events.findByEventId(buildEdgeName(this->edge) + "-w-f");
+        const auto ptr = events.find(buildEdgeName(this->edge) + "-w-f");
         assert(ptr != nullptr);
-        auto ptr1 = events.findByEventId(buildEdgeName(this->edge) + "-r-s");
+        auto ptr1 = events.find(buildEdgeName(this->edge) + "-r-s");
         assert(ptr1->getActualTimeFire() < this->getActualTimeFire());
     }
     locateToThisProcessorFromDisk(this->edge, this->processor->id, false, this->getActualTimeFire());
@@ -441,17 +452,18 @@ void Event::fireWriteStart()
 
     const double actualTimeFireFinish = this->actualTimeFire + durationOfWrite;
     this->isDone = true;
-    const std::shared_ptr<Event> finishWrite = events.findByEventId(buildEdgeName(this->edge) + "-w-f");
+    const std::shared_ptr<Event> finishWrite = events.find(buildEdgeName(this->edge) + "-w-f");
 
     if (finishWrite == nullptr) {
         throw std::runtime_error("NO write finish found for " + this->id);
     }
 
-    events.update(finishWrite->id, actualTimeFireFinish);
+    events.reschedule(finishWrite->id, actualTimeFireFinish);
     assert(finishWrite->getActualTimeFire()==actualTimeFireFinish);
     for ( auto succ : finishWrite->getSuccessors()) {
         if (!succ.expired() && succ.lock()->getActualTimeFire() < finishWrite->getActualTimeFire()) {
-            succ.lock()->setActualTimeFire(finishWrite->getActualTimeFire());
+            bool success = events.reschedule(succ.lock()->id, finishWrite->getActualTimeFire());
+            assert(success);
         }
     }
 
@@ -503,7 +515,7 @@ void Event::fireWriteFinish()
 
     edge_t* edgeToWriteJustInCase = this->processor->writingQueue.at(0);
 
-    if (events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-s") != nullptr || events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-f") != nullptr
+    if (events.find(buildEdgeName(edgeToWriteJustInCase) + "-w-s") != nullptr || events.find(buildEdgeName(edgeToWriteJustInCase) + "-w-f") != nullptr
         || this->processor->getPendingMemories().find(edgeToWriteJustInCase) == this->processor->getPendingMemories().end()) {
         //std:: cout << "event for " << buildEdgeName(edgeToWriteJustInCase) << " already in queue" << endl;
         this->processor->writingQueue.erase(this->processor->writingQueue.begin());
@@ -512,7 +524,7 @@ void Event::fireWriteFinish()
 
     const double presumedLength = assessWritingOfEdge(edgeToWriteJustInCase, this->processor);
     double startOfNextWrite = std::numeric_limits<double>::max();
-    const std::set<std::shared_ptr<Event>, CompareByTimestamp> eventsOnThisProc = events.findByProcessorId(
+    const std::set<std::shared_ptr<Event>, CompareByTimestamp> eventsOnThisProc = events.eventsForProcessor(
         this->processor->id);
     assert((*eventsOnThisProc.begin())->getActualTimeFire() <= (*eventsOnThisProc.rbegin())->getActualTimeFire());
 
@@ -528,8 +540,8 @@ void Event::fireWriteFinish()
     if (this->getActualTimeFire() + presumedLength < startOfNextWrite) {
         // can fit
         //std::cout << "scheduling extra write for " << buildEdgeName(edgeToWriteJustInCase) << std::endl;
-        assert(events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-s") == nullptr);
-        assert(events.findByEventId(buildEdgeName(edgeToWriteJustInCase) + "-w-f") == nullptr);
+        assert(events.find(buildEdgeName(edgeToWriteJustInCase) + "-w-s") == nullptr);
+        assert(events.find(buildEdgeName(edgeToWriteJustInCase) + "-w-f") == nullptr);
         std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>> writeEvents;
         scheduleWriteForEdge(this->processor, edgeToWriteJustInCase, writeEvents, true);
         events.insert(writeEvents.first);
@@ -548,6 +560,7 @@ void Event::fireWriteFinish()
 
 void Event::removeFromPredecessors()
 {
+    this->cleanupSuccessors();
     for (const auto& predecessor : this->predecessors) {
         if (!predecessor) {
             continue;
@@ -567,6 +580,7 @@ void Event::removeFromPredecessors()
 
 void Event::removeFromSuccessors()
 {
+    this->cleanupSuccessors();
     for (auto succIt = this->successors.begin(); succIt != this->successors.end();) {
         const auto successor = succIt->lock();
         if (!successor) {
@@ -589,6 +603,7 @@ void Event::removeFromSuccessors()
 
 void Event::removeFromDependencies()
 {
+    this->cleanupSuccessors();
     removeFromPredecessors();
     removeFromSuccessors();
 }
@@ -687,7 +702,8 @@ bool dealWithPredecessors(const std::shared_ptr<Event>& us)
     // Adjust actual fire time based on remaining predecessors
     for (const auto& pred : preds) {
         if (pred->getActualTimeFire() > us->getActualTimeFire()) {
-            us->setActualTimeFire(pred->getActualTimeFire());
+            bool success = events.reschedule(us->id, pred->getActualTimeFire());
+            assert(success);
         }
     }
 
