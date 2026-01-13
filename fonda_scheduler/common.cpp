@@ -4,6 +4,7 @@
 
 #include "../include/fonda_scheduler/common.hpp"
 
+#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
 #include "graph.hpp"
 
@@ -157,7 +158,8 @@ void delocateFromThisProcessorToDisk(edge_t* edge, int id, const bool imaginary,
         locations.begin(),
         locations.end(),
         [id](const Location& location) {
-            return location.locationType == LocationType::OnProcessor && location.processorId == id;
+            return location.locationType == LocationType::OnProcessor
+                && location.processorId == id;
         });
     if (it == locations.end()) {
         throw std::runtime_error(
@@ -303,6 +305,34 @@ double getSumIn(const vertex_t* v)
 
 void Event::fire()
 {
+    if (this->edge) {
+        assert(this->edge->locations.size()>=0);
+        assert(this->edge->imaginedLocations.size()>=0);
+    }
+
+    // PASS 1: absolute repair
+    std::vector<TimeShift> repair;
+    this->enforceSuccessorConstraints(repair);
+    // Apply any repairs
+    for (auto& s : repair) {
+        events.reschedulePure(s.ev->id, s.newTime);
+    }
+
+    this->timesFired++;
+
+    if (this->type==OnTaskFinish && !this->processor->getLastComputeEvent().expired() && this->processor->getLastComputeEvent().lock()->id==this->id) {
+        //we are last compute event
+        this->processor->setReadyTimeCompute(this->getActualTimeFire());
+    }
+    if (this->type==OnReadFinish && !this->processor->getLastReadEvent().expired() && this->processor->getLastReadEvent().lock()->id==this->id) {
+        //we are last read event
+        this->processor->setReadyTimeRead(this->getActualTimeFire());
+    }
+    if (this->type==OnWriteFinish && !this->processor->getLastWriteEvent().expired() && this->processor->getLastWriteEvent().lock()->id==this->id) {
+        //we are last write event
+        this->processor->setReadyTimeWrite(this->getActualTimeFire());
+    }
+
     switch (this->type) {
     case eventType::OnTaskStart:
         fireTaskStart();

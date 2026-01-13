@@ -13,6 +13,7 @@ extern Cluster* cluster;
 extern EventManager events;
 extern ReadyQueue readyQueue;
 
+
 inline extern double averageSpreadPredecessors=0;
 inline extern int numTasksComputedPredecessors=0;
 
@@ -46,7 +47,6 @@ scheduleWriteForEdge(const std::shared_ptr<Processor>& thisProc, edge_t* edgeToW
     std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>>& writeEvents, double notEarlierThan, bool onlyPreemptive = false);
 void buildPendingMemoriesAfter(const std::shared_ptr<Processor>& ourModifiedProc, const vertex_t* ourVertex);
 void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModifiedProc);
-bool dealWithPredecessors(const std::shared_ptr<Event>& us);
 void checkBestEvents(std::vector<std::shared_ptr<Event>>& bestEvents);
 double assessWritingOfEdge(const edge_t* edge, const std::shared_ptr<Processor>& proc);
 

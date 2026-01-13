@@ -10,6 +10,13 @@
 #include <unordered_set>
 #include <utility>
 
+extern double timeInSystem;
+
+inline double runtimeNow()
+{
+    return timeInSystem;
+}
+
 class Assignment {
 
 public:
@@ -71,6 +78,11 @@ enum eventType {
     OnTaskFinish = 5
 };
 
+struct TimeShift {
+    Event* ev;
+    double newTime;
+};
+
 class Event : public std::enable_shared_from_this<Event> {
 public:
     std::string id;
@@ -85,22 +97,23 @@ public:
 
 private:
     double expectedTimeFire = -1.0;
-    double actualTimeFire   = -1.0;
+    double actualTimeFire = -1.0;
 
     // true once inserted into EventManager
     bool isManaged = false;
     // Only EventManager may change event times
     friend class EventManager;
 
-
-    void setActualTimeFireInternal(double t) noexcept {
-        if (isManaged)
-            throw std::logic_error("Cannot modify actualTimeFire after insertion into EventManager");
+    void setActualTimeFireInternal(double t) noexcept
+    {
+        // std::cout << "set actual time of "<<this->id<< " to "<<t<<std::endl;;
+        assert(!isManaged && "Cannot mutate topology of live event");
 
         actualTimeFire = t;
     }
 
-    void setExpectedTimeFireInternal(double t) noexcept {
+    void setExpectedTimeFireInternal(double t) noexcept
+    {
         if (isManaged)
             throw std::logic_error("Cannot modify expectedTimeFire after insertion into EventManager");
 
@@ -110,7 +123,6 @@ private:
     void forceUpdateTimeFromManager(double t) noexcept
     {
         actualTimeFire = t;
-        expectedTimeFire = t;
     }
 
 public:
@@ -118,12 +130,16 @@ public:
     double getExpectedTimeFire() const noexcept { return expectedTimeFire; }
 
     // combined logical view
-    double getVisibleTimeFireForPlanning() const noexcept {
+    double getVisibleTimeFireForPlanning() const noexcept
+    {
         return isDone ? actualTimeFire : expectedTimeFire;
     }
 
     std::vector<std::weak_ptr<Event>> successors;
     std::vector<std::shared_ptr<Event>> predecessors;
+
+    std::vector<std::shared_ptr<Event>> getPredecessors() { return predecessors; }
+    std::vector<std::weak_ptr<Event>> getSuccessors() { return successors; }
 
     void initialize(const std::vector<std::shared_ptr<Event>>& predecessors,
         const std::vector<std::weak_ptr<Event>>& successors)
@@ -132,7 +148,7 @@ public:
             this->addPredecessorInPlanning(pred);
         }
         for (auto& succ : successors) {
-            this->addSuccessorInPlanning(succ);
+            succ.lock()->addPredecessorInPlanning(shared_from_this());
         }
     }
 
@@ -154,7 +170,7 @@ public:
         initialize(predecessors, successors);
     }
 
-     static std::shared_ptr<Event> createEvent(vertex_t* task, edge_t* edge,
+    static std::shared_ptr<Event> createEvent(vertex_t* task, edge_t* edge,
         eventType type, const std::shared_ptr<Processor>& processor,
         double expectedTimeFire, double actualTimeFire,
         const std::vector<std::shared_ptr<Event>>& predecessors,
@@ -186,6 +202,267 @@ public:
             successors.end());
     }
 
+    bool isStart() const
+    {
+        return type == OnTaskStart || type == OnReadStart || type == OnWriteStart;
+    }
+
+    bool isFinish() const
+    {
+        return type == OnTaskFinish || type == OnReadFinish || type == OnWriteFinish;
+    }
+
+    double earliestAllowedTimeNoPlanning() const
+    {
+        double t = -std::numeric_limits<double>::infinity();
+        for (auto& p : predecessors) {
+            t = std::max(t, p->getActualTimeFire());
+        }
+        return t;
+    }
+
+    double earliestAllowedTime(
+        const std::vector<TimeShift>& shifts)
+    {
+        // std::cout << "earliest allowed time for "<<this->id<<" ";
+        double t = -std::numeric_limits<double>::infinity();
+        for (auto p : predecessors) {
+            t = std::max(t, plannedTime(p, shifts));
+        }
+        // std::cout << " is "<<t<<std::endl;;
+        return t;
+    }
+
+    double plannedTime(std::shared_ptr<Event> e,
+        const std::vector<TimeShift>& shifts)
+    {
+        for (auto it = shifts.rbegin(); it != shifts.rend(); ++it) {
+            if (it->ev->id == e->id) {
+                //      std::cout << "found time in shifts for "<<e->id<<std::endl;
+                return it->newTime;
+            }
+        }
+        return e->getActualTimeFire();
+    }
+
+    double effectiveTime(std::shared_ptr<Event> e,
+        const std::vector<TimeShift>& shifts)
+    {
+        for (auto it = shifts.rbegin(); it != shifts.rend(); ++it) {
+            if (it->ev->id == e->id)
+                return it->newTime;
+        }
+        return e->getActualTimeFire();
+    }
+
+    void pushAllSuccessorsLaterRuntime( std::vector<TimeShift>& shifts)
+    {
+        std::unordered_set<Event*> visited;
+        propagatePushLaterRuntime(visited, shifts);
+    }
+
+    void propagatePushLaterRuntime(
+        std::unordered_set<Event*>& visited,
+        std::vector<TimeShift>& shifts)
+    {
+        if (!visited.insert(this).second)
+            return;
+
+        const double myTime = effectiveTime(shared_from_this(), shifts);
+
+        for (auto& sw : successors) {
+            auto s = sw.lock();
+            if (!s)
+                continue;
+
+            const double sTime = effectiveTime(s, shifts);
+
+            if (sTime < myTime) {
+                shifts.push_back({ s.get(), myTime });
+
+                s->propagatePushLaterRuntime(visited, shifts);
+            }
+        }
+    }
+
+    void pullAllSuccessorsEarlierByRuntime( std::vector<TimeShift>& shifts)
+    {
+
+        std::unordered_set<Event*> visited;
+        propagatePullEarlierRuntime( visited, shifts);
+    }
+
+    void propagatePullEarlierRuntime( std::unordered_set<Event*>& visited,
+    std::vector<TimeShift>& shifts)
+    {
+        if (!visited.insert(this).second)
+            return;
+
+        const double limiting = earliestAllowedTime(shifts);
+        const double myTime   = effectiveTime(shared_from_this(), shifts);
+
+        // Pull ONLY if legal
+        if (myTime > limiting) {
+            shifts.push_back({ this, limiting });
+        }
+
+        for (auto& sw : successors) {
+            auto s = sw.lock();
+            if (!s) continue;
+
+            s->propagatePullEarlierRuntime(visited, shifts);
+        }
+    }
+
+
+    void enforceSuccessorConstraints(std::vector<TimeShift>& shifts)
+    {
+        std::unordered_set<Event*> visited;
+        enforceSuccessorConstraintsImpl(visited, shifts);
+    }
+
+    void enforceSuccessorConstraintsImpl(
+        std::unordered_set<Event*>& visited,
+        std::vector<TimeShift>& shifts)
+    {
+        if (!visited.insert(this).second)
+            return;
+
+        cleanupSuccessors();
+
+        for (auto& sw : successors) {
+            auto s = sw.lock();
+            if (!s)
+                continue;
+
+            double earliestAllowed = s->earliestAllowedTime(shifts);
+
+            // ONLY fix illegal successors
+            if (plannedTime(s, shifts) < earliestAllowed) {
+
+                shifts.push_back({ s.get(), earliestAllowed });
+
+                // Continue repairing downstream
+                s->enforceSuccessorConstraintsImpl(visited, shifts);
+            }
+        }
+    }
+
+    void addPredecessorPure(const std::shared_ptr<Event>& pred)
+    {
+        assert(!isManaged && "Cannot mutate topology of live event");
+        if (pred->id == this->id) {
+            throw std::runtime_error("ADDING OURSELVES AS PREDECESSOR!");
+        }
+
+        if (std::find(predecessors.begin(), predecessors.end(), pred) != predecessors.end()) {
+            // Already a predecessor, no need to add again
+            return;
+        }
+
+        this->predecessors.emplace_back(pred);
+
+        pred->addSuccessorPure(shared_from_this());
+    }
+
+    void addSuccessorPure(const std::weak_ptr<Event>& succ_)
+    {
+        const auto& succ = succ_.lock();
+        if (!succ) {
+            throw std::runtime_error("Successor is expired or null in addSuccessorInPlanning");
+        }
+        if (succ->id == this->id) {
+            throw std::runtime_error("ADDING OURSELVES AS SUCCESSOR!");
+        }
+        this->successors.emplace_back(succ); // Always insert (either first time or replacing one with same ID)
+        // Add this as a predecessor of succ if not already present
+        const bool alreadyPredecessor = std::find(succ->predecessors.begin(), succ->predecessors.end(), shared_from_this()) != succ->predecessors.end();
+        if (!alreadyPredecessor) {
+            succ->addPredecessorPure(shared_from_this());
+        }
+    }
+
+    void addPredecessorInPlanning(std::shared_ptr<Event> predecessor)
+    {
+        // 1. structural edge
+        addPredecessorPure(predecessor);
+
+        // 2. compute latest allowed start
+        double predVisible = predecessor->getVisibleTimeFireForPlanning();
+        double succVisible = this->getVisibleTimeFireForPlanning();
+
+        if (predVisible <= succVisible)
+            return; // already valid, nothing to do
+
+        double diff = predVisible - succVisible;
+
+        // 3. shift THIS event
+        this->setActualTimeFireInternal(this->getActualTimeFire() + diff);
+        this->setExpectedTimeFireInternal(this->getExpectedTimeFire() + diff);
+
+        // 4. and shift ALL successors
+        propagateAllSuccessorsForward(diff, /*inPlanning=*/true);
+    }
+
+    void propagateAllSuccessorsForward(double diff, bool inPlanning)
+    {
+        if (diff <= 0.0)
+            return;
+
+        this->cleanupSuccessors();
+
+        // visited prevents cycles
+        std::unordered_set<Event*> visited;
+        std::deque<std::shared_ptr<Event>> worklist;
+
+        visited.insert(this);
+        worklist.push_back(shared_from_this());
+
+        while (!worklist.empty()) {
+            auto current = worklist.front();
+            worklist.pop_front();
+
+            current->cleanupSuccessors();
+
+            for (auto& succWeak : current->successors) {
+                auto succ = succWeak.lock();
+                if (!succ)
+                    continue;
+
+                if (visited.insert(succ.get()).second) {
+                    // not visited before → schedule traversal
+                    worklist.push_back(succ);
+                }
+
+                // shift the successor time
+                double newTime = succ->getActualTimeFire() + diff;
+                succ->setActualTimeFireInternal(newTime);
+
+                if (inPlanning) {
+                    succ->setExpectedTimeFireInternal(newTime);
+                    // invariants you're aiming for
+                    assert(succ->getExpectedTimeFire() == succ->getActualTimeFire());
+                }
+            }
+        }
+    }
+
+    void adjustBothPlannedFireTimes(double t)
+    {
+        if (isManaged)
+            throw std::logic_error("Cannot modify after insertion into EventManager");
+
+        assert(t >= this->getExpectedTimeFire() || this->getExpectedTimeFire() - t < 0.1);
+        assert(this->getExpectedTimeFire() == this->getActualTimeFire());
+
+        setExpectedTimeFireInternal(t);
+        setActualTimeFireInternal(t);
+
+        double diff = t - this->getExpectedTimeFire();
+        propagateAllSuccessorsForward(diff, true);
+    }
+
+    //////////////////////// CHECK FOR CYCLES AND HELPERS ///////////////////////////////////
     void removeSuccessorById(const std::string& idToRemove)
     {
         successors.erase(
@@ -210,95 +487,6 @@ public:
                 }),
             predecessors.end());
     }
-
-    void cleanupDependencies()
-    {
-        removeFromDependencies();
-    }
-
-
-    static void propagateChainInPlanning(const std::shared_ptr<Event>& event, const double add, std::unordered_set<std::shared_ptr<Event>>& visited)
-    {
-        if (visited.count(event)) {
-            return;
-        }
-
-        event->cleanupSuccessors();
-        visited.insert(event);
-
-        for (auto& succ_ : event->successors) {
-            const auto& successor = succ_.lock();
-            if (!successor) {
-                throw std::runtime_error("Successor is expired or null in propagateChainInPlanning");
-            }
-            const double newTime = successor->getVisibleTimeFireForPlanning() + add;
-            successor->setActualTimeFireInternal(newTime);
-            successor->setExpectedTimeFireInternal(newTime);
-
-            propagateChainInPlanning(successor, add, visited);
-        }
-    }
-
-    void addPredecessorInPlanning(const std::shared_ptr<Event>& pred)
-    {
-        pred->cleanupSuccessors();
-        if (pred->id == this->id) {
-            throw std::runtime_error("ADDING OURSELVES AS PREDECESSOR!");
-        }
-
-        if (std::find(predecessors.begin(), predecessors.end(), pred) != predecessors.end()) {
-
-            // Already a predecessor, no need to add again
-            return;
-        }
-
-        this->predecessors.emplace_back(pred);
-
-        const double predsVisibleTime = pred->getVisibleTimeFireForPlanning();
-        if (predsVisibleTime > this->actualTimeFire) {
-            const double diff = predsVisibleTime - this->actualTimeFire;
-            this->setActualTimeFireInternal(predsVisibleTime);
-            this->setExpectedTimeFireInternal(predsVisibleTime);
-
-            std::unordered_set<std::shared_ptr<Event>> visited;
-            propagateChainInPlanning(shared_from_this(), diff, visited);
-        }
-
-        pred->addSuccessorInPlanning(shared_from_this());
-    }
-
-    // Modified addSuccessorInPlanning to use unordered_set
-    void addSuccessorInPlanning(const std::weak_ptr<Event>& succ_)
-    {
-        const auto& succ = succ_.lock();
-        if (!succ) {
-            throw std::runtime_error("Successor is expired or null in addSuccessorInPlanning");
-        }
-
-        if (succ->id == this->id) {
-            throw std::runtime_error("ADDING OURSELVES AS SUCCESSOR!");
-        }
-        this->cleanupSuccessors();
-        this->successors.emplace_back(succ); // Always insert (either first time or replacing one with same ID)
-
-        // Adjust successor timing if needed
-        const double succsVisibleTime = succ->getVisibleTimeFireForPlanning();
-        if (succsVisibleTime < this->expectedTimeFire) {
-            const double diff = this->expectedTimeFire - succsVisibleTime;
-            succ->setActualTimeFireInternal(this->expectedTimeFire);
-            succ->setExpectedTimeFireInternal(this->expectedTimeFire);
-
-            std::unordered_set<std::shared_ptr<Event>> visited;
-            propagateChainInPlanning(succ, diff, visited);
-        }
-
-        // Add this as a predecessor of succ if not already present
-        const bool alreadyPredecessor = std::find(succ->predecessors.begin(), succ->predecessors.end(), shared_from_this()) != succ->predecessors.end();
-        if (!alreadyPredecessor) {
-            succ->addPredecessorInPlanning(shared_from_this());
-        }
-    }
-
 
     static bool hasCycleFrom(const std::shared_ptr<Event>& event, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recStack,
         const bool checkPredecessors)
@@ -348,41 +536,6 @@ public:
         return hasCycleFrom(shared_from_this(), visited, recStack, true) || hasCycleFrom(shared_from_this(), visited, recStack, false);
     }
 
-    void adjustBothPlannedFireTimes(double t)
-    {
-        if (isManaged)
-            throw std::logic_error("Cannot modify after insertion into EventManager");
-
-        setExpectedTimeFireInternal(t);
-        setActualTimeFireInternal(t);
-
-        // also update affected successors if needed
-        std::unordered_set<std::shared_ptr<Event>> visited;
-        propagateChainInPlanning(shared_from_this(), 0.0, visited);
-    }
-
-
-
-    auto& getPredecessors()
-    {
-        return predecessors;
-    }
-
-    const auto& getPredecessors() const
-    {
-        return predecessors;
-    }
-
-    auto& getSuccessors()
-    {
-        return successors;
-    }
-
-    const auto& getSuccessors() const
-    {
-        return successors;
-    }
-
     void fire();
 
     void fireTaskStart();
@@ -403,11 +556,12 @@ public:
 
     void removeFromDependencies();
 
+    bool cleanupPredecessors();
 };
 
 struct CompareByTimestamp {
     bool operator()(const std::shared_ptr<Event>& a,
-                    const std::shared_ptr<Event>& b) const
+        const std::shared_ptr<Event>& b) const
     {
         if (a->getActualTimeFire() != b->getActualTimeFire())
             return a->getActualTimeFire() < b->getActualTimeFire();
@@ -419,73 +573,115 @@ class EventManager {
 public:
     using EventPtr = std::shared_ptr<Event>;
     using EventSet = std::set<EventPtr, CompareByTimestamp>;
+    double lastFiredTime = -std::numeric_limits<double>::infinity();
 
 private:
-    EventSet eventSet;  // ordered by timestamp
+    EventSet eventSet; // ordered by timestamp
     std::unordered_map<std::string, EventSet::iterator> eventById;
     std::unordered_map<int, EventSet> eventsByProcessor;
 
 public:
     EventManager() = default;
 
-    // ---------------------------
-    // INSERT
-    // ---------------------------
     bool insert(const EventPtr& ev)
     {
-        // Remove existing event with same ID
-        auto it = eventById.find(ev->id);
-        if (it != eventById.end()) {
-            eraseInternal(it); // remove from all structures
+        // First insertion sanity checks
+        if (!ev->isManaged) {
+
         }
 
+        // Remove old instance if present
+        auto it = eventById.find(ev->id);
+        if (it != eventById.end()) {
+            eraseFromQueueOnly(it);
+        }
         auto [setIt, ok] = eventSet.insert(ev);
-        if (!ok) return false;
+        if (!ok)
+            return false;
 
         eventById[ev->id] = setIt;
         eventsByProcessor[ev->processor->id].insert(ev);
 
-        // 🔒 Freeze mutation after insertion
         ev->isManaged = true;
 
+        return true;
+    }
+    bool reschedulePure(const std::string& id, double newTime)
+    {    //  std::cout<<"reschedule pure "<<id<<" to "<<newTime<<std::endl;
 
-        // maintain dependency cross-links
-        for (auto& p : ev->getPredecessors())
-            p->addSuccessorInPlanning(ev);
+        auto it = eventById.find(id);
+        if (it == eventById.end())
+            return false;
 
-        for (auto& s : ev->getSuccessors())
-            if (auto sp = s.lock())
-                sp->addPredecessorInPlanning(ev);
+        EventPtr ev = *(it->second);
+        const double oldTime = ev->actualTimeFire;
+
+        if (oldTime == newTime)
+            return true;
+
+        // Runtime monotonicity enforcement
+        if (newTime < runtimeNow()) {
+            std::string error = " Illegal backward runtime reschedule\n event: " + ev->id + "\n"
+                + "   requested: " + std::to_string(newTime) + "\n"
+                + "   runtimeNow: " + std::to_string(runtimeNow()) + "\n";
+            std::cout
+                << " Illegal backward runtime reschedule\n"
+                << "   event: " << ev->id << "\n"
+                << "   requested: " << newTime << "\n"
+                << "   runtimeNow: " << runtimeNow() << "\n";
+
+            newTime = runtimeNow(); // OR: return false / throw
+            throw new std::runtime_error(error);
+        }
+
+
+        eraseFromQueueOnly(it);
+        ev->actualTimeFire = newTime;
+        // Reinsert at correct position
+        insert(ev);
 
         return true;
     }
 
-    // ---------------------------
-    // RESCHEDULE (safe timestamp change)
-    // ---------------------------
     bool reschedule(const std::string& id, double newTime)
     {
-
         auto it = eventById.find(id);
-        if (it == eventById.end()) return false;
+        if (it == eventById.end())
+            return false;
 
         EventPtr ev = *(it->second);
+        //  std::cout <<" from "<<ev->getActualTimeFire()<<std::endl;;
 
-        eraseInternal(it);
+        const double oldTime = ev->actualTimeFire;
 
-        // bypass flag because manager is allowed
-        ev->forceUpdateTimeFromManager(newTime);
+        if (oldTime == newTime)
+            return true;
 
-        return insert(ev);
+        reschedulePure(id, newTime);
 
+        std::vector<TimeShift> shifts;
+
+        if (newTime > oldTime) {
+            ev->pushAllSuccessorsLaterRuntime(shifts);
+        } else {
+            ev->pullAllSuccessorsEarlierByRuntime(shifts);
+        }
+
+        for (auto& s : shifts) {
+            //     std::cout << "move "<<s.ev->id<<" from "<<s. ev->getActualTimeFire()<< " to "<<s.newTime<<", ";
+            reschedulePure(s.ev->id, s.newTime);
+        }
+        //std::cout << std::endl;
+        return true;
     }
 
     bool remove(const std::string& id)
     {
         auto it = eventById.find(id);
-        if (it == eventById.end()) return false;
+        if (it == eventById.end())
+            return false;
 
-        eraseInternal(it);
+        eraseCompletely(it);
         return true;
     }
 
@@ -502,7 +698,6 @@ public:
         return (it != eventsByProcessor.end()) ? it->second : empty;
     }
 
-
     EventPtr earliestReady() const
     {
         for (const auto& e : eventSet)
@@ -512,6 +707,10 @@ public:
         return nullptr;
     }
 
+    EventPtr earliest() const
+    {
+        return (*eventSet.begin());
+    }
 
     bool empty() const { return eventSet.empty(); }
 
@@ -522,14 +721,44 @@ public:
         eventsByProcessor.clear();
     }
 
-private:
-
-    void eraseInternal(std::unordered_map<std::string, EventSet::iterator>::iterator it)
+    void assertQueueSorted(const std::string& where) const
     {
+        if (eventSet.size() < 2)
+            return;
 
+        auto it = eventSet.begin();
+        auto prev = it;
+        ++it;
+
+        for (; it != eventSet.end(); ++it, ++prev) {
+            double t_prev = (*prev)->getActualTimeFire();
+            double t_curr = (*it)->getActualTimeFire();
+
+            if (t_curr < t_prev) {
+                std::cerr << "\n❌ EVENT QUEUE CORRUPTION DETECTED\n";
+                std::cerr << "Location: " << where << "\n";
+                std::cerr << "Prev event: " << (*prev)->id
+                          << " time=" << t_prev << "\n";
+                std::cerr << "Curr event: " << (*it)->id
+                          << " time=" << t_curr << "\n";
+                std::cerr << "Queue dump:\n";
+
+                for (const auto& e : eventSet) {
+                    std::cerr << "  " << e->id
+                              << " @ " << e->getActualTimeFire()
+                              << "\n";
+                }
+
+                std::abort(); // hard stop — corruption must not continue
+            }
+        }
+    }
+
+private:
+    void eraseFromQueueOnly(std::unordered_map<std::string, EventSet::iterator>::iterator it)
+    {
         EventPtr ev = *(it->second);
         int pid = ev->processor->id;
-
 
         auto pit = eventsByProcessor.find(pid);
         if (pit != eventsByProcessor.end()) {
@@ -538,23 +767,26 @@ private:
                 eventsByProcessor.erase(pit);
         }
 
-
         eventSet.erase(it->second);
-
-
         eventById.erase(it);
+    }
 
-        // maintain dependency structure
+    void eraseCompletely(std::unordered_map<std::string, EventSet::iterator>::iterator it)
+    {
+        EventPtr ev = *(it->second);
+        eraseFromQueueOnly(it);
+
+        // now topology change
         ev->removeFromDependencies();
     }
 };
 
-
 struct CompareByRank {
 
-    bool operator()(const vertex_t* a, const vertex_t* b) const {
-        assert(a->rank!=-1);
-        assert(b->rank!=-1);
+    bool operator()(const vertex_t* a, const vertex_t* b) const
+    {
+        assert(a->rank != -1);
+        assert(b->rank != -1);
 
         if (a->rank != b->rank)
             return a->rank < b->rank; // max-heap
@@ -568,7 +800,6 @@ struct CompareByRank {
 
         return a->id > b->id;
     }
-
 };
 
 class ReadyQueue {
@@ -577,3 +808,4 @@ public:
 };
 
 #endif
+
