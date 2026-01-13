@@ -150,52 +150,67 @@ std::string buildEdgeName(const edge_t* edge)
 void delocateFromThisProcessorToDisk(edge_t* edge, int id, const bool imaginary, double afterWhen)
 {
 
-    std::vector<Location>& locations = imaginary ? edge->imaginedLocations : edge->locations;
-    const auto locationOnThisProcessor = std::find_if(locations.begin(), locations.end(),
+
+    auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
+
+    auto it = std::find_if(
+        locations.begin(),
+        locations.end(),
         [id](const Location& location) {
             return location.locationType == LocationType::OnProcessor && location.processorId == id;
         });
-    // std::cout<<"delocating "; print_edge(edge);
-    // assert(locationOnThisProcessor  != edge->locations.end());
-    if (locationOnThisProcessor == edge->locations.end()) {
-        locations.erase(locationOnThisProcessor);
-        if (!isLocatedOnDisk(edge, imaginary))
-            locations.emplace_back(LocationType::OnDisk, std::nullopt, afterWhen);
-
-        throw std::runtime_error("not located on proc " + buildEdgeName(edge));
+    if (it == locations.end()) {
+        throw std::runtime_error(
+            "Edge " + buildEdgeName(edge) +
+            " not located on processor " + std::to_string(id)
+        );
     }
-    locations.erase(locationOnThisProcessor);
-    if (!isLocatedOnDisk(edge, imaginary))
+
+    locations.erase(it);
+
+    if (!isLocatedOnDisk(edge, imaginary)) {
         locations.emplace_back(LocationType::OnDisk, std::nullopt, afterWhen);
+    }
 }
 
-void delocateFromThisProcessorToNowhere(edge_t* edge, int id, const bool imaginary, double afterWhen)
+void delocateFromThisProcessorToNowhere(edge_t* edge, int id, const bool imaginary)
 {
+    auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
 
-    std::vector<Location>& locations = imaginary ? edge->imaginedLocations : edge->locations;
-    const auto locationOnThisProcessor = std::find_if(locations.begin(), locations.end(),
-        [id](const Location& location) {
-            return location.locationType == LocationType::OnProcessor && location.processorId == id;
+    auto it = std::find_if(
+        locations.begin(),
+        locations.end(),
+        [id](const Location& loc) {
+            return loc.locationType == LocationType::OnProcessor
+                && loc.processorId == id;
         });
-    // cout<<"delocating "; print_edge(edge);
-    // assert(locationOnThisProcessor  != edge->locations.end());
-    if (locationOnThisProcessor == edge->locations.end()) {
-        throw std::runtime_error("not located on proc " + buildEdgeName(edge));
+
+    if (it == locations.end()) {
+        throw std::runtime_error(
+            "Edge " + buildEdgeName(edge) +
+            " not located on processor " + std::to_string(id)
+        );
     }
-    locations.erase(locationOnThisProcessor);
+
+    locations.erase(it);
 }
 
 void locateToThisProcessorFromDisk(edge_t* edge, int id, const bool imaginary, double afterWhen)
 {
 
-    std::vector<Location>& locations = imaginary ? edge->imaginedLocations : edge->locations;
-    //  cout<<"locating to proc "<<id <<" edge "; print_edge(edge);
+    auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
+
     if (!isLocatedOnDisk(edge, imaginary)) {
-       // std::cout << "NOT located on disk yet! Write&Read? " << buildEdgeName(edge) << '\n';
+        throw std::runtime_error(
+            "Cannot locate edge " + buildEdgeName(edge) +
+            " to processor " + std::to_string(id) +
+            " because it is not located on disk"
+        );
     }
-    // assert(isLocatedOnDisk(edge));
-    if (!isLocatedOnThisProcessor(edge, id, imaginary))
+
+    if (!isLocatedOnThisProcessor(edge, id, imaginary)) {
         locations.emplace_back(LocationType::OnProcessor, id, afterWhen);
+    }
 }
 
 Location* getLocationOnProcessor(edge_t* edge, int id, const bool imaginary)
