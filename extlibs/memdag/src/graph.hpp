@@ -245,7 +245,7 @@ bool isLocatedOnThisProcessor(edge_t* edge, int id, bool imaginary);
 bool isLocatedOnAnyProcessor(edge_t* edge, bool imaginary);
 int whatProcessorIsLocatedOn(edge_t* edge, bool imaginary);
 void delocateFromThisProcessorToDisk(edge_t* edge, int id, bool imaginary, double afterWhen);
-void delocateFromThisProcessorToNowhere(edge_t* edge, int id, bool imaginary, double afterWhen);
+void delocateFromThisProcessorToNowhere(edge_t* edge, int id, bool imaginary);
 void locateToThisProcessorFromDisk(edge_t* edge, int id, bool imaginary, double afterWhen);
 void locateToThisProcessorFromNowhere(edge_t* edge, int id, bool imaginary, double afterWhen);
 void locateToDisk(edge_t* edge, bool imaginary, double afterWhen);
