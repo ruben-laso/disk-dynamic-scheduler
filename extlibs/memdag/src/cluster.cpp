@@ -83,14 +83,14 @@ Processor::delocateToDisk(edge_t* edge, const bool shouldUseImaginary, const dou
 }
 
 std::set<edge_t*, decltype(Processor::comparePendingMemories)*>::iterator
-Processor::delocateToNowhere(edge_t* edge, const bool shouldUseImaginary, const double afterWhen)
+Processor::delocateToNowhere(edge_t* edge, const bool shouldUseImaginary)
 {
 
     if (this->pendingMemories.find(edge) == this->pendingMemories.end()) {
         std::cout << "not fnd1 " << buildEdgeName(edge) << '\n';
     }
 
-    delocateFromThisProcessorToNowhere(edge, this->id, shouldUseImaginary, afterWhen);
+    delocateFromThisProcessorToNowhere(edge, this->id, shouldUseImaginary);
     return removePendingMemory(edge);
 }
 
@@ -109,12 +109,12 @@ Processor::delocateToDiskOptionally(edge_t* edge, const bool shouldUseImaginary,
 }
 
 std::set<edge_t*, decltype(Processor::comparePendingMemories)*>::iterator
-Processor::delocateToNowhereOptionally(edge_t* edge, const bool shouldUseImaginary, const double afterWhen)
+Processor::delocateToNowhereOptionally(edge_t* edge, const bool shouldUseImaginary)
 {
     // cout<<"delocate optionally  from "<<this->id<<" "<<buildEdgeName(edge)<<" imagine? "<<(shouldUseImaginary? "yes":"no")<<endl;
 
     if (isLocatedOnThisProcessor(edge, this->id, false))
-        delocateFromThisProcessorToNowhere(edge, this->id, shouldUseImaginary, afterWhen);
+        delocateFromThisProcessorToNowhere(edge, this->id, shouldUseImaginary);
 
     if (this->pendingMemories.find(edge) == this->pendingMemories.end()) {
         return this->pendingMemories.end();

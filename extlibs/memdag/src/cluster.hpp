@@ -151,11 +151,11 @@ public:
     void assignSubgraph(vertex_t* taskToBeAssigned);
 
     std::set<edge_t*, decltype(comparePendingMemories)*>::iterator delocateToDisk(edge_t* edge, bool shouldUseImaginary, double afterWhen);
-    std::set<edge_t*, decltype(comparePendingMemories)*>::iterator delocateToNowhere(edge_t* edge, bool shouldUseImaginary, double afterWhen);
+    std::set<edge_t*, decltype(comparePendingMemories)*>::iterator delocateToNowhere(edge_t* edge, bool shouldUseImaginary);
     void loadFromDisk(edge_t* edge, bool shouldUseImaginary, double afterWhen);
     void loadFromNowhere(edge_t* edge, bool shouldUseImaginary, double afterWhen);
     std::set<edge_t*, decltype(comparePendingMemories)*>::iterator delocateToDiskOptionally(edge_t* edge, bool shouldUseImaginary, double afterWhen);
-    std::set<edge_t*, decltype(comparePendingMemories)*>::iterator delocateToNowhereOptionally(edge_t* edge, bool shouldUseImaginary, double afterWhen);
+    std::set<edge_t*, decltype(comparePendingMemories)*>::iterator delocateToNowhereOptionally(edge_t* edge, bool shouldUseImaginary);
 
     std::set<edge_t*, decltype(comparePendingMemories)*>::iterator
     removePendingMemory(edge_t* edgeToRemove)
@@ -296,9 +296,9 @@ public:
     {
         return this->lastComputeEvent;
     }
-    double getReadyTimeWrite();
+    double getReadyTimeWrite() const;
     double getReadyTimeRead();
-    double getReadyTimeCompute();
+    double getReadyTimeCompute() const;
 
     double getExpectedOrActualReadyTimeWrite() const;
     double getExpectedOrActualReadyTimeRead() const;
