@@ -666,19 +666,19 @@ void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cl
 
         if (onWhichProcessor == schedulingResult.processorOfAssignment->id) {
             // optionally, because edge could have been force removed during calculation of caorrect result in HEFT
-            schedulingResult.processorOfAssignment->delocateToNowhereOptionally(ine, shouldUseImaginary, -1);
+            schedulingResult.processorOfAssignment->delocateToNowhereOptionally(ine, shouldUseImaginary);
         } else {
             if (onWhichProcessor != -1) {
-                cluster->getProcessorById(onWhichProcessor)->delocateToNowhereOptionally(ine, shouldUseImaginary, -1);
+                cluster->getProcessorById(onWhichProcessor)->delocateToNowhereOptionally(ine, shouldUseImaginary);
             } else {
                 // edge has been read
                 // cout<<"bla"<<endl;
                 // cout << "NOWHERE! " << buildEdgeName(ine) << endl;
                 if (const auto proc = findProcessorThatHoldsEdge(ine, cluster); proc != nullptr) {
                     if (proc->id == schedulingResult.processorOfAssignment->id)
-                        schedulingResult.processorOfAssignment->delocateToNowhereOptionally(ine, shouldUseImaginary, -1);
+                        schedulingResult.processorOfAssignment->delocateToNowhereOptionally(ine, shouldUseImaginary);
                     else
-                        proc->delocateToNowhereOptionally(ine, shouldUseImaginary, -1);
+                        proc->delocateToNowhereOptionally(ine, shouldUseImaginary);
                 }
 
                 // assert(proc == nullptr);
