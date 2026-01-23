@@ -305,10 +305,12 @@ double getSumIn(const vertex_t* v)
 
 void Event::fire()
 {
+   // std::cout<<"fire event "<<this->id<<" at " <<this->getActualTimeFire()<<" planned at "<<this->getExpectedTimeFire()<<" on proc "<<this->processor->id <<std::endl;
     if (this->edge) {
         assert(this->edge->locations.size()>=0);
         assert(this->edge->imaginedLocations.size()>=0);
     }
+    assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
 
     // PASS 1: absolute repair
     std::vector<TimeShift> repair;
@@ -369,6 +371,7 @@ void Processor::updateFrom(const Processor& other)
 
     assert(other.availableMemory <= other.getMemorySize() || std::abs(other.availableMemory - other.getMemorySize()) < 1);
     this->availableMemory = other.availableMemory;
+   this->availableMemoryDuringPreviousTask = other.availableMemoryDuringPreviousTask;
     std::set<edge_t*, std::function<bool(edge_t*, edge_t*)>> updatedMemories(comparePendingMemories);
     // First, add elements that exist in both and new ones from 'other'
     for (auto* mem : other.pendingMemories) {
@@ -407,6 +410,7 @@ void clearGraph(const graph_t* graphMemTopology)
         vertex->actuallyUsedMemory = -1;
         vertex->rank = -1;
         vertex->bottom_level = -1;
+
         vertex = vertex->next;
     }
 

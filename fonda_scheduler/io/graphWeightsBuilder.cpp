@@ -109,7 +109,6 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
            mintt = std::numeric_limits<double>::max();
     for (vertex_t* v = graphMemTopology->first_vertex; v; v = v->next) {
         v->bottom_level = -1;
-        v->factorForRealExecution = 1;
         std::string lowercase_name = v->name;
         std::regex pattern("_\\d+");
         lowercase_name = std::regex_replace(lowercase_name, pattern, "");

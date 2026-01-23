@@ -86,7 +86,7 @@ struct vertex_t {
     Status status = Status::Unscheduled;
 
     double actuallyUsedMemory = -1;
-    double factorForRealExecution = 1;
+    double factorForRealExecution = -1;
 
     double rank = -1;
     double swapRate=1;
@@ -149,7 +149,7 @@ struct edge_t {
     edge_status_t status;
     /* user data */
     void* data = nullptr;
-    double factorForRealExecution = 1;
+    double factorForRealExecution = -1;
     ///\cond HIDDEN_SYMBOLS
     /* other data used for graph algorithms */
     void* generic_pointer = nullptr;

@@ -155,7 +155,7 @@ public:
     Event(vertex_t* task, edge_t* edge,
         const eventType type, const std::shared_ptr<Processor>& processor,
         const double expectedTimeFire, const double actualTimeFire,
-        const bool isEviction, std::string idN,
+        const bool isPreemptive, std::string idN,
         const std::vector<std::shared_ptr<Event>>& predecessors = {},
         const std::vector<std::weak_ptr<Event>>& successors = {})
         : id(std::move(idN))
@@ -163,7 +163,7 @@ public:
         , edge(edge)
         , type(type)
         , processor(processor) // shared ownership
-        , onlyPreemptive(isEviction)
+        , onlyPreemptive(isPreemptive)
         , expectedTimeFire(expectedTimeFire)
         , actualTimeFire(actualTimeFire)
     {
@@ -175,19 +175,19 @@ public:
         double expectedTimeFire, double actualTimeFire,
         const std::vector<std::shared_ptr<Event>>& predecessors,
         const std::vector<std::weak_ptr<Event>>& successors,
-        bool isEviction, const std::string& id)
+        bool isPreemptive, const std::string& id)
     {
         return std::make_shared<Event>(task, edge, type, processor, expectedTimeFire,
-            actualTimeFire, isEviction, id, predecessors, successors);
+            actualTimeFire, isPreemptive, id, predecessors, successors);
     }
 
     static std::shared_ptr<Event> createEvent(vertex_t* task, edge_t* edge,
         eventType type, const std::shared_ptr<Processor>& processor,
         double expectedTimeFire, double actualTimeFire,
-        bool isEviction, const std::string& id)
+        bool isPreemptive, const std::string& id)
     {
         return std::make_shared<Event>(task, edge, type, processor, expectedTimeFire,
-            actualTimeFire, isEviction, id);
+            actualTimeFire, isPreemptive, id);
     }
 
     void cleanupSuccessors()
@@ -258,6 +258,7 @@ public:
     void pushAllSuccessorsLaterRuntime( std::vector<TimeShift>& shifts)
     {
         std::unordered_set<Event*> visited;
+        visited.insert(this);
         propagatePushLaterRuntime(visited, shifts);
     }
 
@@ -289,6 +290,7 @@ public:
     {
 
         std::unordered_set<Event*> visited;
+        visited.insert(this);
         propagatePullEarlierRuntime( visited, shifts);
     }
 
@@ -303,12 +305,29 @@ public:
 
         // Pull ONLY if legal
         if (myTime > limiting) {
-            shifts.push_back({ this, limiting });
+            auto it = std::find_if(shifts.begin(), shifts.end(),
+           [this](const TimeShift& ts) { return ts.ev->id == this->id; });
+
+            if (it == shifts.end()) {
+                shifts.push_back({ this, limiting });
+            }
+
         }
 
         for (auto& sw : successors) {
             auto s = sw.lock();
             if (!s) continue;
+
+            const double sLimiting = s->earliestAllowedTime(shifts);
+            const double sTime = effectiveTime(s, shifts);
+
+            if (sTime > sLimiting) {
+                auto it = std::find_if(shifts.begin(), shifts.end(),
+                   [s](const TimeShift& ts) { return ts.ev->id == s->id; });
+                if (it == shifts.end()) {
+                    shifts.push_back({ s.get(), sLimiting });
+                }
+            }
 
             s->propagatePullEarlierRuntime(visited, shifts);
         }
@@ -447,18 +466,18 @@ public:
         }
     }
 
-    void adjustBothPlannedFireTimes(double t)
+    void adjustBothPlannedFireTimes(double newTime)
     {
         if (isManaged)
             throw std::logic_error("Cannot modify after insertion into EventManager");
 
-        assert(t >= this->getExpectedTimeFire() || this->getExpectedTimeFire() - t < 0.1);
+        assert(newTime >= this->getExpectedTimeFire() || this->getExpectedTimeFire() - newTime < 0.1);
         assert(this->getExpectedTimeFire() == this->getActualTimeFire());
 
-        setExpectedTimeFireInternal(t);
-        setActualTimeFireInternal(t);
+        setExpectedTimeFireInternal(newTime);
+        setActualTimeFireInternal(newTime);
 
-        double diff = t - this->getExpectedTimeFire();
+        double diff = newTime - this->getExpectedTimeFire();
         propagateAllSuccessorsForward(diff, true);
     }
 
@@ -557,6 +576,45 @@ public:
     void removeFromDependencies();
 
     bool cleanupPredecessors();
+
+    void printEventDetailed() const{
+
+        std::cout << "--- Event [" << id << "] ---\n";
+
+        // Type and State
+        std::cout
+                  << " | Status: " << (isDone ? "DONE" : "PENDING")
+                  << " | Fired: " << timesFired << "x\n";
+
+        // Pointers (Task, Edge, Processor)
+        std::cout << " | Processor: " << processor->id << "\n";
+
+        // Timing (Formatted to 4 decimal places)
+        std::cout << std::fixed << std::setprecision(4);
+        std::cout << "  Expected Fire: " << (expectedTimeFire < 0 ? "N/A" : std::to_string(expectedTimeFire)) << "\n";
+        std::cout << "  Actual Fire:   " << (actualTimeFire < 0 ? "N/A" : std::to_string(actualTimeFire)) << "\n";
+
+        // Relationships (Predecessors and Successors)
+        std::cout << "  Predecessors: [ " ;
+        for (const auto& swp : predecessors) {
+                std::cout << swp->id << " ";
+        }
+        std::cout << "]\n";
+
+        std::cout << "  Successors:   [ ";
+        for (const auto& swp : successors) {
+            if (auto s = swp.lock()) { // Lock weak_ptr to access the object
+                std::cout << s->id << " ";
+            }
+        }
+        std::cout << "]\n";
+
+        // Internal Flags
+        std::cout << "  Flags: [Managed: " << (isManaged ? "Yes" : "No")
+                  << "] [Preemptive Only: " << (onlyPreemptive ? "Yes" : "No") << "]\n";
+
+        std::cout << "--------------------------" << std::endl;
+    }
 };
 
 struct CompareByTimestamp {
@@ -582,6 +640,11 @@ private:
 
 public:
     EventManager() = default;
+
+    unsigned int  size()
+    {
+        return eventSet.size();
+    }
 
     bool insert(const EventPtr& ev)
     {
@@ -654,7 +717,7 @@ public:
 
         const double oldTime = ev->actualTimeFire;
 
-        if (oldTime == newTime)
+        if (abs(oldTime - newTime)<1e-7)
             return true;
 
         reschedulePure(id, newTime);
@@ -753,6 +816,61 @@ public:
             }
         }
     }
+
+    void verifySchedule(std::unordered_map<int, vertex_t*> allVertices) {
+   // std::cout << "--- Starting Event-Based Verification ---" << std::endl;
+    bool violationFound = false;
+
+    for (auto pain : allVertices) {
+        auto* v= pain.second;
+        // 1. Recover the Start and Finish events for this vertex
+        auto startEv = this->find(v->name + "-s");
+        auto finishEv = this->find(v->name + "-f");
+
+        if (startEv == nullptr || finishEv == nullptr) {
+            std::cerr << "[ERROR] Missing events for vertex: " << v->name << std::endl;
+            violationFound = true;
+            continue;
+        }
+
+        double vStart = startEv->getVisibleTimeFireForPlanning();
+        double vFinish = finishEv->getVisibleTimeFireForPlanning();
+
+        // 2. Check Data Dependencies
+        for (auto* in_edge : v->in_edges) {
+            auto predFinishEv = this->find(in_edge->tail->name + "-f");
+            if (predFinishEv != nullptr) {
+                double predFinish = predFinishEv->getVisibleTimeFireForPlanning();
+                if (vStart < predFinish - 1e-7) {
+                    std::cerr << "[ERROR] Data Dependency Violation: " << v->name
+                              << " starts at " << vStart << " but predecessor "
+                              << in_edge->tail->name << " finishes at " << predFinish << std::endl;
+                    violationFound = true;
+                }
+            }
+        }
+
+        // 3. Check Processor Sequentiality (The "Last Event" Chain)
+        // Find if this Start Event has a predecessor on the same processor
+        for (auto const& pred : startEv->getPredecessors()) {
+
+            if (pred && pred->processor->id == startEv->processor->id) {
+                // This is a compute-to-compute or write-to-compute dependency on the same proc
+                double predTime = pred->getVisibleTimeFireForPlanning();
+                if (vStart < predTime - 1e-7) {
+                    std::cerr << "[ERROR] Processor Resource Violation: " << v->name
+                              << " starts at " << vStart << " before same-processor event "
+                              << pred->id << " finished at " << predTime << std::endl;
+                    violationFound = true;
+                }
+            }
+        }
+    }
+
+    if (!violationFound) {
+      //  std::cout << "Verification Successful: All event timings are consistent." << std::endl;
+    }
+}
 
 private:
     void eraseFromQueueOnly(std::unordered_map<std::string, EventSet::iterator>::iterator it)

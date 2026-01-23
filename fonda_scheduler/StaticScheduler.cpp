@@ -52,7 +52,7 @@ double medih(graph_t* graph, int algoNum, double& runtime){
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
         readyQ.pop();
-        //std::cout<<"deal w "<<vertex->name<<std::endl;
+       // std::cout<<"deal w "<<vertex->name<<std::endl;
         numProcessedVertices++;
 
         if (vertex->in_edges.size()>1 ) {
@@ -153,6 +153,7 @@ double medih(graph_t* graph, int algoNum, double& runtime){
         }
     }
 
+
     averageSpreadPredecessors/=numProcComputedSpread;
 
     double cv_of_processor_loads = CVOfProcessorLoads(processorLoads);
@@ -245,6 +246,8 @@ void tentativeAssignment(const vertex_t* v, const bool shouldUseDeviatedTimes, S
     modifiedProcs.emplace_back(result.processorOfAssignment);
     std::vector<std::shared_ptr<Event>>  createdEvents;
     processIncomingEdges(v, shouldUseDeviatedTimes, result.resultingVar==-1, result.processorOfAssignment, modifiedProcs, result.startTime,createdEvents);
+
+
 
 
     assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
@@ -555,6 +558,7 @@ void tentativeAssignmentHEFT(const vertex_t* v, const bool shouldUseDeviatedTime
     resultCorrect.modifiedProcs = modifiedProcsCorrect;
     result.resultingVar = 1;
     resultCorrect.resultingVar = 1;
+
 }
 
 void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult& bestSchedulingResult, const vertex_t* pVertex,

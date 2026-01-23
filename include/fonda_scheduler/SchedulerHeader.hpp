@@ -75,20 +75,27 @@ double calculateBLCBottomUpRank( vertex_t* task);
 
 std::vector<std::pair<vertex_t*, double>> calculateMMBottomUpRank(graph_t* graphWMems);
 
-double medih(graph_t* graph, int algoNum, double& runtime);
+double medih(graph_t* graph, int algoNum, double& runtime, std::vector<vertex_t*> & processedInThisOrder);
+
+std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& runtime);
 
 std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, int algoNum);
 
 double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj);
 
-void tentativeAssignment(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result);
+std::vector<std::shared_ptr<Event>>  tentativeAssignment(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result);
+
+std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, SchedulingResult& result);
 
 void tentativeAssignmentHEFT(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result, SchedulingResult& resultCorrect);
+std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT2(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result, SchedulingResult& resultCorrect);
 
 graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>& noMemToWithMem);
 
 void processIncomingEdges(const vertex_t* v, bool shouldUseDeviatedTimes, const bool shouldUseImaginaryCluster, const std::shared_ptr<Processor>& ourModifiedProc,
     std::vector<std::shared_ptr<Processor>>& modifiedProcs,
+    double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents);
+void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, std::vector<std::shared_ptr<Processor>>& modifiedProcs,
     double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents);
 
 void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDeviatedTimes,
@@ -98,9 +105,10 @@ void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDev
 
 void checkIfPendingMemoryCorrect(const std::shared_ptr<Processor>& p);
 
-bool hasDuplicates(const std::vector<std::shared_ptr<Processor>>& vec);
+
 
 void bestTentativeAssignment(bool isHeft, const vertex_t* vertex, SchedulingResult& result, SchedulingResult& correctResultForHeftOnly);
+std::vector<std::shared_ptr<Event>>  bestTentativeAssignment2(bool isHeft,  vertex_t* vertex, SchedulingResult& result, SchedulingResult& correctResultForHeftOnly);
 
 void realSurplusOfOutgoingEdges(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, double& sumOut);
 
@@ -112,8 +120,12 @@ std::shared_ptr<Processor> findProcessorThatHoldsEdge(edge_t* incomingEdge, Clus
 
 void handleBiggestEvict(bool real, SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
     double startTimeForTask, edge_t* biggestPendingEdge, double readyTimeCompute, double readyTimeWrite);
+void handleBiggestEvict2( SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
+    double startTimeForTask, edge_t* biggestPendingEdge, double readyTimeCompute, double readyTimeWrite);
 
 void handleAllEvict(SchedulingResult& result, double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
+    double startTimeForAllEvicted, double readyTimeCompute, double readyTimeWrite);
+void handleAllEvict2(SchedulingResult& result, double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
     double startTimeForAllEvicted, double readyTimeCompute, double readyTimeWrite);
 
 

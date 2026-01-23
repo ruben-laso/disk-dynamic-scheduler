@@ -62,7 +62,7 @@ public:
 
     std::string assignment = {};
 
-    double availableMemoryDuringPreviousTask=0;
+
 
 private:
     std::weak_ptr<Event> lastReadEvent = {};
@@ -72,6 +72,8 @@ private:
     double readyTimeCompute = 0;
     double readyTimeRead = 0;
     double readyTimeWrite = 0;
+
+    double availableMemoryDuringPreviousTask=-1;
 
 public:
     Processor() = default;
@@ -127,6 +129,17 @@ public:
         }
 
         this->availableMemory = mem;
+    }
+    void setAvailableMemoryDuringPreviousTask(double newAv)
+    {
+        this->availableMemoryDuringPreviousTask= newAv;
+    }
+    double getAvailableMemoryDuringPreviousTask()
+    {
+        if ( availableMemoryDuringPreviousTask==-1) {
+            throw new std::runtime_error("available memory not set, trying to get.");
+        }
+        return availableMemoryDuringPreviousTask;
     }
 
     void setReadyTimeCompute(const double newTime)

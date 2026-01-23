@@ -22,7 +22,10 @@ inline  extern std::map<int, std::vector<std::tuple<double, double>>> processorW
 
 
 double dynMedih(graph_t* graph, Cluster* cluster, int algoNum, int deviationNumber, bool upw, double& runtime);
+double oflineMedihWithEvents(graph_t* graph, Cluster* cluster, int algoNum, int deviationNumber, double& runtime,std::vector<vertex_t*> & processedInThisOrder);
+double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, double& runtime);
 
+double getOrApplyDeviationFactor(double& factorForRealExecution, double & duration);
 double applyDeviationTo(double& in);
 std::vector<std::shared_ptr<Processor>>
 tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModifiedProc,

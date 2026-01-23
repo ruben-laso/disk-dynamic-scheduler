@@ -8,6 +8,7 @@
 #include "csv/single_include/csv2/csv2.hpp"
 #include "fonda_scheduler/DynamicSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
+
 #include "fonda_scheduler/io/graphWeightsBuilder.hpp"
 #include "fonda_scheduler/options.hpp"
 #include "fonda_scheduler/utils.hpp"
@@ -87,27 +88,12 @@ int main(const int argc, char* argv[])
     Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, imaginedCluster, 1, 1, options);
     //print_graph_to_cout(graphMemTopology);
 
-   /* int low=0, mod=0, high=0;
-    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
-       if(u->swapRateText=="low")
-           low++;
-       else if(u->swapRateText=="moderate")
-           mod++;
-       else if(u->swapRateText=="high")
-           high++;
-       else
-           throw std::runtime_error("BLABLA "+ u->swapRateText);
-    }
-
-   std::cout<<"low "<<low<<" moderate "<<mod<<" high "<<high<<"low to high "<<((low*1.0)/high)<<std::endl;
-*/
     if (options.scaleToFit) {
         fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);
     }
 
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
-    // std::cout << " duration_of_prep " << elapsed_seconds.count()<<" ";// << endl;
 
     std::cout << std::setprecision(15);
     std::clog << std::setprecision(15);
@@ -156,7 +142,7 @@ int main(const int argc, char* argv[])
 
     delete actualCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-
+    timeInSystem=0;
     clearGraph(graphMemTopology);
     start = std::chrono::system_clock::now();
     double runtimeStatic = 0;
@@ -174,11 +160,34 @@ int main(const int argc, char* argv[])
             }
         }
     }
-    double stat  = medih(graphMemTopology, options.algoNumber, runtimeStatic);
+
+    delete actualCluster;
+    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+
+    clearGraph(graphMemTopology);
+    start = std::chrono::system_clock::now();
+    runtimeStatic = 0;
+
+    //HEFT should not profit from earlier finishing times of tasks and edges in case of deviations
+    if (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT) {
+        for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+            if (u->factorForRealExecution<1) {
+                u->factorForRealExecution=1;
+            }
+        }
+        for (edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
+            if (e->factorForRealExecution<1) {
+                e->factorForRealExecution=1;
+            }
+        }
+    }
+
+    double stat  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimeStatic);
+
     end = std::chrono::system_clock::now();
     elapsed_seconds = end - start;
     std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
-    std::cout << "makespan_static " << stat << '\n';
+    std::cout << "makespan_static_dynamic " << stat << '\n';
 
     //std::cout<<" dyn/stat "<<(dynamic/stat)<<"\n";
 

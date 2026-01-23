@@ -11,7 +11,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
     }
 
 
-    //std::cout << "!!!START BEST tent assign for " << vertex->name << std::endl;
+   // std::cout << "!!!START BEST tent assign for " << vertex->name << std::endl;
     double bestStartTime = std::numeric_limits<double>::max();
     double bestFinishTime = std::numeric_limits<double>::max();
     double bestReallyUsedMem = std::numeric_limits<double>::max();
@@ -35,9 +35,29 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
             startTime, resultingEvictionVariant,
             newEvents, reallyUsedMem, notEarlierThan);
 
-        // cout<<"on "<<processor->id<<" fin time "<<finTime<<endl;
-        if (finTime < bestFinishTime) {
-            // cout << "best acutalize to " << ourModifiedProc->id << " act used mem " << reallyUsedMem << endl;
+
+        double epsilon = 1e-9;
+
+        bool isBetterTime = (finTime < bestFinishTime - epsilon);
+        bool isSameTime = (std::abs(finTime - bestFinishTime) < epsilon);
+
+        // Tie-break: Smallest Memory, then Smallest ID
+        bool isBetterTieBreak = false;
+        if (isSameTime && bestProcessorToAssign != nullptr) {
+            size_t currentMem = processor->getMemorySize();
+            size_t bestMem = bestProcessorToAssign->getMemorySize();
+
+            if (currentMem < bestMem) {
+                isBetterTieBreak = true;
+            } else if (currentMem == bestMem) {
+                if (processor->id < bestProcessorToAssign->id) { // Force smallest ID
+                    isBetterTieBreak = true;
+                }
+            }
+        }
+
+        if (isBetterTime || isBetterTieBreak) {
+           // std::cout << "best actualize to " << ourModifiedProc->id << " act used mem " << reallyUsedMem << std::endl;
             assert(!modifiedProcs.empty());
             bestModifiedProcs = modifiedProcs;
             bestFinishTime = finTime;
@@ -48,6 +68,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
             bestReallyUsedMem = reallyUsedMem;
             bestResultingVar= resultingEvictionVariant;
         }
+
     }
     // cout << "!!!END BEST"<<endl;
 
@@ -93,7 +114,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
     processorWorkTimes[bestProcessorToAssign->id].emplace_back(bestStartTime,
         bestFinishTime);
 
-
+    //std::cout << "[DYNAMIC] Vertex " << vertex->name << " can start at: " << bestStartTime <<" on proc "<<bestProcessorToAssign->id  <<" end at " <<bestFinishTime<< std::endl;
     // cout << "resulting var " << resultingVar<<" on "<<bestProcessorToAssign->id << endl;
     return bestEvents;
 }
@@ -535,7 +556,7 @@ scheduleARead(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, std::ve
 
 
     bool isDependentOnLastCompute=false;
-    if (estimatedStartOfRead < ourModifiedProc->getExpectedOrActualReadyTimeCompute() && ourModifiedProc->availableMemoryDuringPreviousTask < incomingEdge->weight) {
+    if (estimatedStartOfRead < ourModifiedProc->getExpectedOrActualReadyTimeCompute() && ourModifiedProc->getAvailableMemoryDuringPreviousTask() < incomingEdge->weight) {
         assert(!ourModifiedProc->getLastComputeEvent().lock()->isDone);
         estimatedStartOfRead = ourModifiedProc->getExpectedOrActualReadyTimeCompute();
         isDependentOnLastCompute = true;
