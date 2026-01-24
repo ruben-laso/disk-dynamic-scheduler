@@ -88,7 +88,7 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment(const vertex_t* v, bool
 std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, SchedulingResult& result);
 
 void tentativeAssignmentHEFT(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result, SchedulingResult& resultCorrect);
-std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT2(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result, SchedulingResult& resultCorrect);
+std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT2(const vertex_t* v, SchedulingResult& result, SchedulingResult& resultCorrect);
 
 graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>& noMemToWithMem);
 
@@ -96,7 +96,7 @@ void processIncomingEdges(const vertex_t* v, bool shouldUseDeviatedTimes, const 
     std::vector<std::shared_ptr<Processor>>& modifiedProcs,
     double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents);
 void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, std::vector<std::shared_ptr<Processor>>& modifiedProcs,
-    double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents);
+    double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents, bool forbidLookingIntoPast);
 
 void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDeviatedTimes,
     const std::shared_ptr<Processor>& ourModifiedProc,
