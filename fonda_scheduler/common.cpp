@@ -310,6 +310,11 @@ void Event::fire()
         assert(this->edge->locations.size()>=0);
         assert(this->edge->imaginedLocations.size()>=0);
     }
+
+    if (cluster->getProcessorById(this->processor->id).use_count() != this->processor.use_count()) {
+        assert(this->timesFired==0); // jsut came in with a processor from a wrong cluster
+        this->processor= cluster->getProcessorById(this->processor->id);
+    }
     assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
 
     // PASS 1: absolute repair
