@@ -130,10 +130,9 @@ public:
 
         this->availableMemory = mem;
     }
-    void setAvailableMemoryDuringPreviousTask(double newAv)
+    void setAvailableMemoryDuringPreviousTask(double newAv, bool canBeInvalid=false)
     {
-        std::cout << "set av mem to " << newAv << " on proc " << this->id << std::endl;
-        if (newAv==-1) {
+        if (newAv==-1 && !canBeInvalid) {
           //  throw new std::runtime_error("trying to set available memory to invalid value -1");
             std::cout << "trying to set available memory to invalid value -1"<< std::endl;
         }
@@ -141,7 +140,6 @@ public:
     }
     double getAvailableMemoryDuringPreviousTask()
     {
-        std::cout << "get av mem on proc " << this->id << " it is "<<availableMemoryDuringPreviousTask<< std::endl;
         if ( availableMemoryDuringPreviousTask==-1) {
             throw new std::runtime_error("available memory not set, trying to get.");
         }

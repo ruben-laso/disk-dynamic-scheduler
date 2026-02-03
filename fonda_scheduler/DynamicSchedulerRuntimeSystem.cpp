@@ -14,12 +14,15 @@ bool usePreemptiveWrites;
 std::string lastEventName;
 double runtimeOfScheduler;
 double timeInSystem;
+bool isHeft= false;
 
 double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, double& runtime)
 {
     double resMakespan = -1;
     devationVariant = deviationNumber;
     cluster = cluster1;
+    isHeft = (algoNum == fonda_scheduler::ALGORITHMS::HEFT);
+
     const auto start = std::chrono::system_clock::now();
     std::vector<std::shared_ptr<Event>> newEvents = medih2(graph, algoNum, runtime);
     events.verifySchedule(graph->vertices_by_id);
@@ -123,14 +126,14 @@ double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int 
         // Schedule events without predecessors (i.e., starting tasks)
         if (vertex->in_edges.empty()) {
             //  cout << "starting task " << vertex->name << endl;
-            std::vector<std::shared_ptr<Processor>> bestModifiedProcs;
-            std::shared_ptr<Processor> bestProcessorToAssign;
-            int bestResultingVar;
+    std::vector<std::shared_ptr<Processor>> bestModifiedProcs;
+    std::shared_ptr<Processor> bestProcessorToAssign;
+    int bestResultingVar;
             std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(vertex, bestModifiedProcs, bestProcessorToAssign, 0, bestResultingVar);
 
-            for (auto& item : newEvents) {
-                events.insert(item);
-            }
+    for (auto& item : newEvents) {
+        events.insert(item);
+    }
             vertex->status = Status::Scheduled;
         }
         vertex = vertex->next;
@@ -259,6 +262,8 @@ void Event::fireTaskStart()
     }
 }
 
+
+
 void Event::fireTaskFinish()
 {
     const vertex_t* thisTask = this->task;
@@ -300,48 +305,7 @@ void Event::fireTaskFinish()
         }
     }
 
-    bool foundTaskForThisProc = false;
-
-    while (!readyQueue.readyTasks.empty()) {
-        vertex_t* v = *readyQueue.readyTasks.begin();
-
-        std::vector<std::shared_ptr<Processor>> modified;
-        std::shared_ptr<Processor> assigned;
-        int bestVar;
-
-        auto newEvents = bestTentativeAssignment(
-            v,
-            modified,
-            assigned,
-            this->getActualTimeFire(),
-            bestVar);
-
-        v->status = Status::Scheduled;
-        readyQueue.readyTasks.erase(v);
-
-        if (assigned->id == this->processor->id) {
-            foundTaskForThisProc = true;
-        }
-
-        for (auto& e : newEvents) {
-            events.insert(e); // SAFE: new events only
-        }
-
-        if (foundTaskForThisProc) {
-            break;
-        }
-
-        bool idleExists = std::any_of(
-            cluster->getProcessors().begin(),
-            cluster->getProcessors().end(),
-            [&](const auto& p) {
-                return p.second->getReadyTimeCompute() <= this->getActualTimeFire();
-            });
-
-        if (!idleExists) {
-            break;
-        }
-    }
+    scheduleTasksUntilFoundForThisProc();
 }
 
 void Event::fireReadStart()
@@ -554,37 +518,52 @@ bool Event::cleanupPredecessors()
     return preds.empty();
 }
 
-/*
-bool dealWithPredecessors(const std::shared_ptr<Event>& us)
+void Event::scheduleTasksUntilFoundForThisProc()
 {
-   std::vector<std::shared_ptr<Event>> preds = us->getPredecessors();
+    bool foundTaskForThisProc = false;
 
-    // Remove completed predecessors
-    for (auto it = preds.begin(); it != preds.end();) {
-        const auto& pred = *it;
-        if (!pred) {
-            throw std::runtime_error("Invalid (nullptr) predecessor to " + us->id);
+    while (!readyQueue.readyTasks.empty()) {
+        vertex_t* v = *readyQueue.readyTasks.begin();
+
+        std::vector<std::shared_ptr<Processor>> modified;
+        std::shared_ptr<Processor> assigned;
+        int bestVar;
+
+        auto newEvents = bestTentativeAssignment(
+            v,
+            modified,
+            assigned,
+            this->getActualTimeFire(),
+            bestVar);
+
+        v->status = Status::Scheduled;
+        readyQueue.readyTasks.erase(v);
+
+        if (assigned->id == this->processor->id) {
+            foundTaskForThisProc = true;
         }
-        if (pred->isDone) {
-            // cout << "removing done predecessor " << pred->id << endl;
-            it = preds.erase(it);
-        } else {
-            ++it;
+
+        for (auto& e : newEvents) {
+            events.insert(e); // SAFE: new events only
+        }
+
+        if (foundTaskForThisProc) {
+            break;
+        }
+
+        bool idleExists = std::any_of(
+            cluster->getProcessors().begin(),
+            cluster->getProcessors().end(),
+            [&](const auto& p) {
+                return p.second->getReadyTimeCompute() <= this->getActualTimeFire();
+            });
+
+        if (!idleExists) {
+            break;
         }
     }
-
-    // Adjust actual fire time based on remaining predecessors
-    for (const auto& pred : preds) {
-        if (pred->getActualTimeFire() > us->getActualTimeFire()) {
-            bool success = events.reschedule(us->id, pred->getActualTimeFire());
-            assert(success);
-        }
-    }
-
-    return preds.empty();
 }
 
-*/
 std::shared_ptr<Processor> findPredecessorsProcessor(const edge_t* incomingEdge, std::vector<std::shared_ptr<Processor>>& modifiedProcs)
 {
     const vertex_t* predecessor = incomingEdge->tail;

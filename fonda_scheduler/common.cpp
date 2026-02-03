@@ -150,7 +150,7 @@ std::string buildEdgeName(const edge_t* edge)
 
 void delocateFromThisProcessorToDisk(edge_t* edge, int id, const bool imaginary, double afterWhen)
 {
-
+    //std::cout << buildEdgeName(edge)<<" delocate from proc "<<id<<" to disk imagine? "<<(imaginary?"yes":"no")<<std::endl;
 
     auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
 
@@ -177,6 +177,7 @@ void delocateFromThisProcessorToDisk(edge_t* edge, int id, const bool imaginary,
 
 void delocateFromThisProcessorToNowhere(edge_t* edge, int id, const bool imaginary)
 {
+    //std::cout << buildEdgeName(edge)<<" delocate from proc "<<id<<" to nowhere imagine? "<<(imaginary?"yes":"no")<<std::endl;
     auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
 
     auto it = std::find_if(

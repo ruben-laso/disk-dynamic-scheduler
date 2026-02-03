@@ -94,6 +94,7 @@ public:
     bool onlyPreemptive = false;
     bool isDone = false;
     int timesFired = 0;
+    int memoryVariant=-1;
 
 private:
     double expectedTimeFire = -1.0;
@@ -558,6 +559,7 @@ public:
     void fire();
 
     void fireTaskStart();
+    void scheduleTasksUntilFoundForThisProc();
 
     void fireTaskFinish();
 
@@ -924,6 +926,10 @@ class ReadyQueue {
 public:
     std::set<vertex_t*, CompareByRank> readyTasks;
 };
+
+std::shared_ptr<Event> findTaskStart(const std::vector<std::shared_ptr<Event>>& someEvents);
+
+std::shared_ptr<Event> findLatest(const std::vector<std::shared_ptr<Event>>& someEvents);
 
 #endif
 

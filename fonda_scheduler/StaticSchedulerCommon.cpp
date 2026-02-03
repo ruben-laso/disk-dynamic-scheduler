@@ -6,7 +6,7 @@
 #include <iterator>
 #include <queue>
 
-void handleAllEvict2(SchedulingResult& result, const double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
+void emulateAllEvict2(SchedulingResult& result, const double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
     const double startTimeForAllEvicted, const double readyTimeCompute, double readyTimeWrite)
 {
 
@@ -25,7 +25,7 @@ void handleAllEvict2(SchedulingResult& result, const double timeToWriteAllPendin
 }
 
 
-void handleBiggestEvict2( SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
+void emulateBiggestEvict2( SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
     const double startTimeForTask, edge_t* biggestPendingEdge, const double readyTimeCompute, double readyTimeWrite)
 {
 
@@ -302,84 +302,93 @@ double uniquePredecessorProcs(vertex_t* vertex)
     return uniqueProcessorIds.size();
 }
 
-void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cluster* cluster, int& numberWithEvictedCases,
-     const bool isHeft)
+void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cluster* ourCluster, int& numberWithEvictedCases,  bool isHeft)
 {
-    checkIfPendingMemoryCorrect(schedulingResult.processorOfAssignment);
+    constexpr bool useImagined = true;
+    auto proc = schedulingResult.processorOfAssignment;
 
-    schedulingResult.processorOfAssignment->setAvailableMemoryDuringPreviousTask( schedulingResult.shouldBeFreeOnProcessorDuringTask);
+    ///////////////////////sanity checks
+    if(!isHeft)
+        checkIfPendingMemoryCorrect(proc);
+    assert(schedulingResult.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
+    switch (schedulingResult.resultingVar) {
+    case 0:
+    case 1:
+        assert(schedulingResult.edgesToChangeStatus.size()==0);
+        break;
+    case 3:
+        assert(schedulingResult.edgesToChangeStatus.size()>=1);
+        break;
+    case 2:
+        assert(schedulingResult.edgesToChangeStatus.size()==1);
+    default:
+        throw std::runtime_error("unknown resultingVar");
+    };
+    ///////////////////////
 
-    evictAccordingToBestDecision(numberWithEvictedCases, schedulingResult, vertex, isHeft);
+    proc->setAvailableMemoryDuringPreviousTask( schedulingResult.shouldBeFreeOnProcessorDuringTask, isHeft&&!proc->getIsKeptValid());
 
+    //Apply processor mutations
     for (auto& modifiedProc : schedulingResult.modifiedProcs) {
-        checkIfPendingMemoryCorrect(modifiedProc);
-        const auto procInClusterWithId = cluster->getProcessorById(modifiedProc->id);
-        procInClusterWithId->updateFrom(*modifiedProc);
+        if(!isHeft)
+            checkIfPendingMemoryCorrect(proc);
+        ourCluster->getProcessorById(modifiedProc->id)
+            ->updateFrom(*modifiedProc);
     }
 
-    for (auto e : schedulingResult.edgesToChangeStatus) {
-        //  cout<<"change status "<<buildEdgeName(e.edge)<<endl;
-
-        if (isLocatedOnThisProcessor(e.edge, schedulingResult.processorOfAssignment->id, true)) {
-            delocateFromThisProcessorToDisk(e.edge, schedulingResult.processorOfAssignment->id, true,
-                e.newLocation.afterWhen.value());
+    for (const auto& e : schedulingResult.edgesToChangeStatus) {
+        if (isLocatedOnThisProcessor(e.edge, proc->id, useImagined)) {
+            delocateFromThisProcessorToDisk(e.edge, proc->id, useImagined, e.newLocation.afterWhen.value());
         }
     }
+    if (schedulingResult.resultingVar>0) {
+        numberWithEvictedCases++;
+    }
 
-    assert(schedulingResult.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
-    vertex->assignedProcessorId = schedulingResult.processorOfAssignment->id;
+    vertex->assignedProcessorId = proc->id;
 
     for (const auto ine : vertex->in_edges) {
-        const int onWhichProcessor = whatProcessorIsLocatedOn(ine, true);
-        assert(onWhichProcessor == -1 || onWhichProcessor == schedulingResult.processorOfAssignment->id || cluster->getProcessorById(onWhichProcessor)->getPendingMemories().find(ine) == cluster->getProcessorById(onWhichProcessor)->getPendingMemories().end());
 
-        if (onWhichProcessor == schedulingResult.processorOfAssignment->id) {
-            // optionally, because edge could have been force removed during calculation of caorrect result in HEFT
-            schedulingResult.processorOfAssignment->delocateToNowhereOptionally(ine, true);
+        const int onWhichProcessor = whatProcessorIsLocatedOn(ine, useImagined);
+        assert(onWhichProcessor == -1 || onWhichProcessor == schedulingResult.processorOfAssignment->id ||
+            cluster->getProcessorById(onWhichProcessor)->getPendingMemories().find(ine) == cluster->getProcessorById(onWhichProcessor)->getPendingMemories().end());
+
+        if (onWhichProcessor == proc->id) {
+            proc->delocateToNowhereOptionally(ine, useImagined);
+        } else if (onWhichProcessor != -1) {
+            ourCluster->getProcessorById(onWhichProcessor)
+                ->delocateToNowhereOptionally(ine, useImagined);
         } else {
-            if (onWhichProcessor != -1) {
-                cluster->getProcessorById(onWhichProcessor)->delocateToNowhereOptionally(ine, true);
-            } else {
-                // edge has been read
-                // cout<<"bla"<<endl;
-                // cout << "NOWHERE! " << buildEdgeName(ine) << endl;
-                if (const auto proc = findProcessorThatHoldsEdge(ine, cluster); proc != nullptr) {
-                    if (proc->id == schedulingResult.processorOfAssignment->id)
-                        schedulingResult.processorOfAssignment->delocateToNowhereOptionally(ine, true);
-                    else
-                        proc->delocateToNowhereOptionally(ine, true);
-                }
-
-                // assert(proc == nullptr);
+            if (auto holder = findProcessorThatHoldsEdge(ine, ourCluster)) {
+                holder->delocateToNowhereOptionally(ine, useImagined);
             }
         }
-        if (true)
-            ine->imaginedLocations.clear();
-        else
-            ine->locations.clear();
+        ine->imaginedLocations.clear();
     }
 
-    checkIfPendingMemoryCorrect(schedulingResult.processorOfAssignment);
-
-    for (const auto v1 : vertex->out_edges) {
-        schedulingResult.processorOfAssignment->loadFromNowhere(v1, true, schedulingResult.finishTime);
+    for (const auto out : vertex->out_edges) {
+        proc->loadFromNowhere(out, useImagined, schedulingResult.finishTime);
         checkIfPendingMemoryCorrect(schedulingResult.processorOfAssignment);
         if (schedulingResult.processorOfAssignment->getAvailableMemory() < 0) {
-            std::cout << "";
+            std::cout << "NO AVAILABLE MEMORY\n";
         }
     }
-    cluster->getProcessorById(schedulingResult.processorOfAssignment->id)->updateFrom(*schedulingResult.processorOfAssignment);
-    for (const auto& [proc_id, processor] : cluster->getProcessors()) {
-        checkIfPendingMemoryCorrect(processor);
-    }
+
+    ourCluster->getProcessorById(proc->id)->updateFrom(*proc);
+    if(!isHeft)
+        for (const auto& [_, p] : ourCluster->getProcessors()) {
+            checkIfPendingMemoryCorrect(p);
+        }
 }
+
+
 
 void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult& bestSchedulingResult, const vertex_t* pVertex, bool isHeft)
 {
-
-    const bool canAlreadyBeEvicted = !isHeft;
     edge_t* edgeToKick = bestSchedulingResult.edgeToKick;
     switch (bestSchedulingResult.resultingVar) {
+    case 0:
+        break;
     case 1:
         break;
     case 2: {
@@ -394,12 +403,7 @@ void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult&
             });
         assert(findEdgeInChanges != bestSchedulingResult.edgesToChangeStatus.end());
 
-        isHeft?
-         bestSchedulingResult.processorOfAssignment->delocateToDiskOptionally(edgeToKick,
-                                  true, findEdgeInChanges->newLocation.afterWhen.value()):
-                           bestSchedulingResult.processorOfAssignment->delocateToDisk(
-                                  edgeToKick,
-                                  true, findEdgeInChanges->newLocation.afterWhen.value());
+        bestSchedulingResult.processorOfAssignment->delocateToDisk(edgeToKick,true, findEdgeInChanges->newLocation.afterWhen.value());
         numberWithEvictedCases++;
         checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         break;
@@ -462,6 +466,27 @@ std::shared_ptr<Processor> findProcessorThatHoldsEdge(edge_t* incomingEdge, Clus
     return nullptr;
 }
 
+std::shared_ptr<Event> findTaskStart(const std::vector<std::shared_ptr<Event>>& someEvents)
+{
+    for (auto some_event : someEvents) {
+        if (some_event->type==OnTaskStart)
+            return some_event;
+    }
+    return nullptr;
+}
+
+std::shared_ptr<Event> findLatest(const std::vector<std::shared_ptr<Event>>& someEvents)
+{
+    double latestTime = -1;
+    std::shared_ptr<Event> latestEvent = nullptr;
+    for (auto some_event : someEvents) {
+       if (some_event->getActualTimeFire()>latestTime){
+           latestTime= some_event->getActualTimeFire();
+           latestEvent= some_event;
+       }
+    }
+    return latestEvent;
+}
 
 ///////////////////////////////////////////////////FOR HEFT ONLY///////////////////////////////////////////////////
 ///

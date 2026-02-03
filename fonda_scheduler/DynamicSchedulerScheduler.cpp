@@ -114,7 +114,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
     processorWorkTimes[bestProcessorToAssign->id].emplace_back(bestStartTime,
         bestFinishTime);
 
-    //std::cout << "[DYNAMIC] Vertex " << vertex->name << " can start at: " << bestStartTime <<" on proc "<<bestProcessorToAssign->id  <<" end at " <<bestFinishTime<< std::endl;
+  //  std::cout << "\n [DYNAMIC] Vertex " << vertex->name << " can start at: " << bestStartTime <<" on proc "<<bestProcessorToAssign->id  <<" end at " <<bestFinishTime<< " variant "<< bestResultingVar<< std::endl;
     // cout << "resulting var " << resultingVar<<" on "<<bestProcessorToAssign->id << endl;
     return bestEvents;
 }
@@ -315,21 +315,25 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
             assert(ourModifiedProc->getAvailableMemory() <= ourModifiedProc->getMemorySize());
             actuallyUsedMemory = ourModifiedProc->getAvailableMemory();
             ourModifiedProc->setAvailableMemory(0);
+            eventStartTask->memoryVariant=1;
         } else if (timeToFinishBiggestEvicted == minTTF) {
             actuallyUsedMemory = std::min(ourModifiedProc->getAvailableMemory(), peakMemoryRequirementOfVertex(vertex));
             assert(actuallyUsedMemory <= ourModifiedProc->getMemorySize());
             ourModifiedProc->setAvailableMemory(std::max(0.0,
                 ourModifiedProc->getAvailableMemory() - vertex->memoryRequirement));
+            eventStartTask->memoryVariant=2;
         } else if (timeToFinishTaskAllEvicted == minTTF) {
             actuallyUsedMemory = std::min(ourModifiedProc->getMemorySize(), peakMemoryRequirementOfVertex(vertex));
             ourModifiedProc->setAvailableMemory(std::max(0.0,
                 ourModifiedProc->getMemorySize() - peakMemoryRequirementOfVertex(vertex)));
             //  cout<<"case 3 end avail mem "<<ourModifiedProc->getAvailableMemory()<<" "<<ourModifiedProc->getAfterAvailableMemory()<<endl;
+            eventStartTask->memoryVariant=3;
         }
 
     } else {
         processIncomingEdges(vertex, eventStartTask, ourModifiedProc, modifiedProcs, newEvents, notEarlierThan);
-
+        resultingVar=0;
+        eventStartTask->memoryVariant=0;
         actuallyUsedMemory = peakMemoryRequirementOfVertex(vertex);
         assert(actuallyUsedMemory <= ourModifiedProc->getMemorySize());
         //  ourModifiedProc->setAvailableMemory(
@@ -348,8 +352,9 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
         }
     }
 
+    assert(resultingVar>-1);
     finishTime =
-        resultingVar<0? ( eventStartTask->getExpectedTimeFire() + vertex->time / ourModifiedProc->getProcessorSpeed()):
+        resultingVar==0? ( eventStartTask->getExpectedTimeFire() + vertex->time / ourModifiedProc->getProcessorSpeed()):
         finishTimeWithMemorySwapping(eventStartTask->getExpectedTimeFire() , resultingVar==1 ? std::abs(Res) :
             resultingVar==2 ? amountToOffloadWithoutBiggestFile  :amountToOffloadWithoutAllFiles,  vertex->time, vertex, ourModifiedProc );
 

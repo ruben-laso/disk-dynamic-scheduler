@@ -113,7 +113,7 @@ Processor::delocateToNowhereOptionally(edge_t* edge, const bool shouldUseImagina
 {
     // cout<<"delocate optionally  from "<<this->id<<" "<<buildEdgeName(edge)<<" imagine? "<<(shouldUseImaginary? "yes":"no")<<endl;
 
-    if (isLocatedOnThisProcessor(edge, this->id, false))
+    if (isLocatedOnThisProcessor(edge, this->id, shouldUseImaginary))
         delocateFromThisProcessorToNowhere(edge, this->id, shouldUseImaginary);
 
     if (this->pendingMemories.find(edge) == this->pendingMemories.end()) {

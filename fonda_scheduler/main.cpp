@@ -49,6 +49,7 @@ int main(const int argc, char* argv[])
 
     // Theoretical perfect (static schedule)
     imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    imaginedClusterIncorrect =  Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
 
     // With deviations
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);

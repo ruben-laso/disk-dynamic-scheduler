@@ -12,6 +12,7 @@
 #include "sp-graph.hpp"
 
 extern Cluster* imaginedCluster;
+extern Cluster* imaginedClusterIncorrect;
 extern Cluster* actualCluster;
 
 struct EdgeChange {
@@ -89,6 +90,11 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, Schedulin
 
 void tentativeAssignmentHEFT(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result, SchedulingResult& resultCorrect);
 std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT2( vertex_t* v, SchedulingResult& result);
+std::vector<std::shared_ptr<Event>>
+tentativeAssignmentHEFT_withCorrectionAndEvents(
+    vertex_t* v,
+    SchedulingResult& result,
+    SchedulingResult& resultCorrect);
 
 graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>& noMemToWithMem);
 
@@ -98,8 +104,7 @@ void processIncomingEdges(const vertex_t* v, bool shouldUseDeviatedTimes, const 
 void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, std::vector<std::shared_ptr<Processor>>& modifiedProcs,
     double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents, bool forbidLookingIntoPast);
 void processIncomingEdgesDisregardingMemorySizes(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc,
-    std::vector<std::shared_ptr<Processor>>& modifiedProcs, double& earliestStartingTimeToComputeVertex,  std::vector<std::shared_ptr<Event>>& createdEvents,
-    bool forbidLookingIntoPast);
+    std::vector<std::shared_ptr<Processor>>& modifiedProcs, double& earliestStartingTimeToComputeVertex);
 
 void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDeviatedTimes,
     const std::shared_ptr<Processor>& ourModifiedProc,
@@ -111,24 +116,25 @@ void checkIfPendingMemoryCorrect(const std::shared_ptr<Processor>& p);
 
 
 void bestTentativeAssignment(bool isHeft, const vertex_t* vertex, SchedulingResult& result, SchedulingResult& correctResultForHeftOnly);
-std::vector<std::shared_ptr<Event>>  bestTentativeAssignment2(bool isHeft,  vertex_t* vertex, SchedulingResult& result);
+std::vector<std::shared_ptr<Event>>  bestTentativeAssignment2(bool isHeft,  vertex_t* vertex, SchedulingResult& result, SchedulingResult& incorrectResultForHeftOnly);
 
 void realSurplusOfOutgoingEdges(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, double& sumOut);
 
 void evictAccordingToBestDecision(int& numberWithEvictedCases, SchedulingResult& bestSchedulingResult, const vertex_t* pVertex, bool isHeft);
 
-void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cluster* cluster, int& numberWithEvictedCases, bool isHeft = false);
+//void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cluster* cluster, int& numberWithEvictedCases, bool isHeft = false);
+void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cluster* ourCluster, int& numberWithEvictedCases,  bool isHeft);
 
 std::shared_ptr<Processor> findProcessorThatHoldsEdge(edge_t* incomingEdge, Cluster* clusterToLookIn);
 
 void handleBiggestEvict(bool real, SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
     double startTimeForTask, edge_t* biggestPendingEdge, double readyTimeCompute, double readyTimeWrite);
-void handleBiggestEvict2( SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
+void emulateBiggestEvict2( SchedulingResult& result, const std::vector<EdgeChange>& changedEdgesOne,
     double startTimeForTask, edge_t* biggestPendingEdge, double readyTimeCompute, double readyTimeWrite);
 
 void handleAllEvict(SchedulingResult& result, double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
     double startTimeForAllEvicted, double readyTimeCompute, double readyTimeWrite);
-void handleAllEvict2(SchedulingResult& result, double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
+void emulateAllEvict2(SchedulingResult& result, double timeToWriteAllPending, const std::vector<EdgeChange>& changedEdgesAll,
     double startTimeForAllEvicted, double readyTimeCompute, double readyTimeWrite);
 
 
