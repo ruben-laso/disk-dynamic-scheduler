@@ -244,16 +244,11 @@ double finishTimeWithMemorySwapping(double startTime, double amountToOffload, do
          double penaltyToSwap = (1 + task->swapRate) * (std::abs(amountToOffload) / task->memoryRequirement) *
              (std::abs(amountToOffload) / p->writeSpeedDisk);
 
-         //double penaltyToSwap = (std::abs(amountToOffload)) *1000;
          result += penaltyToSwap;
 
          if(result<startTime){
              std::cout<<"bad computed result with memory swapping on vertex "<<task->name<<std::endl;
          }
-        // double timeToWriteEdgeOfThisSize= std::abs(amountToOffload)/p->writeSpeedDisk;
-        // if (timeToWriteEdgeOfThisSize<penaltyToSwap) {
-         //    std::cout<<"cheaper than writing\n";
-        // }
          return result;
 }
 
@@ -321,8 +316,9 @@ void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& 
         break;
     case 2:
         assert(schedulingResult.edgesToChangeStatus.size()==1);
+        break;
     default:
-        throw std::runtime_error("unknown resultingVar");
+        throw std::runtime_error("unknown resultingVar of "+std::to_string(schedulingResult.resultingVar));
     };
     ///////////////////////
 
@@ -338,7 +334,7 @@ void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& 
 
     for (const auto& e : schedulingResult.edgesToChangeStatus) {
         if (isLocatedOnThisProcessor(e.edge, proc->id, useImagined)) {
-            delocateFromThisProcessorToDisk(e.edge, proc->id, useImagined, e.newLocation.afterWhen.value());
+            proc->delocateToDisk(e.edge, useImagined, e.newLocation.afterWhen.value());
         }
     }
     if (schedulingResult.resultingVar>0) {

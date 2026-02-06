@@ -41,7 +41,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
         readyQ.pop();
-       // std::cout<<"deal w "<<vertex->name<<std::endl;
+        std::cout<<"deal w "<<vertex->name<<std::endl;
         numProcessedVertices++;
         SchedulingResult bestSchedulingResult(nullptr);
         SchedulingResult bestSchedulingResultIncorrect(nullptr);
@@ -50,10 +50,15 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
 
 
         auto newevents = bestTentativeAssignment2(isHeft, vertex, bestSchedulingResult, bestSchedulingResultIncorrect);
+        if (bestSchedulingResult.modifiedProcs.empty()) {
+            std::cout << "Invalid assignment of " << vertex->name;
+            return {};
+        }
+
         checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         res_events.insert(res_events.end(), newevents.begin(), newevents.end());
 
-       /* std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
+        std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
         std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
 
         for (auto newevent : newevents) {
@@ -65,10 +70,6 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
 
         if (vertex->name=="BWA_MEM") {
                     std::cout << "";
-        } */
-        if (bestSchedulingResult.modifiedProcs.empty()) {
-            std::cout << "Invalid assignment of " << vertex->name;
-            return {};
         }
 
         assert((*newevents.rbegin())->id== vertex->name+"-f");
@@ -248,6 +249,7 @@ std::vector<std::shared_ptr<Event>>  bestTentativeAssignment2(const bool isHeft,
 
 std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, SchedulingResult& result)
 {
+
     if (result.processorOfAssignment->getMemorySize() < outMemoryRequirement(v) || result.processorOfAssignment->getMemorySize() < inMemoryRequirement(v)) {
       //  std::cout<<"too large outs absolutely on " <<result.processorOfAssignment->id<<std::endl;
         result.finishTime = std::numeric_limits<double>::max();
@@ -314,7 +316,7 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, Schedulin
 
             const auto biggestFileWeight = biggestPendingEdge->weight;
             const double amountToOffloadWithoutBiggestFile = (amountToOffload - biggestFileWeight) > 0 ? (amountToOffload - biggestFileWeight) : 0;
-            availableMem1Evict= result.processorOfAssignment->getAvailableMemory() - amountToOffload + biggestFileWeight;
+            availableMem1Evict= (biggestFileWeight-amountToOffload)>0? biggestFileWeight-amountToOffload:0;
             const double startTimeToWriteBiggestEdge = std::max(result.processorOfAssignment->getReadyTimeWrite(),  biggestPendingEdge->tail->makespanPerceived);
             finishTimeWrite1Evict = startTimeToWriteBiggestEdge + biggestPendingEdge->weight / result.processorOfAssignment->writeSpeedDisk;
             changedEdgesOne.emplace_back(biggestPendingEdge, Location(LocationType::OnDisk, std::nullopt, finishTimeWrite1Evict));
@@ -409,7 +411,7 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, Schedulin
             }
 
             const double amountToOffloadWithoutAllFiles = (amountToOffload - sumWeightsOfAllPending > 0) ? amountToOffload - sumWeightsOfAllPending : 0;
-            availableMemAllEvict= result.processorOfAssignment->getAvailableMemory() - amountToOffload + sumWeightsOfAllPending;
+            availableMemAllEvict= ( sumWeightsOfAllPending - amountToOffload)>0? sumWeightsOfAllPending - amountToOffload:0;
 
             //  finishTimeToWrite = result.processorOfAssignment->getReadyTimeWrite() +
             //                     timeToWriteAllPending;
@@ -498,7 +500,8 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignmentHEFT2( vertex_t* v, Sche
 
     assert(result.resultingVar==-1);
      std::vector<std::shared_ptr<Event>>  createdEvents;
-    processIncomingEdgesDisregardingMemorySizes(v, result.processorOfAssignment, modifiedProcs, result.startTime, createdEvents );
+
+    processIncomingEdgesDisregardingMemorySizes(v, result.processorOfAssignment, modifiedProcs, result.startTime );
 
     assert(result.processorOfAssignment->getReadyTimeCompute() < std::numeric_limits<double>::max());
     result.startTime = result.processorOfAssignment->getReadyTimeCompute() > result.startTime ? result.processorOfAssignment->getReadyTimeCompute() : result.startTime;
