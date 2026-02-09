@@ -281,7 +281,7 @@ void locateToDisk(edge_t* edge, const bool imaginary, double afterWhen)
 {
     std::vector<Location>& locations = imaginary ? edge->imaginedLocations : edge->locations;
     if (!isLocatedOnDisk(edge, imaginary))
-        locations.emplace_back(LocationType::OnDisk, afterWhen);
+        locations.emplace_back(LocationType::OnDisk, std::nullopt, afterWhen);
 }
 
 double getSumOut(const vertex_t* v)

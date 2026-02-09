@@ -63,6 +63,23 @@ public:
         return result;
     }
 
+    // Creates: Pred1-> (A) -> Succ1
+    static  vertex_t* CreateOneTaskWith1Incoming1Outgoing( double taskTime, double taskMemory, double edgeWeight) {
+
+        graph_t* g = new_graph();
+        vertex_t* result = new_vertex2Weights(g, "A", taskTime, taskMemory, nullptr);
+
+        vertex_t* pred1 = new_vertex2Weights(g, "Pred_1" , taskTime, taskMemory/2, nullptr);
+        new_edge(g, pred1, result, edgeWeight, nullptr);
+
+        vertex_t* succ1 = new_vertex2Weights(g, "Succ_1" , taskTime, taskMemory/2, nullptr);
+        new_edge(g, result, succ1, edgeWeight, nullptr);
+
+
+        return result;
+    }
+
+
 
     static  vertex_t* CreateOneSimpleTaskNoEdges( std::string taskName , double taskTime, double taskMemory) {
 

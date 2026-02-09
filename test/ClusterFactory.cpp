@@ -42,8 +42,8 @@ public:
         return cluster;
     }
 
-    static std::shared_ptr<Processor> createSingleProcessor(double mem, double speed) {
-        auto p = std::make_shared<Processor>(mem, speed, 0);
+    static std::shared_ptr<Processor> createSingleProcessor(double mem, double speed, double id=0) {
+        auto p = std::make_shared<Processor>(mem, speed, id);
         p->name = "SingleProc";
         p->setAvailableMemory(mem);
         p->setAfterAvailableMemory(mem);

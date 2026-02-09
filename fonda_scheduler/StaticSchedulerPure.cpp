@@ -727,7 +727,6 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
     forbidLookingIntoPast
         ? ourModifiedProc->getReadyTimeCompute()
         : -std::numeric_limits<double>::infinity();
-    std::shared_ptr<Event> lastIncomingEdgeEvent = nullptr;
 
     earliestStartingTimeToComputeVertex = ourModifiedProc->getReadyTimeCompute();
     for (const auto incomingEdge : v->in_edges) {
@@ -755,10 +754,6 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                 }
 
                 readFinish->addPredecessorInPlanning(readStart);
-                if (lastIncomingEdgeEvent) {
-                    firstEventOfThisEdge->addPredecessorInPlanning(lastIncomingEdgeEvent);
-                }
-                lastIncomingEdgeEvent = lastEventOfThisEdge;
 
                 const std::shared_ptr<Event>& eventFinishPredecessorComputing = events.find(incomingEdge->tail->name + "-f");
                 if (eventFinishPredecessorComputing != nullptr) {
@@ -813,11 +808,6 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                  if (!ourModifiedProc->getLastReadEvent().expired()) {
                     readStart->addPredecessorInPlanning(ourModifiedProc->getLastReadEvent().lock());
                 }
-                if (lastIncomingEdgeEvent) {
-                    firstEventOfThisEdge->addPredecessorInPlanning(lastIncomingEdgeEvent);
-                }
-                lastIncomingEdgeEvent = lastEventOfThisEdge;
-
 
                 const std::shared_ptr<Event>& eventFinishPredecessorComputing = events.find(incomingEdge->tail->name + "-f");
                 if (eventFinishPredecessorComputing != nullptr) {
@@ -914,15 +904,8 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                     }
                 }
 
-                if (lastIncomingEdgeEvent) {
-                    firstEventOfThisEdge->addPredecessorInPlanning(lastIncomingEdgeEvent);
-                }
-                lastIncomingEdgeEvent = lastEventOfThisEdge;
-
-
                 ourModifiedProc->setLastReadEvent(readFinish);
                 addedProc->setLastWriteEvent(writeFinish);
-
 
                 earliestStartingTimeToComputeVertex = std::max(earliestStartingTimeToComputeVertex, readFinish->getExpectedTimeFire());
 
@@ -933,12 +916,7 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
             }
         }
     }
-
-    earliestStartingTimeToComputeVertex =
-    lastIncomingEdgeEvent
-        ? std::max(lastIncomingEdgeEvent->getExpectedTimeFire(), earliestStartingTimeToComputeVertex)
-        : std::max(ourModifiedProc->getReadyTimeCompute(), earliestStartingTimeToComputeVertex);
-
+    std::cout << "";
 }
 
 void processIncomingEdgesDisregardingMemorySizes(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc,
