@@ -62,4 +62,15 @@ public:
 
         return result;
     }
+
+
+    static  vertex_t* CreateOneSimpleTaskNoEdges( std::string taskName , double taskTime, double taskMemory) {
+
+        graph_t* g = new_graph();
+        vertex_t* result = new_vertex2Weights(g, taskName.c_str(), taskTime, taskMemory, nullptr);
+
+        return result;
+    }
+
+
 };

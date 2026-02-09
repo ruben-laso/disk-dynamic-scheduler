@@ -91,8 +91,10 @@ if (FONDA_UNIT_TESTS)
     add_executable(dagp-tests
             "${PROJECT_SOURCE_DIR}/test/test-singular-functions.cpp"
             "${PROJECT_SOURCE_DIR}/test/test-general.cpp"
+            "${PROJECT_SOURCE_DIR}/test/test-moving-events.cpp"
             "${PROJECT_SOURCE_DIR}/test/WorkflowFactory.cpp"
             "${PROJECT_SOURCE_DIR}/test/ClusterFactory.cpp"
+            "${PROJECT_SOURCE_DIR}/test/EventFactory.cpp"
             # Add your other test .cpp files here
     )
 
@@ -108,8 +110,8 @@ if (FONDA_UNIT_TESTS)
     include(GoogleTest)
     gtest_discover_tests(dagp-tests)
 
-    if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(fonda_logic PRIVATE --coverage -fno-inline -fno-inline-small-functions -fno-default-inline)
-        target_link_options(dagp-tests PRIVATE --coverage)
-    endif()
+   # if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   #     target_compile_options(fonda_logic PRIVATE --coverage -fno-inline -fno-inline-small-functions -fno-default-inline)
+   #     target_link_options(dagp-tests PRIVATE --coverage)
+   # endif()
 endif ()

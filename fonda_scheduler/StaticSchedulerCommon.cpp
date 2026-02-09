@@ -332,9 +332,12 @@ void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& 
             ->updateFrom(*modifiedProc);
     }
 
-    for (const auto& e : schedulingResult.edgesToChangeStatus) {
+    for (auto e : schedulingResult.edgesToChangeStatus) {
         if (isLocatedOnThisProcessor(e.edge, proc->id, useImagined)) {
-            proc->delocateToDisk(e.edge, useImagined, e.newLocation.afterWhen.value());
+            delocateFromThisProcessorToDisk(e.edge, proc->id, useImagined, e.newLocation.afterWhen.value());
+        }
+        if (proc->getPendingMemories().find(e.edge) != proc->getPendingMemories().end()) {
+            proc->removePendingMemory(e.edge);
         }
     }
     if (schedulingResult.resultingVar>0) {

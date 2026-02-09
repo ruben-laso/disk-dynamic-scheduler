@@ -115,6 +115,7 @@ private:
 
     void setExpectedTimeFireInternal(double t) noexcept
     {
+       // std::cout << "set expected time of "<<this->id<< " to "<<t<<std::endl;
         if (isManaged)
             throw std::logic_error("Cannot modify expectedTimeFire after insertion into EventManager");
 
@@ -404,7 +405,7 @@ public:
 
     void addPredecessorInPlanning(std::shared_ptr<Event> predecessor)
     {
-        // 1. structural edge
+        // 1. structural edge, no time change happens here
         addPredecessorPure(predecessor);
 
         // 2. compute latest allowed start
@@ -420,7 +421,7 @@ public:
         this->setActualTimeFireInternal(this->getActualTimeFire() + diff);
         this->setExpectedTimeFireInternal(this->getExpectedTimeFire() + diff);
 
-        // 4. and shift ALL successors
+        // 4. and shift all successors
         propagateAllSuccessorsForward(diff, /*inPlanning=*/true);
     }
 
@@ -431,39 +432,74 @@ public:
 
         this->cleanupSuccessors();
 
-        // visited prevents cycles
-        std::unordered_set<Event*> visited;
-        std::deque<std::shared_ptr<Event>> worklist;
+        // visited prevents cycles and tracks by how much they have already been shifted, so we only re-visit if we have to shift more than before
+        std::unordered_map<Event*, double> visitedShift;
+        std::deque<std::pair<std::shared_ptr<Event>, double>> worklist;
 
-        visited.insert(this);
-        worklist.push_back(shared_from_this());
+        visitedShift[this] = diff;
+        worklist.push_back({shared_from_this(), diff});
 
         while (!worklist.empty()) {
-            auto current = worklist.front();
+            auto currentPair = worklist.front();
             worklist.pop_front();
+            //a start always has only one successor, its own finish
 
+            auto current = currentPair.first;
+            double currentDiff= currentPair.second;
             current->cleanupSuccessors();
 
-            for (auto& succWeak : current->successors) {
-                auto succ = succWeak.lock();
-                if (!succ)
-                    continue;
+            if (current->isFinish()) {
 
-                if (visited.insert(succ.get()).second) {
-                    // not visited before → schedule traversal
-                    worklist.push_back(succ);
-                }
+                for (auto& succWeak : current->successors) {
+                    auto succ = succWeak.lock();
+                    if (!succ)
+                        continue;
+                    assert(succ->isStart());
 
-                // shift the successor time
-                double newTime = succ->getActualTimeFire() + diff;
-                succ->setActualTimeFireInternal(newTime);
+                    double oldSuccTime = succ->getVisibleTimeFireForPlanning();
+                    double newSuccTime = oldSuccTime;
 
-                if (inPlanning) {
-                    succ->setExpectedTimeFireInternal(newTime);
-                    // invariants you're aiming for
-                    assert(succ->getExpectedTimeFire() == succ->getActualTimeFire());
+                    //shifting starts happens only if we are the limiting predecesoor
+                    if (current->getVisibleTimeFireForPlanning() > oldSuccTime) {
+                        //current is the limiter, move the start successor forward to our time
+                        newSuccTime =  oldSuccTime + (current->getVisibleTimeFireForPlanning()-oldSuccTime);
+                        double localDiff = newSuccTime - oldSuccTime;
+
+                        succ->setActualTimeFireInternal(newSuccTime);
+                        if (inPlanning) {
+                            succ->setExpectedTimeFireInternal(newSuccTime);
+                            assert(succ->getExpectedTimeFire() == succ->getActualTimeFire());
+                        }
+
+                        if (visitedShift[succ.get()] < localDiff) {
+                            visitedShift[succ.get()] = localDiff;
+                            worklist.push_back({succ, localDiff});
+                        }
+                    }
+
                 }
             }
+            else {
+                // curr is start, can have only one finish - its own
+                assert(current->getSuccessors().size()==1);
+                std::shared_ptr<Event> succFinish = current->successors.at(0).lock();
+
+                double oldFinishTime = succFinish->getVisibleTimeFireForPlanning();
+                double newFinishTime = oldFinishTime + currentDiff;
+
+                succFinish->setActualTimeFireInternal(newFinishTime);
+                if (inPlanning) {
+                    succFinish->setExpectedTimeFireInternal(newFinishTime);
+                    assert(succFinish->getExpectedTimeFire() == succFinish->getActualTimeFire());
+                }
+
+                if (visitedShift[succFinish.get()] < currentDiff) {
+                    visitedShift[succFinish.get()] = currentDiff;
+                    worklist.push_back({succFinish, currentDiff});
+                }
+
+            }
+
         }
     }
 
@@ -475,10 +511,11 @@ public:
         assert(newTime >= this->getExpectedTimeFire() || this->getExpectedTimeFire() - newTime < 0.1);
         assert(this->getExpectedTimeFire() == this->getActualTimeFire());
 
+        double oldTime = this->getExpectedTimeFire();
         setExpectedTimeFireInternal(newTime);
         setActualTimeFireInternal(newTime);
 
-        double diff = newTime - this->getExpectedTimeFire();
+        double diff = newTime - oldTime;
         propagateAllSuccessorsForward(diff, true);
     }
 
@@ -615,6 +652,16 @@ public:
         std::cout << "  Flags: [Managed: " << (isManaged ? "Yes" : "No")
                   << "] [Preemptive Only: " << (onlyPreemptive ? "Yes" : "No") << "]\n";
 
+        std::cout << "--------------------------" << std::endl;
+    }
+
+    void printEventShort() const{
+        std::cout << std::scientific;
+        std::cout << "--- Event [" << id << "] ---";
+
+        std::cout << " | Processor: " << processor->id ;
+        std::cout << "  Expected Fire: " <<  expectedTimeFire;
+        std::cout << "  Actual Fire:   " <<  actualTimeFire ;
         std::cout << "--------------------------" << std::endl;
     }
 };

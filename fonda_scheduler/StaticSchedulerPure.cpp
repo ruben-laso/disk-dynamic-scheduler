@@ -62,15 +62,13 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
         std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
 
         for (auto newevent : newevents) {
-            newevent->printEventDetailed();
+            newevent->printEventShort();
         }
 
         std::cout<<"for task "<<vertex->name<<" variant "<< bestSchedulingResult.resultingVar << " on proc "<< bestSchedulingResult.processorOfAssignment->id
-                 <<" from "<< bestSchedulingResult.startTime <<" to "<< bestSchedulingResult.finishTime << std::endl;
+                 <<" from "<< bestSchedulingResult.startTime <<" to "<< bestSchedulingResult.finishTime
+        <<" duration is "<<" "<< bestSchedulingResult.finishTime - bestSchedulingResult.startTime << std::endl;
 
-        if (vertex->name=="BWA_MEM") {
-                    std::cout << "";
-        }
 
         assert((*newevents.rbegin())->id== vertex->name+"-f");
         assert((*newevents.rbegin())->getExpectedTimeFire()== bestSchedulingResult.finishTime);
@@ -180,7 +178,6 @@ std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentHEFT2(vertex_t* vert
             //    std::cout << "best actualize to " << tentativeResult.processorOfAssignment->id << " should be free " << tentativeResult.shouldBeFreeOnProcessorDuringTask << std::endl;
             assert(!tentativeResultCorrect.modifiedProcs.empty());
             result = tentativeResultCorrect;
-            result.resultingVar = 1;
             resultIncorrect= tentativeResultIncorrect;
             bestEvents = eventsFromCorrect;
         }
@@ -540,9 +537,12 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignmentHEFT2( vertex_t* v, Sche
 
 std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEvents( vertex_t* v, SchedulingResult& result, SchedulingResult& resultCorrect)
 {
-    if (v->name=="TRIMGALORE" && result.processorOfAssignment->id==5) {
+    if (v->name=="BWA_MEM_00000004"&& result.processorOfAssignment->id==30) {
         std::cout << "";
     }
+    result.resultingVar = 1;
+    resultCorrect.resultingVar = 1;
+
      assert(result.processorOfAssignment->id == resultCorrect.processorOfAssignment->id);
     auto proc = result.processorOfAssignment;
     auto procCorrect = resultCorrect.processorOfAssignment;
@@ -564,9 +564,6 @@ std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEve
     std::vector<std::shared_ptr<Processor>> modifiedProcs, modifiedProcsCorrect;
     modifiedProcs.emplace_back(proc);
     modifiedProcsCorrect.emplace_back(procCorrect);
-
-    assert(result.resultingVar == -1);
-    assert(resultCorrect.resultingVar == -1);
 
     std::vector<std::shared_ptr<Event>> createdEvents;
 
@@ -591,7 +588,7 @@ std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEve
         double stillNeedsToBeEvictedToRun =
             sumOut - procCorrect->getAvailableMemory();
 
-        double writeTime = resultCorrect.startTime;
+        double writeTime = std::max(resultCorrect.startTime,procCorrect->getReadyTimeWrite());
         std::shared_ptr<Event> lastEvictionEvent = nullptr;
         for (auto it = procCorrect->getPendingMemories().begin(); it != procCorrect->getPendingMemories().end() &&
              stillNeedsToBeEvictedToRun > 0;)
@@ -647,10 +644,12 @@ std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEve
 
                 createdEvents.emplace_back(writeStart);
                 createdEvents.emplace_back(writeFinish);
+
             } else {
                 ++it;
             }
             resultCorrect.shouldBeFreeOnProcessorDuringTask=std::max(stillNeedsToBeEvictedToRun, 0.0);
+            resultCorrect.resultingVar=3;
         }
 
         if (stillNeedsToBeEvictedToRun > 0) {
@@ -714,9 +713,6 @@ std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEve
     result.modifiedProcs = modifiedProcs;
     resultCorrect.modifiedProcs = modifiedProcsCorrect;
 
-    result.resultingVar = 1;
-    resultCorrect.resultingVar = 1;
-
     return createdEvents;
 }
 
@@ -746,9 +742,9 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                 assert(isLocatedOnDisk(incomingEdge, true));
 
                 double startOfRead = std::max({ourModifiedProc->getReadyTimeRead(), (*getLocationOnDisk(incomingEdge, true)).afterWhen.value(), eventFinishWriteOfThisEdge->getExpectedTimeFire(), preparationBarrier});
-
+                double finishOfRead = startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk;
                 auto readStart= Event::createEvent(nullptr, incomingEdge, OnReadStart, ourModifiedProc,startOfRead, startOfRead, false, buildEdgeName(incomingEdge) + "-r-s");
-                auto readFinish= Event::createEvent(nullptr, incomingEdge, OnReadFinish, ourModifiedProc,ourModifiedProc->getReadyTimeRead(), ourModifiedProc->getReadyTimeRead(), false, buildEdgeName(incomingEdge) + "-r-f");
+                auto readFinish= Event::createEvent(nullptr, incomingEdge, OnReadFinish, ourModifiedProc,finishOfRead, finishOfRead, false, buildEdgeName(incomingEdge) + "-r-f");
                 std::shared_ptr<Event> firstEventOfThisEdge = readStart; // or writeStart
                 std::shared_ptr<Event> lastEventOfThisEdge  = readFinish; // or read/write finish
 
@@ -758,10 +754,7 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                     isDependentOnLastCompute=true;
                 }
 
-                ourModifiedProc->setReadyTimeRead(
-                    startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk);
-
-                 readFinish->addPredecessorInPlanning(readStart);
+                readFinish->addPredecessorInPlanning(readStart);
                 if (lastIncomingEdgeEvent) {
                     firstEventOfThisEdge->addPredecessorInPlanning(lastIncomingEdgeEvent);
                 }
