@@ -10,17 +10,6 @@
 
 bool Debug;
 
-void delayEverythingBy(const std::vector<Assignment*>& assignments, const Assignment* startingPoint, const double delayTime)
-{
-
-    for (const auto& assignment : assignments) {
-        if (assignment->startTime >= startingPoint->startTime) {
-            assignment->startTime += delayTime;
-            assignment->finishTime += delayTime;
-        }
-    }
-}
-
 void Cluster::printAssignment()
 {
     int counter = 0;
