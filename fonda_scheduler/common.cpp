@@ -295,7 +295,7 @@ double getSumIn(const vertex_t* v)
 
 void Event::fire()
 {
-   // std::cout<<"fire event "<<this->id<<" at " <<this->getActualTimeFire()<<" planned at "<<this->getExpectedTimeFire()<<" on proc "<<this->processor->id <<std::endl;
+   std::cout<<"fire event "<<this->id<<" at " <<this->getActualTimeFire()<<" planned at "<<this->getExpectedTimeFire()<<" on proc "<<this->processor->id <<std::endl;
     if (this->edge) {
         assert(this->edge->locations.size()>=0);
         assert(this->edge->imaginedLocations.size()>=0);
@@ -307,7 +307,7 @@ void Event::fire()
     }
     assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
 
-    // PASS 1: absolute repair
+     // PASS 1: absolute repair
     std::vector<TimeShift> repair;
     this->enforceSuccessorConstraints(repair);
     // Apply any repairs

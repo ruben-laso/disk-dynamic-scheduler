@@ -461,7 +461,7 @@ processIncomingEdges(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, 
             double atThisTime =  std::max(notEarlierThan,getLocationOnDisk(incomingEdge, false)->afterWhen.value());
             scheduleARead(v, ourEvent, createdEvents, ourEvent->getExpectedTimeFire(), ourModifiedProc, incomingEdge, atThisTime);
             if (atThisTime > ourEvent->getExpectedTimeFire()) {
-                ourEvent->propagateAllSuccessorsForward(atThisTime - ourEvent->getExpectedTimeFire(), true);
+                ourEvent->propagateAllSuccessorsForwardInPlanning(atThisTime - ourEvent->getExpectedTimeFire());
                 ourEvent->adjustBothPlannedFireTimes(atThisTime);
             }
         } else if (isLocatedOnAnyProcessor(incomingEdge, false)) {

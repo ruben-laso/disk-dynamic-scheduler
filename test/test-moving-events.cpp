@@ -525,7 +525,7 @@ TEST(EventReschedulingTest, DiamondBothBranchesPullBackward) {
 }
 
 
-TEST(EventReschedulingTest, DiamondOneBranchPushesForwrd) {
+TEST(EventReschedulingTest, DiamondOneBranchPushesForward) {
 
     auto p1 = ClusterFactory::createSingleProcessor(80, 1.0);
     auto p2 = ClusterFactory::createSingleProcessor(80, 1.0);
@@ -628,6 +628,109 @@ TEST(EventReschedulingTest, DiamondOneBranchPushesForwrd) {
 
 }
 
+TEST(EventReschedulingTest, DiamondBothBranchesPushForward) {
+
+    auto p1 = ClusterFactory::createSingleProcessor(80, 1.0);
+    auto p2 = ClusterFactory::createSingleProcessor(80, 1.0);
+
+     graph_t* g = new_graph();
+
+    auto a = new_vertex2Weights(g, "a", 100.0, 50, nullptr);
+    auto b = new_vertex2Weights(g, "b", 100.0, 50, nullptr);
+    auto c = new_vertex2Weights(g, "c", 100.0, 50, nullptr);
+    auto m = new_vertex2Weights(g, "m", 100.0, 50, nullptr);
+    auto x = new_vertex2Weights(g, "x", 100.0, 50, nullptr);
+    auto y = new_vertex2Weights(g, "y", 100.0, 50, nullptr);
+
+    new_edge(g, a, c, 20, nullptr);
+    new_edge(g, b, m, 20, nullptr);
+    new_edge(g, c, m, 20,nullptr);
+    new_edge(g, x, b, 20, nullptr);
+    new_edge(g, y, b, 20, nullptr);
+
+    auto a_f = EventFactory::createTaskFinishEvent(a, p1, 10);
+    auto a_s = EventFactory::createTaskStartEvent(a, p1, 5);
+
+    auto a_c_w_s = EventFactory::createWriteStartEvent(a->out_edges.at(0), p1, 10);
+    auto a_c_w_f = EventFactory::createWriteFinishEvent(a->out_edges.at(0), p1, 15);
+    auto a_c_r_s = EventFactory::createReadStartEvent(a->out_edges.at(0), p2, 15);
+    auto a_c_r_f = EventFactory::createReadFinishEvent(a->out_edges.at(0), p2, 20);
+
+    auto  x_b_r_s = EventFactory::createReadStartEvent(x->out_edges.at(0), p1, 20);
+    auto  x_b_r_f = EventFactory::createReadFinishEvent(x->out_edges.at(0), p1, 25);
+    auto  y_b_r_s = EventFactory::createReadStartEvent(y->out_edges.at(0), p1, 25);
+    auto  y_b_r_f = EventFactory::createReadFinishEvent(y->out_edges.at(0), p1, 30);
+
+    auto b_s = EventFactory::createTaskStartEvent(b, p1, 30);
+    auto b_f = EventFactory::createTaskFinishEvent(b, p1, 35);
+    auto b_m_w_s = EventFactory::createWriteStartEvent(b->out_edges.at(0), p1, 35);
+    auto b_m_w_f = EventFactory::createWriteFinishEvent(b->out_edges.at(0), p1, 40);
+
+    auto c_s = EventFactory::createTaskStartEvent(c, p2, 20);
+    auto c_f = EventFactory::createTaskFinishEvent(c, p2, 40);
+
+    auto m_s = EventFactory::createTaskStartEvent(m, p1, 40);
+    auto m_f = EventFactory::createTaskFinishEvent(m, p1, 45);
+
+    a_f->addPredecessorInPlanning(a_s);
+    a_c_w_s->addPredecessorInPlanning(a_f);
+    a_c_w_f->addPredecessorInPlanning(a_c_w_s);
+    a_c_r_s->addPredecessorInPlanning(a_c_w_f);
+    a_c_r_f->addPredecessorInPlanning(a_c_r_s);
+    x_b_r_s->addPredecessorInPlanning(a_f);
+    x_b_r_f->addPredecessorInPlanning(x_b_r_s);
+    y_b_r_s->addPredecessorInPlanning(x_b_r_f);
+    y_b_r_f->addPredecessorInPlanning(y_b_r_s);
+    b_s->addPredecessorInPlanning(x_b_r_f);
+    b_s->addPredecessorInPlanning(y_b_r_f);
+    b_f->addPredecessorInPlanning(b_s);
+    b_m_w_s->addPredecessorInPlanning(b_f);
+    b_m_w_f->addPredecessorInPlanning(b_m_w_s);
+    m_s->addPredecessorInPlanning(b_m_w_f);
+    m_f->addPredecessorInPlanning(m_s);
+    c_s->addPredecessorInPlanning(a_c_r_f);
+    c_f->addPredecessorInPlanning(c_s);
+    m_s->addPredecessorInPlanning(c_f);
+
+    events.insert(a_f); events.insert(a_s);
+    events.insert(a_c_w_s);    events.insert(a_c_w_f);
+    events.insert(a_c_r_s);    events.insert(a_c_r_f);
+    events.insert(x_b_r_s);    events.insert(x_b_r_f);
+    events.insert(y_b_r_s);    events.insert(y_b_r_f);
+    events.insert(b_s);    events.insert(b_f);
+    events.insert(b_m_w_s);    events.insert(b_m_w_f);
+    events.insert(c_s);    events.insert(c_f);
+    events.insert(m_s);    events.insert(m_f);
+
+
+    EXPECT_NO_THROW({
+
+        events.reschedule(a_f->id, 21);
+
+        EXPECT_EQ(events.find("a-c-w-s").get()->getActualTimeFire(),21);
+        EXPECT_EQ(events.find("a-c-w-f").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("a-c-r-s").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("a-c-r-f").get()->getActualTimeFire(),31);
+        EXPECT_EQ(events.find("c-s").get()->getActualTimeFire(),31);
+        EXPECT_EQ(events.find("c-f").get()->getActualTimeFire(),51);
+
+        EXPECT_EQ(events.find("x-b-r-s").get()->getActualTimeFire(),21);
+        EXPECT_EQ(events.find("x-b-r-f").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("y-b-r-s").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("y-b-r-f").get()->getActualTimeFire(),31);
+
+        EXPECT_EQ(events.find("b-s").get()->getActualTimeFire(),31);
+        EXPECT_EQ(events.find("b-f").get()->getActualTimeFire(),36);
+        EXPECT_EQ(events.find("b-m-w-s").get()->getActualTimeFire(),36);
+        EXPECT_EQ(events.find("b-m-w-f").get()->getActualTimeFire(),41);
+
+        EXPECT_EQ(events.find("m-s").get()->getActualTimeFire(),51);
+        EXPECT_EQ(events.find("m-f").get()->getActualTimeFire(),56);
+
+    });
+
+}
+
 
 TEST(Reschedule, SlackSuccessorMovesMore) {
     auto p1 = ClusterFactory::createSingleProcessor(80, 1.0);
@@ -697,4 +800,256 @@ TEST(EventReschedulingTest, SuccessorCannotPrecedePredecessor) {
     events.reschedule("B-s", 5);
 
     EXPECT_GE(bs->getActualTimeFire(), af->getActualTimeFire());
+}
+
+TEST(enforceSuccessorConstraintsTest, DiamondBothBranchesPushForward) {
+
+    auto p1 = ClusterFactory::createSingleProcessor(80, 1.0);
+    auto p2 = ClusterFactory::createSingleProcessor(80, 1.0);
+
+     graph_t* g = new_graph();
+
+    auto a = new_vertex2Weights(g, "a", 100.0, 50, nullptr);
+    auto b = new_vertex2Weights(g, "b", 100.0, 50, nullptr);
+    auto c = new_vertex2Weights(g, "c", 100.0, 50, nullptr);
+    auto m = new_vertex2Weights(g, "m", 100.0, 50, nullptr);
+    auto x = new_vertex2Weights(g, "x", 100.0, 50, nullptr);
+    auto y = new_vertex2Weights(g, "y", 100.0, 50, nullptr);
+
+    new_edge(g, a, c, 20, nullptr);
+    new_edge(g, b, m, 20, nullptr);
+    new_edge(g, c, m, 20,nullptr);
+    new_edge(g, x, b, 20, nullptr);
+    new_edge(g, y, b, 20, nullptr);
+
+    auto a_f = EventFactory::createTaskFinishEvent(a, p1, 10);
+    auto a_s = EventFactory::createTaskStartEvent(a, p1, 5);
+
+    auto a_c_w_s = EventFactory::createWriteStartEvent(a->out_edges.at(0), p1, 10);
+    auto a_c_w_f = EventFactory::createWriteFinishEvent(a->out_edges.at(0), p1, 15);
+    auto a_c_r_s = EventFactory::createReadStartEvent(a->out_edges.at(0), p2, 15);
+    auto a_c_r_f = EventFactory::createReadFinishEvent(a->out_edges.at(0), p2, 20);
+
+    auto  x_b_r_s = EventFactory::createReadStartEvent(x->out_edges.at(0), p1, 20);
+    auto  x_b_r_f = EventFactory::createReadFinishEvent(x->out_edges.at(0), p1, 25);
+    auto  y_b_r_s = EventFactory::createReadStartEvent(y->out_edges.at(0), p1, 25);
+    auto  y_b_r_f = EventFactory::createReadFinishEvent(y->out_edges.at(0), p1, 30);
+
+    auto b_s = EventFactory::createTaskStartEvent(b, p1, 30);
+    auto b_f = EventFactory::createTaskFinishEvent(b, p1, 35);
+    auto b_m_w_s = EventFactory::createWriteStartEvent(b->out_edges.at(0), p1, 35);
+    auto b_m_w_f = EventFactory::createWriteFinishEvent(b->out_edges.at(0), p1, 40);
+
+    auto c_s = EventFactory::createTaskStartEvent(c, p2, 20);
+    auto c_f = EventFactory::createTaskFinishEvent(c, p2, 40);
+
+    auto m_s = EventFactory::createTaskStartEvent(m, p1, 40);
+    auto m_f = EventFactory::createTaskFinishEvent(m, p1, 45);
+
+    a_f->addPredecessorInPlanning(a_s);
+
+    a_c_w_f->addPredecessorInPlanning(a_c_w_s);
+    a_c_r_s->addPredecessorInPlanning(a_c_w_f);
+    a_c_r_f->addPredecessorInPlanning(a_c_r_s);
+
+    x_b_r_f->addPredecessorInPlanning(x_b_r_s);
+    y_b_r_s->addPredecessorInPlanning(x_b_r_f);
+    y_b_r_f->addPredecessorInPlanning(y_b_r_s);
+    b_s->addPredecessorInPlanning(x_b_r_f);
+    b_s->addPredecessorInPlanning(y_b_r_f);
+    b_f->addPredecessorInPlanning(b_s);
+    b_m_w_s->addPredecessorInPlanning(b_f);
+    b_m_w_f->addPredecessorInPlanning(b_m_w_s);
+    m_s->addPredecessorInPlanning(b_m_w_f);
+    m_f->addPredecessorInPlanning(m_s);
+    c_s->addPredecessorInPlanning(a_c_r_f);
+    c_f->addPredecessorInPlanning(c_s);
+    m_s->addPredecessorInPlanning(c_f);
+
+    events.insert(a_f);
+    //a-f is unattached
+    events.reschedule(a_f->id, 21);
+
+    EXPECT_EQ(a_c_w_s->getActualTimeFire(),10);
+    EXPECT_EQ(x_b_r_f->getActualTimeFire(),25);
+    EXPECT_EQ(b_s->getActualTimeFire(),30);
+
+    a_c_w_s->addPredecessorInPlanning(a_f);
+    x_b_r_s->addPredecessorInPlanning(a_f);
+
+     events.insert(a_s);
+    events.insert(a_c_w_s);    events.insert(a_c_w_f);
+    events.insert(a_c_r_s);    events.insert(a_c_r_f);
+    events.insert(x_b_r_s);    events.insert(x_b_r_f);
+    events.insert(y_b_r_s);    events.insert(y_b_r_f);
+    events.insert(b_s);    events.insert(b_f);
+    events.insert(b_m_w_s);    events.insert(b_m_w_f);
+    events.insert(c_s);    events.insert(c_f);
+    events.insert(m_s);    events.insert(m_f);
+
+
+    EXPECT_NO_THROW({
+
+        //adding predecessors in planning after reschedule does propagate rescheduling
+        EXPECT_EQ(events.find("a-c-w-s").get()->getActualTimeFire(),10);
+       EXPECT_EQ(events.find("x-b-r-f").get()->getActualTimeFire(),25);
+       EXPECT_EQ(events.find("b-s").get()->getActualTimeFire(),30);
+       EXPECT_EQ(events.find("c-f").get()->getActualTimeFire(),40);
+
+
+        //we explicitly repair the constraints before firing a-f
+        std::vector<TimeShift> repair;
+        a_f->enforceSuccessorConstraints(repair);
+        for (auto& s : repair) {
+            events.reschedulePure(s.ev->id, s.newTime);
+        }
+
+        EXPECT_EQ(events.find("a-c-w-s").get()->getActualTimeFire(),21);
+        EXPECT_EQ(events.find("a-c-w-f").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("a-c-r-s").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("a-c-r-f").get()->getActualTimeFire(),31);
+        EXPECT_EQ(events.find("c-s").get()->getActualTimeFire(),31);
+        EXPECT_EQ(events.find("c-f").get()->getActualTimeFire(),51);
+
+        EXPECT_EQ(events.find("x-b-r-s").get()->getActualTimeFire(),21);
+        EXPECT_EQ(events.find("x-b-r-f").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("y-b-r-s").get()->getActualTimeFire(),26);
+        EXPECT_EQ(events.find("y-b-r-f").get()->getActualTimeFire(),31);
+
+        EXPECT_EQ(events.find("b-s").get()->getActualTimeFire(),31);
+        EXPECT_EQ(events.find("b-f").get()->getActualTimeFire(),36);
+        EXPECT_EQ(events.find("b-m-w-s").get()->getActualTimeFire(),36);
+        EXPECT_EQ(events.find("b-m-w-f").get()->getActualTimeFire(),41);
+
+        EXPECT_EQ(events.find("m-s").get()->getActualTimeFire(),51);
+        EXPECT_EQ(events.find("m-f").get()->getActualTimeFire(),56);
+
+    });
+
+}
+
+TEST(enforceSuccessorConstraintsTest, DiamondPullsBack) {
+
+    auto p1 = ClusterFactory::createSingleProcessor(80, 1.0);
+    auto p2 = ClusterFactory::createSingleProcessor(80, 1.0);
+
+     graph_t* g = new_graph();
+
+    auto a = new_vertex2Weights(g, "a", 100.0, 50, nullptr);
+    auto b = new_vertex2Weights(g, "b", 100.0, 50, nullptr);
+    auto c = new_vertex2Weights(g, "c", 100.0, 50, nullptr);
+    auto m = new_vertex2Weights(g, "m", 100.0, 50, nullptr);
+    auto x = new_vertex2Weights(g, "x", 100.0, 50, nullptr);
+    auto y = new_vertex2Weights(g, "y", 100.0, 50, nullptr);
+
+    new_edge(g, a, c, 20, nullptr);
+    new_edge(g, b, m, 20, nullptr);
+    new_edge(g, c, m, 20,nullptr);
+    new_edge(g, x, b, 20, nullptr);
+    new_edge(g, y, b, 20, nullptr);
+
+    auto a_f = EventFactory::createTaskFinishEvent(a, p1, 10);
+    auto a_s = EventFactory::createTaskStartEvent(a, p1, 5);
+
+    auto a_c_w_s = EventFactory::createWriteStartEvent(a->out_edges.at(0), p1, 10);
+    auto a_c_w_f = EventFactory::createWriteFinishEvent(a->out_edges.at(0), p1, 15);
+    auto a_c_r_s = EventFactory::createReadStartEvent(a->out_edges.at(0), p2, 15);
+    auto a_c_r_f = EventFactory::createReadFinishEvent(a->out_edges.at(0), p2, 20);
+
+    auto  x_b_r_s = EventFactory::createReadStartEvent(x->out_edges.at(0), p1, 20);
+    auto  x_b_r_f = EventFactory::createReadFinishEvent(x->out_edges.at(0), p1, 25);
+    auto  y_b_r_s = EventFactory::createReadStartEvent(y->out_edges.at(0), p1, 25);
+    auto  y_b_r_f = EventFactory::createReadFinishEvent(y->out_edges.at(0), p1, 30);
+
+    auto b_s = EventFactory::createTaskStartEvent(b, p1, 30);
+    auto b_f = EventFactory::createTaskFinishEvent(b, p1, 35);
+    auto b_m_w_s = EventFactory::createWriteStartEvent(b->out_edges.at(0), p1, 35);
+    auto b_m_w_f = EventFactory::createWriteFinishEvent(b->out_edges.at(0), p1, 40);
+
+    auto c_s = EventFactory::createTaskStartEvent(c, p2, 20);
+    auto c_f = EventFactory::createTaskFinishEvent(c, p2, 40);
+
+    auto m_s = EventFactory::createTaskStartEvent(m, p1, 40);
+    auto m_f = EventFactory::createTaskFinishEvent(m, p1, 45);
+
+    a_f->addPredecessorInPlanning(a_s);
+
+    a_c_w_f->addPredecessorInPlanning(a_c_w_s);
+    a_c_r_s->addPredecessorInPlanning(a_c_w_f);
+    a_c_r_f->addPredecessorInPlanning(a_c_r_s);
+
+    x_b_r_f->addPredecessorInPlanning(x_b_r_s);
+    y_b_r_s->addPredecessorInPlanning(x_b_r_f);
+    y_b_r_f->addPredecessorInPlanning(y_b_r_s);
+    b_s->addPredecessorInPlanning(x_b_r_f);
+    b_s->addPredecessorInPlanning(y_b_r_f);
+    b_f->addPredecessorInPlanning(b_s);
+    b_m_w_s->addPredecessorInPlanning(b_f);
+    b_m_w_f->addPredecessorInPlanning(b_m_w_s);
+    m_s->addPredecessorInPlanning(b_m_w_f);
+    m_f->addPredecessorInPlanning(m_s);
+    c_s->addPredecessorInPlanning(a_c_r_f);
+    c_f->addPredecessorInPlanning(c_s);
+    m_s->addPredecessorInPlanning(c_f);
+
+    events.insert(a_f);
+    //a-f is unattached
+    events.reschedule(a_f->id, 7);
+
+    EXPECT_EQ(a_c_w_s->getActualTimeFire(),10);
+    EXPECT_EQ(x_b_r_f->getActualTimeFire(),25);
+    EXPECT_EQ(b_s->getActualTimeFire(),30);
+
+    a_c_w_s->addPredecessorInPlanning(a_f);
+    x_b_r_s->addPredecessorInPlanning(a_f);
+
+     events.insert(a_s);
+    events.insert(a_c_w_s);    events.insert(a_c_w_f);
+    events.insert(a_c_r_s);    events.insert(a_c_r_f);
+    events.insert(x_b_r_s);    events.insert(x_b_r_f);
+    events.insert(y_b_r_s);    events.insert(y_b_r_f);
+    events.insert(b_s);    events.insert(b_f);
+    events.insert(b_m_w_s);    events.insert(b_m_w_f);
+    events.insert(c_s);    events.insert(c_f);
+    events.insert(m_s);    events.insert(m_f);
+
+
+    EXPECT_NO_THROW({
+
+        //adding predecessors in planning after reschedule does propagate rescheduling
+        EXPECT_EQ(events.find("a-c-w-s").get()->getActualTimeFire(),10);
+       EXPECT_EQ(events.find("x-b-r-f").get()->getActualTimeFire(),25);
+       EXPECT_EQ(events.find("b-s").get()->getActualTimeFire(),30);
+       EXPECT_EQ(events.find("c-f").get()->getActualTimeFire(),40);
+
+
+        //we explicitly repair the constraints before firing a-f
+        std::vector<TimeShift> repair;
+        a_f->enforceSuccessorConstraints(repair);
+        for (auto& s : repair) {
+            events.reschedulePure(s.ev->id, s.newTime);
+        }
+
+        EXPECT_EQ(events.find("a-c-w-s").get()->getActualTimeFire(),7);
+        EXPECT_EQ(events.find("a-c-w-f").get()->getActualTimeFire(),12);
+        EXPECT_EQ(events.find("a-c-r-s").get()->getActualTimeFire(),12);
+        EXPECT_EQ(events.find("a-c-r-f").get()->getActualTimeFire(),17);
+        EXPECT_EQ(events.find("c-s").get()->getActualTimeFire(),17);
+        EXPECT_EQ(events.find("c-f").get()->getActualTimeFire(),37);
+
+        EXPECT_EQ(events.find("x-b-r-s").get()->getActualTimeFire(),7);
+        EXPECT_EQ(events.find("x-b-r-f").get()->getActualTimeFire(),12);
+        EXPECT_EQ(events.find("y-b-r-s").get()->getActualTimeFire(),12);
+        EXPECT_EQ(events.find("y-b-r-f").get()->getActualTimeFire(),17);
+
+        EXPECT_EQ(events.find("b-s").get()->getActualTimeFire(),17);
+        EXPECT_EQ(events.find("b-f").get()->getActualTimeFire(),22);
+        EXPECT_EQ(events.find("b-m-w-s").get()->getActualTimeFire(),22);
+        EXPECT_EQ(events.find("b-m-w-f").get()->getActualTimeFire(),27);
+
+        EXPECT_EQ(events.find("m-s").get()->getActualTimeFire(),37);
+        EXPECT_EQ(events.find("m-f").get()->getActualTimeFire(),42);
+
+    });
+
 }

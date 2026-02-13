@@ -99,7 +99,6 @@ private:
 
     void setActualTimeFireInternal(double t) noexcept
     {
-        std::cout << "set actual time of "<<this->id<< " to "<<t<<std::endl;;
         assert(!isManaged && "Cannot mutate topology of live event");
 
         actualTimeFire = t;
@@ -293,38 +292,60 @@ public:
     }
 
 
-    void enforceSuccessorConstraints(std::vector<TimeShift>& shifts)
-    {
-        std::unordered_set<Event*> visited;
-        enforceSuccessorConstraintsImpl(visited, shifts);
+    void enforceSuccessorConstraints(std::vector<TimeShift>& shifts) {
+        std::cout << "enforce constraints on "<<this->id<<std::endl;;
+    // We use a queue to handle the diamond dependency correctly
+    std::deque<std::shared_ptr<Event>> worklist;
+
+    // Start by checking the immediate successors of the event that just fired/moved
+    for (auto& sw : successors) {
+        if (auto s = sw.lock()) worklist.push_back(s);
     }
 
-    void enforceSuccessorConstraintsImpl(
-        std::unordered_set<Event*>& visited,
-        std::vector<TimeShift>& shifts)
-    {
-        if (!visited.insert(this).second)
-            return;
+    while (!worklist.empty()) {
+        auto current = worklist.front();
+        worklist.pop_front();
 
-        cleanupSuccessors();
+        double oldTime = current->getActualTimeFire();
+        double limiting = current->earliestAllowedTime(shifts);
 
-        for (auto& sw : successors) {
-            auto s = sw.lock();
-            if (!s)
-                continue;
+        // Use a small epsilon to avoid floating point jitter
+        if (std::abs(limiting - plannedTime(current, shifts)) > 1e-7) {
 
-            double earliestAllowed = s->earliestAllowedTime(shifts);
+            if (current->isStart()) {
+                // 1. Calculate the displacement (how much the start is moving)
+                double diff = limiting - oldTime;
 
-            // ONLY fix illegal successors
-            if (plannedTime(s, shifts) < earliestAllowed) {
+                // 2. Shift the Start
+                updateOrAddShift(shifts, current.get(), limiting);
 
-                shifts.push_back({ s.get(), earliestAllowed });
+                // 3. IMMEDIATELY shift the associated Finish by the same diff
+                // This preserves duration without needing duration stored anywhere
+                auto ourFinish = current->getSuccessors().at(0).lock();
+                if (ourFinish) {
+                    double newFinTime = ourFinish->getActualTimeFire() + diff;
+                    updateOrAddShift(shifts, ourFinish.get(), newFinTime);
 
-                // Continue repairing downstream
-                s->enforceSuccessorConstraintsImpl(visited, shifts);
+                    // 4. Queue the successors of the Finish
+                    for (auto& sw : ourFinish->getSuccessors()) {
+                        if (auto s = sw.lock()) worklist.push_back(s);
+                    }
+                }
+            }
+            else {
+                // It's a Finish or an I/O event
+                updateOrAddShift(shifts, current.get(), limiting);
+
+                // Queue successors to check if they need to move too
+                for (auto& sw : current->getSuccessors()) {
+                    if (auto s = sw.lock()) worklist.push_back(s);
+                }
             }
         }
     }
+        std::cout << "END enforce constraints on "<<this->id<<std::endl;
+}
+
 
     void addPredecessorPure(const std::shared_ptr<Event>& pred)
     {
@@ -379,10 +400,10 @@ public:
         this->setExpectedTimeFireInternal(this->getExpectedTimeFire() + diff);
 
         // 4. and shift all successors
-        propagateAllSuccessorsForward(diff, /*inPlanning=*/true);
+        propagateAllSuccessorsForwardInPlanning(diff);
     }
 
-    void propagateAllSuccessorsForward(double diff, bool inPlanning)
+    void propagateAllSuccessorsForwardInPlanning(double diff)
     {
         if (diff <= 0.0)
             return;
@@ -413,21 +434,20 @@ public:
                         continue;
                     assert(succ->isStart());
 
-                    double oldSuccTime = inPlanning? succ->getVisibleTimeFireForPlanning(): succ->getActualTimeFire();
+                    double oldSuccTime =  succ->getVisibleTimeFireForPlanning();
                     double newSuccTime = oldSuccTime;
 
-                    double oldCurrTime = inPlanning? current->getVisibleTimeFireForPlanning(): current->getActualTimeFire();
+                    double oldCurrTime = current->getVisibleTimeFireForPlanning();
                     // shifting starts happens only if we are the limiting predecesoor
                     if (oldCurrTime > oldSuccTime) {
                         //current is the limiter, move the start successor forward to our time
                         newSuccTime =  oldSuccTime + (oldCurrTime-oldSuccTime);
                         double localDiff = newSuccTime - oldSuccTime;
 
-                        inPlanning? succ->setActualTimeFireInternal(newSuccTime): succ->forceUpdateTimeFromManager(newSuccTime);
-                        if (inPlanning) {
-                            succ->setExpectedTimeFireInternal(newSuccTime);
-                            assert(succ->getExpectedTimeFire() == succ->getActualTimeFire());
-                        }
+                        succ->setActualTimeFireInternal(newSuccTime);
+                        succ->setExpectedTimeFireInternal(newSuccTime);
+                        assert(succ->getExpectedTimeFire() == succ->getActualTimeFire());
+
 
                         if (visitedShift[succ.get()] < localDiff) {
                             visitedShift[succ.get()] = localDiff;
@@ -438,28 +458,102 @@ public:
                 }
             }
             else {
-                // curr is start, can have only one finish - its own
-                assert(current->getSuccessors().size()==1);
-                std::shared_ptr<Event> succFinish = current->successors.at(0).lock();
+                // curr is start, can have only one finish - its own; unless we are still planning and have not yet added the finish. But no 2 or more finishes
+               assert(current->getSuccessors().size()<=1);
+                if (current->getSuccessors().size()>0) {
+                    std::shared_ptr<Event> succFinish = current->successors.at(0).lock();
 
-                double oldFinishTime = inPlanning?  succFinish->getVisibleTimeFireForPlanning(): succFinish->getActualTimeFire();
-                double newFinishTime = oldFinishTime + currentDiff;
+                    double oldFinishTime =  succFinish->getVisibleTimeFireForPlanning();
+                    double newFinishTime = oldFinishTime + currentDiff;
 
-                inPlanning? succFinish->setActualTimeFireInternal(newFinishTime): succFinish->forceUpdateTimeFromManager(newFinishTime);
-                if (inPlanning) {
+                    succFinish->setActualTimeFireInternal(newFinishTime);
                     succFinish->setExpectedTimeFireInternal(newFinishTime);
                     assert(succFinish->getExpectedTimeFire() == succFinish->getActualTimeFire());
-                }
 
-                if (visitedShift[succFinish.get()] < currentDiff) {
-                    visitedShift[succFinish.get()] = currentDiff;
-                    worklist.push_back({succFinish, currentDiff});
+                    if (visitedShift[succFinish.get()] < currentDiff) {
+                        visitedShift[succFinish.get()] = currentDiff;
+                        worklist.push_back({succFinish, currentDiff});
+                    }
                 }
 
             }
 
         }
     }
+    void updateOrAddShift(std::vector<TimeShift>& shifts, Event* ev, double newTime) {
+      //  std::cout << "update shift "<<ev->id<<" to "<<newTime<<std::endl;
+        for (auto& s : shifts) {
+            if (s.ev == ev) {
+                s.newTime = newTime;
+                return;
+            }
+        }
+        shifts.push_back({ ev, newTime });
+    }
+
+
+    void propagateAllSuccessorsForwardInExecution(double initialDiff, std::vector<TimeShift>& shifts)
+{
+    if (initialDiff <= 1e-7) return;
+
+    // Maps event to the max diff applied to it during this propagation
+    std::unordered_map<Event*, double> visitedShift;
+    std::deque<std::shared_ptr<Event>> worklist;
+
+    // Mark the starting event as shifted
+    visitedShift[this] = initialDiff;
+
+    // We don't need to add 'this' to shifts because reschedulePure already moved it.
+    // We start by checking everyone who depends on 'this'
+    for (auto& sw : successors) {
+        if (auto s = sw.lock()) {
+            worklist.push_back(s);
+        }
+    }
+
+    while (!worklist.empty()) {
+        auto current = worklist.front();
+        worklist.pop_front();
+
+        // Get the latest fire time of all predecessors (including any already in 'shifts')
+        double newLimitingTime = current->earliestAllowedTime(shifts);
+        double oldFireTime = current->getActualTimeFire(); // The time in the (unsorted) set
+
+        if (current->isFinish()) {
+            // FINISH RULE: Preserve duration from Start
+            auto startEv = current->getPredecessors().at(0);
+            // How much did the start move?
+            double startDiff = visitedShift[startEv.get()];
+
+            if (startDiff > visitedShift[current.get()]) {
+                double newFinishTime = oldFireTime + startDiff;
+                updateOrAddShift(shifts, current.get(), newFinishTime);
+                visitedShift[current.get()] = startDiff;
+
+                // Propagate to successors of this finish
+                for (auto& sw : current->successors) {
+                    if (auto next = sw.lock()) worklist.push_back(next);
+                }
+            }
+        }
+        else {
+            // START RULE: Move only if predecessors pushed us past our current time
+            if (newLimitingTime > oldFireTime + 1e-7) {
+                double localDiff = newLimitingTime - oldFireTime;
+
+                if (localDiff > visitedShift[current.get()]) {
+                    updateOrAddShift(shifts, current.get(), newLimitingTime);
+                    visitedShift[current.get()] = localDiff;
+
+                    // Propagate to the finish of this start
+                    for (auto& sw : current->successors) {
+                        if (auto next = sw.lock()) worklist.push_back(next);
+                    }
+                }
+            }
+        }
+    }
+}
 
     void adjustBothPlannedFireTimes(double newTime)
     {
@@ -474,7 +568,7 @@ public:
         setActualTimeFireInternal(newTime);
 
         double diff = newTime - oldTime;
-        propagateAllSuccessorsForward(diff, true);
+        propagateAllSuccessorsForwardInPlanning(diff);
     }
 
     //////////////////////// CHECK FOR CYCLES AND HELPERS ///////////////////////////////////
@@ -676,7 +770,8 @@ public:
         return true;
     }
     bool reschedulePure(const std::string& id, double newTime)
-    {    //  std::cout<<"reschedule pure "<<id<<" to "<<newTime<<std::endl;
+    {
+      //  std::cout<<"reschedule pure "<<id<<" to "<<newTime<<std::endl;
 
         auto it = eventById.find(id);
         if (it == eventById.end())
@@ -715,12 +810,14 @@ public:
     bool reschedule(const std::string& id, double newTime)
     {
 
+
         auto it = eventById.find(id);
         if (it == eventById.end())
             return false;
 
         EventPtr ev = *(it->second);
         //  std::cout <<" from "<<ev->getActualTimeFire()<<std::endl;;
+        std::cout << "reschedule "<<id<<" to "<<newTime<<std::endl;
 
         const double oldTime = ev->actualTimeFire;
         double diff = newTime - oldTime;
@@ -750,16 +847,16 @@ public:
         std::vector<TimeShift> shifts;
         if (diff>0) {
 
-            eventToPushAfter->propagateAllSuccessorsForward(diff, /*inPlanning=*/false);
+            eventToPushAfter->propagateAllSuccessorsForwardInExecution(diff, shifts);
         } else {
             eventToPushAfter->pullAllSuccessorsEarlierByRuntime(shifts);
         }
 
         for (auto& s : shifts) {
-            std::cout << "move "<<s.ev->id<<" from "<<s. ev->getActualTimeFire()<< " to "<<s.newTime<<", \n";
+          //  std::cout << "shifts: move "<<s.ev->id<<" from "<<s. ev->getActualTimeFire()<< " to "<<s.newTime<<", ";
             reschedulePure(s.ev->id, s.newTime);
         }
-        std::cout << std::endl;
+     //   std::cout << std::endl;
         return true;
     }
 
