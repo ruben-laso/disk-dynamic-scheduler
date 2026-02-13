@@ -226,6 +226,20 @@ public:
         return t;
     }
 
+    double earliestAllowedTimeFast(const std::unordered_map<Event*, double>& fastShifts) {
+        double t = 0;
+        for (auto p : predecessors) {
+            // Look in the map first (O(1) lookup)
+            auto it = fastShifts.find(p.get());
+
+            // If it's in the map, use the new shifted time; otherwise, use the current time
+            double pTime = (it != fastShifts.end()) ? it->second : p->getActualTimeFire();
+
+            t = std::max(t, pTime);
+        }
+        return t;
+    }
+
 
     double plannedTime(std::shared_ptr<Event> e,
         const std::vector<TimeShift>& shifts)
@@ -291,13 +305,12 @@ public:
         }
     }
 
-
-    void enforceSuccessorConstraints(std::vector<TimeShift>& shifts) {
-        std::cout << "enforce constraints on "<<this->id<<std::endl;;
-    // We use a queue to handle the diamond dependency correctly
+    void enforceSuccessorConstraints(std::vector<TimeShift>& outShifts) {
     std::deque<std::shared_ptr<Event>> worklist;
+    // Map of Event* -> NewTime
+    std::unordered_map<Event*, double> fastShifts;
 
-    // Start by checking the immediate successors of the event that just fired/moved
+    // 1. Initial Worklist seed
     for (auto& sw : successors) {
         if (auto s = sw.lock()) worklist.push_back(s);
     }
@@ -306,44 +319,52 @@ public:
         auto current = worklist.front();
         worklist.pop_front();
 
-        double oldTime = current->getActualTimeFire();
-        double limiting = current->earliestAllowedTime(shifts);
+        // 2. Fast check for current scheduled time (from map or object)
+        auto it = fastShifts.find(current.get());
+        double currentTime = (it != fastShifts.end()) ? it->second : current->getActualTimeFire();
 
-        // Use a small epsilon to avoid floating point jitter
-        if (std::abs(limiting - plannedTime(current, shifts)) > 1e-7) {
+        // 3. Fast check for limiting constraint
+        double limiting = current->earliestAllowedTimeFast(fastShifts);
+
+        // Only proceed if the event actually needs to move
+        if (std::abs(limiting - currentTime) > 1e-7) {
 
             if (current->isStart()) {
-                // 1. Calculate the displacement (how much the start is moving)
-                double diff = limiting - oldTime;
+                // Calculate the displacement based on ACTUAL time, not map time
+                double diff = limiting - current->getActualTimeFire();
+                fastShifts[current.get()] = limiting;
 
-                // 2. Shift the Start
-                updateOrAddShift(shifts, current.get(), limiting);
-
-                // 3. IMMEDIATELY shift the associated Finish by the same diff
-                // This preserves duration without needing duration stored anywhere
+                assert(current->getSuccessors().size()==1);
                 auto ourFinish = current->getSuccessors().at(0).lock();
                 if (ourFinish) {
                     double newFinTime = ourFinish->getActualTimeFire() + diff;
-                    updateOrAddShift(shifts, ourFinish.get(), newFinTime);
 
-                    // 4. Queue the successors of the Finish
-                    for (auto& sw : ourFinish->getSuccessors()) {
-                        if (auto s = sw.lock()) worklist.push_back(s);
+                    // Only queue successors of finish if it actually changed
+                    auto fIt = fastShifts.find(ourFinish.get());
+                    double fCurrent = (fIt != fastShifts.end()) ? fIt->second : ourFinish->getActualTimeFire();
+
+                    if (std::abs(newFinTime - fCurrent) > 1e-7) {
+                        fastShifts[ourFinish.get()] = newFinTime;
+                        for (auto& sw : ourFinish->getSuccessors()) {
+                            if (auto s = sw.lock()) worklist.push_back(s);
+                        }
                     }
                 }
             }
             else {
-                // It's a Finish or an I/O event
-                updateOrAddShift(shifts, current.get(), limiting);
-
-                // Queue successors to check if they need to move too
+                // It's a Finish or I/O event
+                fastShifts[current.get()] = limiting;
                 for (auto& sw : current->getSuccessors()) {
                     if (auto s = sw.lock()) worklist.push_back(s);
                 }
             }
         }
     }
-        std::cout << "END enforce constraints on "<<this->id<<std::endl;
+
+    // 4. Fill the output vector once (O(N))
+    for (auto const& [ev, time] : fastShifts) {
+        outShifts.push_back({ev, time});
+    }
 }
 
 
@@ -491,64 +512,109 @@ public:
         shifts.push_back({ ev, newTime });
     }
 
+    void propagateAllSuccessorsForwardInExecution(double initialDiff, std::unordered_map<Event*, double>& fastShifts) {
+        if (initialDiff <= 1e-7) return;
 
-    void propagateAllSuccessorsForwardInExecution(double initialDiff, std::vector<TimeShift>& shifts)
-{
-    if (initialDiff <= 1e-7) return;
+        // We use visitedShift to track the max displacement applied to each event
+        std::unordered_map<Event*, double> visitedShift;
+        std::deque<std::shared_ptr<Event>> worklist;
 
-    // Maps event to the max diff applied to it during this propagation
-    std::unordered_map<Event*, double> visitedShift;
-    std::deque<std::shared_ptr<Event>> worklist;
+        visitedShift[this] = initialDiff;
 
-    // Mark the starting event as shifted
-    visitedShift[this] = initialDiff;
+        for (auto& sw : successors) {
+            if (auto s = sw.lock()) worklist.push_back(s);
+        }
 
-    // We don't need to add 'this' to shifts because reschedulePure already moved it.
-    // We start by checking everyone who depends on 'this'
-    for (auto& sw : successors) {
-        if (auto s = sw.lock()) {
-            worklist.push_back(s);
+        while (!worklist.empty()) {
+            auto current = worklist.front();
+            worklist.pop_front();
+
+            double oldFireTime = current->getActualTimeFire();
+            double newLimitingTime = current->earliestAllowedTimeFast(fastShifts);
+
+            if (current->isFinish()) {
+                auto startEv = current->getPredecessors().at(0);
+                double startDiff = visitedShift[startEv.get()];
+
+                if (startDiff > visitedShift[current.get()]) {
+                    double newFinishTime = oldFireTime + startDiff;
+                    fastShifts[current.get()] = newFinishTime; // O(1)
+                    visitedShift[current.get()] = startDiff;
+
+                    for (auto& sw : current->successors) {
+                        if (auto next = sw.lock()) worklist.push_back(next);
+                    }
+                }
+            }
+            else {
+                if (newLimitingTime > oldFireTime + 1e-7) {
+                    double localDiff = newLimitingTime - oldFireTime;
+                    if (localDiff > visitedShift[current.get()]) {
+                        fastShifts[current.get()] = newLimitingTime; // O(1)
+                        visitedShift[current.get()] = localDiff;
+
+                        for (auto& sw : current->successors) {
+                            if (auto next = sw.lock()) worklist.push_back(next);
+                        }
+                    }
+                }
+            }
         }
     }
 
+
+    void propagatePullEarlierRuntimeFast(std::unordered_map<Event*, double>& fastShifts) {
+    std::unordered_set<Event*> visited;
+    std::deque<std::shared_ptr<Event>> worklist;
+
+    // Start with the successors of the event that just moved earlier
+    for (auto& sw : successors) {
+        if (auto s = sw.lock()) worklist.push_back(s);
+    }
+
     while (!worklist.empty()) {
-        auto current = worklist.front();
+        auto s = worklist.front();
         worklist.pop_front();
 
-        // Get the latest fire time of all predecessors (including any already in 'shifts')
-        double newLimitingTime = current->earliestAllowedTime(shifts);
-        double oldFireTime = current->getActualTimeFire(); // The time in the (unsorted) set
+        // In pulling, we can use a simple visited set because we are
+        // pulling to the "Earliest" possible, which is usually
+        // determined by the 'latest' parent.
+        if (visited.count(s.get())) continue;
 
-        if (current->isFinish()) {
-            // FINISH RULE: Preserve duration from Start
-            auto startEv = current->getPredecessors().at(0);
-            // How much did the start move?
-            double startDiff = visitedShift[startEv.get()];
+        double oldTime = s->getActualTimeFire();
 
-            if (startDiff > visitedShift[current.get()]) {
-                double newFinishTime = oldFireTime + startDiff;
-                updateOrAddShift(shifts, current.get(), newFinishTime);
-                visitedShift[current.get()] = startDiff;
+        if (s->isStart()) {
+            // How early CAN it fire based on the new positions of predecessors?
+            double limiting = s->earliestAllowedTimeFast(fastShifts);
 
-                // Propagate to successors of this finish
-                for (auto& sw : current->successors) {
+            // If the current scheduled time is later than the limiting time, pull it back
+            if (oldTime > limiting) {
+                fastShifts[s.get()] = limiting;
+                visited.insert(s.get());
+
+                for (auto& sw : s->successors) {
                     if (auto next = sw.lock()) worklist.push_back(next);
                 }
             }
         }
         else {
-            // START RULE: Move only if predecessors pushed us past our current time
-            if (newLimitingTime > oldFireTime + 1e-7) {
-                double localDiff = newLimitingTime - oldFireTime;
+            // It's a Finish event
+            assert(s->getPredecessors().size() == 1);
+            auto startEv = s->getPredecessors().at(0);
 
-                if (localDiff > visitedShift[current.get()]) {
-                    updateOrAddShift(shifts, current.get(), newLimitingTime);
-                    visitedShift[current.get()] = localDiff;
+            // Find the NEW time of the start event from our map
+            auto it = fastShifts.find(startEv.get());
+            double fireTimeOfStart = (it != fastShifts.end()) ? it->second : startEv->getActualTimeFire();
 
-                    // Propagate to the finish of this start
-                    for (auto& sw : current->successors) {
-                        if (auto next = sw.lock()) worklist.push_back(next);
-                    }
+            double durationOriginal = s->getActualTimeFire() - startEv->getActualTimeFire();
+            double newFinishTime = fireTimeOfStart + durationOriginal;
+
+            if (newFinishTime < oldTime - 1e-7) {
+                fastShifts[s.get()] = newFinishTime;
+                visited.insert(s.get());
+
+                for (auto& sw : s->successors) {
+                    if (auto next = sw.lock()) worklist.push_back(next);
                 }
             }
         }
@@ -807,58 +873,55 @@ public:
         return true;
     }
 
-    bool reschedule(const std::string& id, double newTime)
-    {
-
-
+    bool reschedule(const std::string& id, double newTime) {
         auto it = eventById.find(id);
-        if (it == eventById.end())
-            return false;
+        if (it == eventById.end()) return false;
 
         EventPtr ev = *(it->second);
-        //  std::cout <<" from "<<ev->getActualTimeFire()<<std::endl;;
-        std::cout << "reschedule "<<id<<" to "<<newTime<<std::endl;
-
+        ev->cleanupSuccessors();
         const double oldTime = ev->actualTimeFire;
+
+        // 1. Initial constraint check
+        double earliest = ev->earliestAllowedTimeFast({});
+        if (newTime < earliest) newTime = earliest;
+
+        if (std::abs(newTime - oldTime) < 1e-7) return true;
+
+        // Use a map for all propagation calculations
+        std::unordered_map<Event*, double> fastShifts;
+        fastShifts[ev.get()] = newTime;
+
         double diff = newTime - oldTime;
-        if (abs(diff)<1e-7)
-            return true;
+        EventPtr eventToPropagateFrom = ev;
 
-        double earliestAllowedForThisEvent = ev->earliestAllowedTime({ });
-        if (newTime<earliestAllowedForThisEvent) {
-            newTime=earliestAllowedForThisEvent;
-        }
-        reschedulePure(id, newTime);
-        auto eventToPushAfter= ev;
-
+        // 2. Handle Start-Finish lockstep immediately in the map
         if (ev->isStart()) {
-            // if reschedule start, keep the original duration by moving the finish accordingly
-            ev->cleanupSuccessors();
-            assert(ev->successors.size()==1);
-            auto myFinish = ev->getSuccessors().at(0) .lock();
-            auto duration = myFinish->getActualTimeFire() - oldTime;
-            double oldTimeMyFinish = myFinish->getActualTimeFire();
-            double newTimeOfFinisher = newTime + duration;
-            reschedulePure(myFinish->id, newTimeOfFinisher);
-            eventToPushAfter = myFinish;
-            diff = newTimeOfFinisher - oldTimeMyFinish;
+            auto myFinish = ev->getSuccessors().at(0).lock();
+            if (myFinish) {
+                double finishOldTime = myFinish->getActualTimeFire();
+                double finishNewTime = finishOldTime + diff;
+                fastShifts[myFinish.get()] = finishNewTime;
+                eventToPropagateFrom = myFinish;
+            }
         }
 
-        std::vector<TimeShift> shifts;
-        if (diff>0) {
-
-            eventToPushAfter->propagateAllSuccessorsForwardInExecution(diff, shifts);
+        // 3. Propagate
+        if (diff > 0) {
+            eventToPropagateFrom->propagateAllSuccessorsForwardInExecution(diff, fastShifts);
         } else {
-            eventToPushAfter->pullAllSuccessorsEarlierByRuntime(shifts);
+            // You should refactor propagatePullEarlierRuntime to use the map similarly
+            eventToPropagateFrom->propagatePullEarlierRuntimeFast(fastShifts);
         }
 
-        for (auto& s : shifts) {
-          //  std::cout << "shifts: move "<<s.ev->id<<" from "<<s. ev->getActualTimeFire()<< " to "<<s.newTime<<", ";
-            reschedulePure(s.ev->id, s.newTime);
+        // 4. Batch Update (The Performance Winner)
+        for (auto& s : fastShifts) {
+            //  std::cout << "shifts: move "<<s.ev->id<<" from "<<s. ev->getActualTimeFire()<< " to "<<s.newTime<<", ";
+            reschedulePure(s.first->id, s.second);
         }
-     //   std::cout << std::endl;
+
         return true;
     }
+
 
     bool remove(const std::string& id)
     {

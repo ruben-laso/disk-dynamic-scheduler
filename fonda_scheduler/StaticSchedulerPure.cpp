@@ -694,7 +694,9 @@ std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEve
     eventFinish->addPredecessorInPlanning(eventStart);
 
     for (auto& e : createdEvents) {
-        eventStart->addPredecessorInPlanning(e);
+        //finishes depend on their corresponding starts, so event start only neeed to depend on finishes
+        if (e->isFinish())
+            eventStart->addPredecessorInPlanning(e);
     }
 
     if (!procCorrect->getLastComputeEvent().expired()) {
