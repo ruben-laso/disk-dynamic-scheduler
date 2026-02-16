@@ -809,7 +809,6 @@ public:
         std::cout << " | Processor: " << processor->id << "\n";
 
         // Timing (Formatted to 4 decimal places)
-        std::cout << std::fixed << std::setprecision(4);
         std::cout << "  Expected Fire: " << (expectedTimeFire < 0 ? "N/A" : std::to_string(expectedTimeFire)) << "\n";
         std::cout << "  Actual Fire:   " << (actualTimeFire < 0 ? "N/A" : std::to_string(actualTimeFire)) << "\n";
 
