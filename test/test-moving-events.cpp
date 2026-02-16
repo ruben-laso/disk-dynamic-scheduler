@@ -1053,3 +1053,26 @@ TEST(enforceSuccessorConstraintsTest, DiamondPullsBack) {
     });
 
 }
+
+
+TEST(enforceSuccessorConstraintsTest, SimpleSuccessorPushedForward)
+{
+    auto first = WorkflowFactory::CreateOneSimpleTaskNoEdges("first", 100.0, 50);
+    auto second = WorkflowFactory::CreateOneSimpleTaskNoEdges("second", 100.0, 50);
+
+    auto p = ClusterFactory::createSingleProcessor(80, 1.0);
+
+    auto first_s = EventFactory::createTaskStartEvent(first, p, 5);
+    auto first_f = EventFactory::createTaskFinishEvent(first, p, 10);
+    auto second_s = EventFactory::createTaskStartEvent(second, p, 10);
+    auto second_f = EventFactory::createTaskFinishEvent(second, p, 20);
+    second_f->addPredecessorInPlanning(second_s);
+    first_f->addPredecessorInPlanning(first_s);
+    second_s->addPredecessorInPlanning(first_f);
+
+    EXPECT_NO_THROW({
+        std::vector<TimeShift> outShifts;
+        second_s->enforceSuccessorConstraints(outShifts);
+        EXPECT_EQ(outShifts.size(), 0);
+    });
+}

@@ -642,7 +642,8 @@ void putChangeOnCluster(vertex_t* vertex, SchedulingResult& schedulingResult, Cl
     checkIfPendingMemoryCorrect(schedulingResult.processorOfAssignment);
     const bool shouldUseImaginary = !real;
 
-    schedulingResult.processorOfAssignment->availableMemoryDuringPreviousTask= schedulingResult.shouldBeFreeOnProcessorDuringTask;
+    schedulingResult.processorOfAssignment->setAvailableMemoryDuringPreviousTask( schedulingResult.shouldBeFreeOnProcessorDuringTask);
+    schedulingResult.processorOfAssignment->setStartOfLastTask(schedulingResult.startTime);
 
     evictAccordingToBestDecision(numberWithEvictedCases, schedulingResult, vertex, isHeft, real);
 

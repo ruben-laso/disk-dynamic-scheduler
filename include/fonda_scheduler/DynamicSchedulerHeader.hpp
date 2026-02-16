@@ -49,7 +49,7 @@ std::set<edge_t*, bool (*)(edge_t*, edge_t*)>::iterator
 scheduleWriteForEdge(const std::shared_ptr<Processor>& thisProc, edge_t* edgeToWrite,
     std::pair<std::shared_ptr<Event>, std::shared_ptr<Event>>& writeEvents, double notEarlierThan, bool onlyPreemptive = false);
 void buildPendingMemoriesAfter(const std::shared_ptr<Processor>& ourModifiedProc, const vertex_t* ourVertex);
-void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModifiedProc);
+void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModifiedProc, double notEarlierThan);
 void checkBestEvents(std::vector<std::shared_ptr<Event>>& bestEvents);
 double assessWritingOfEdge(const edge_t* edge, const std::shared_ptr<Processor>& proc);
 

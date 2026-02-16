@@ -323,6 +323,7 @@ void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& 
     ///////////////////////
 
     proc->setAvailableMemoryDuringPreviousTask( schedulingResult.shouldBeFreeOnProcessorDuringTask, isHeft&&!proc->getIsKeptValid());
+    proc->setStartOfLastTask( schedulingResult.startTime, isHeft&&!proc->getIsKeptValid());
 
     //Apply processor mutations
     for (auto& modifiedProc : schedulingResult.modifiedProcs) {

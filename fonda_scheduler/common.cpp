@@ -367,6 +367,7 @@ void Processor::updateFrom(const Processor& other)
     assert(other.availableMemory <= other.getMemorySize() || std::abs(other.availableMemory - other.getMemorySize()) < 1);
     this->availableMemory = other.availableMemory;
    this->availableMemoryDuringPreviousTask = other.availableMemoryDuringPreviousTask;
+   this->startOfLastTask = other.startOfLastTask;
     std::set<edge_t*, std::function<bool(edge_t*, edge_t*)>> updatedMemories(comparePendingMemories);
     // First, add elements that exist in both and new ones from 'other'
     for (auto* mem : other.pendingMemories) {

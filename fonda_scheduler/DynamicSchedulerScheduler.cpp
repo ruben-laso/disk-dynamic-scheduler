@@ -130,7 +130,7 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
     std::vector<std::shared_ptr<Processor>> modifiedProcs;
     modifiedProcs.emplace_back(ourModifiedProc);
 
-    transferAfterMemoriesToBefore(ourModifiedProc);
+    transferAfterMemoriesToBefore(ourModifiedProc, notEarlierThan);
 
     startTime = std::max(notEarlierThan, ourModifiedProc->getExpectedOrActualReadyTimeCompute());
     auto eventStartTask = Event::createEvent(vertex, nullptr, OnTaskStart, ourModifiedProc,
@@ -606,6 +606,12 @@ scheduleARead(const vertex_t* v, const std::shared_ptr<Event>& ourEvent, std::ve
     if (isDependentOnLastCompute && !ourModifiedProc->getLastComputeEvent().expired() ) {
         assert(!ourModifiedProc->getLastComputeEvent().lock()->isDone);
         eventStartRead->addPredecessorInPlanning(ourModifiedProc->getLastComputeEvent().lock());
+    }
+
+    if (!ourModifiedProc->getLastComputeEvent().expired() && !ourModifiedProc->getLastComputeEvent().lock()->isDone&&
+    ourModifiedProc->getLastComputeEvent().lock()->predecessors.size()>0 ) {
+        //we do not remember how much memory was before the last task, so arrange the read after it
+        eventStartRead->addPredecessorInPlanning(ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart())               ;
     }
 
     const double estimatedTimeOfFinishRead = eventStartRead->getExpectedTimeFire() + incomingEdge->weight / ourModifiedProc->readSpeedDisk;

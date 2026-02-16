@@ -74,6 +74,7 @@ private:
     double readyTimeWrite = 0;
 
     double availableMemoryDuringPreviousTask=-1;
+    double startOfLastTask=-1;
 
 public:
     Processor() = default;
@@ -144,6 +145,22 @@ public:
             throw new std::runtime_error("available memory not set, trying to get.");
         }
         return availableMemoryDuringPreviousTask;
+    }
+
+    void setStartOfLastTask(double newAv, bool canBeInvalid=false)
+    {
+        if (newAv==-1 && !canBeInvalid) {
+            //  throw new std::runtime_error("trying to set available memory to invalid value -1");
+            std::cout << "trying to set startOfLastTask to invalid value -1"<< std::endl;
+        }
+        this->startOfLastTask= newAv;
+    }
+    double getStartOfLastTask()
+    {
+        if ( startOfLastTask==-1) {
+            throw new std::runtime_error("startOfLastTask not set, trying to get.");
+        }
+        return startOfLastTask;
     }
 
     void setReadyTimeCompute(const double newTime)

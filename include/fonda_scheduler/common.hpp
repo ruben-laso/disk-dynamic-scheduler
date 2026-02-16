@@ -92,6 +92,8 @@ private:
     double expectedTimeFire = -1.0;
     double actualTimeFire = -1.0;
 
+
+
     // true once inserted into EventManager
     bool isManaged = false;
     // Only EventManager may change event times
@@ -205,6 +207,48 @@ public:
         return type == OnTaskFinish || type == OnReadFinish || type == OnWriteFinish;
     }
 
+    std::shared_ptr<Event> getCorrespondingStart()
+    {
+        assert(this->isFinish());
+        for (auto predecessor : this->getPredecessors()) {
+                if (predecessor->isStart()) {
+                    if (this->task!=nullptr) {
+                        if (predecessor->task !=nullptr && this->task->name== predecessor->task->name) {
+                            return predecessor;
+                        }
+                    }
+                    else {
+                        if (predecessor->edge !=nullptr && buildEdgeName(this->edge)== buildEdgeName(predecessor->edge)) {
+                            return predecessor;
+                        }
+                    }
+
+                }
+        }
+        throw new std::runtime_error("no corresponding start event found for "+this->id);
+    }
+
+    std::shared_ptr<Event> getCorrespondingFinish()
+    {
+        assert(this->isStart());
+        for (auto successpr : this->getSuccessors()) {
+            auto succ = successpr.lock();
+            if (succ->isFinish()) {
+                if (this->task!=nullptr) {
+                    if (succ->task !=nullptr && this->task->name== succ->task->name) {
+                        return succ;
+                    }
+                }
+                else {
+                    if (succ->edge !=nullptr && buildEdgeName(this->edge)== buildEdgeName(succ->edge)) {
+                        return succ;
+                    }
+                }
+            }
+        }
+        throw new std::runtime_error("no corresponding finish event found for "+this->id);
+    }
+
     double earliestAllowedTimeNoPlanning() const
     {
         double t = -std::numeric_limits<double>::infinity();
@@ -238,6 +282,14 @@ public:
             t = std::max(t, pTime);
         }
         return t;
+    }
+
+    double getOldOrNewTime(Event* ev, const std::unordered_map<Event*, double>& fastShifts) {
+        auto it = fastShifts.find(ev);
+        if (it != fastShifts.end()) {
+            return it->second; // Return the new proposed time
+        }
+        return ev->getActualTimeFire(); // Return the original time
     }
 
 
@@ -291,7 +343,7 @@ public:
             else {
                 //s is finish
                 assert(s->getPredecessors().size()==1);
-                auto startEv = s->getPredecessors().at(0);
+                auto startEv = s->getCorrespondingStart();
                 auto fireTimeOfStart = plannedTime(startEv, shifts);
                 double durationOriginal = s->getActualTimeFire() - startEv->getActualTimeFire();
                 shifts.push_back({ s.get(), fireTimeOfStart + durationOriginal });
@@ -305,12 +357,12 @@ public:
         }
     }
 
-    void enforceSuccessorConstraints(std::vector<TimeShift>& outShifts) {
+   void enforceSuccessorConstraints(std::vector<TimeShift>& outShifts) {
     std::deque<std::shared_ptr<Event>> worklist;
-    // Map of Event* -> NewTime
+    // Map of Event* -> NewTime (O(1) lookups)
     std::unordered_map<Event*, double> fastShifts;
 
-    // 1. Initial Worklist seed
+    // 1. Initial Worklist seed: Check everyone who depends on 'this'
     for (auto& sw : successors) {
         if (auto s = sw.lock()) worklist.push_back(s);
     }
@@ -319,54 +371,64 @@ public:
         auto current = worklist.front();
         worklist.pop_front();
 
-        // 2. Fast check for current scheduled time (from map or object)
-        auto it = fastShifts.find(current.get());
-        double currentTime = (it != fastShifts.end()) ? it->second : current->getActualTimeFire();
+        // Helper to find the "current" time in this transaction
+        double currentTime = getOldOrNewTime(current.get(), fastShifts);
 
-        // 3. Fast check for limiting constraint
-        double limiting = current->earliestAllowedTimeFast(fastShifts);
+        if (current->isStart()) {
+            // RULE: Start must wait for predecessors
+            double limiting = current->earliestAllowedTimeFast(fastShifts);
 
-        // Only proceed if the event actually needs to move
-        if (std::abs(limiting - currentTime) > 1e-7) {
-
-            if (current->isStart()) {
-                // Calculate the displacement based on ACTUAL time, not map time
+            if (std::abs(limiting - currentTime) > 1e-7) {
                 double diff = limiting - current->getActualTimeFire();
                 fastShifts[current.get()] = limiting;
 
-                assert(current->getSuccessors().size()==1);
-                auto ourFinish = current->getSuccessors().at(0).lock();
-                if (ourFinish) {
-                    double newFinTime = ourFinish->getActualTimeFire() + diff;
+                // ATOMIC MOVE: If Start moves, Finish MUST move by same diff
+                auto f = current->getCorrespondingFinish();
+                if (f) {
+                    double newFinTime = f->getActualTimeFire() + diff;
+                    fastShifts[f.get()] = newFinTime;
 
-                    // Only queue successors of finish if it actually changed
-                    auto fIt = fastShifts.find(ourFinish.get());
-                    double fCurrent = (fIt != fastShifts.end()) ? fIt->second : ourFinish->getActualTimeFire();
-
-                    if (std::abs(newFinTime - fCurrent) > 1e-7) {
-                        fastShifts[ourFinish.get()] = newFinTime;
-                        for (auto& sw : ourFinish->getSuccessors()) {
-                            if (auto s = sw.lock()) worklist.push_back(s);
-                        }
+                    // Only queue successors of the Finish
+                    for (auto& sw : f->getSuccessors()) {
+                        if (auto next = sw.lock()) worklist.push_back(next);
                     }
                 }
             }
-            else {
-                // It's a Finish or I/O event
+        }
+        else if (current->isFinish()) {
+            // RULE: Finish must wait for data predecessors AND its own Start
+            auto s = current->getCorrespondingStart();
+            double sTime = getOldOrNewTime(s.get(), fastShifts);
+            double duration = current->getActualTimeFire() - s->getActualTimeFire();
+
+            // It must be at least (Start + Duration) AND >= any other data dependencies
+            double limiting = std::max(current->earliestAllowedTimeFast(fastShifts), sTime + duration);
+
+            if (std::abs(limiting - currentTime) > 1e-7) {
+                fastShifts[current.get()] = limiting;
+                // Check downstream tasks
+                for (auto& sw : current->getSuccessors()) {
+                    if (auto next = sw.lock()) worklist.push_back(next);
+                }
+            }
+        }
+        else {
+            // RULE: Generic I/O or other events
+            double limiting = current->earliestAllowedTimeFast(fastShifts);
+            if (std::abs(limiting - currentTime) > 1e-7) {
                 fastShifts[current.get()] = limiting;
                 for (auto& sw : current->getSuccessors()) {
-                    if (auto s = sw.lock()) worklist.push_back(s);
+                    if (auto next = sw.lock()) worklist.push_back(next);
                 }
             }
         }
     }
 
-    // 4. Fill the output vector once (O(N))
+    // 2. Final Step: Convert our fast map to the output vector
     for (auto const& [ev, time] : fastShifts) {
         outShifts.push_back({ev, time});
     }
 }
-
 
     void addPredecessorPure(const std::shared_ptr<Event>& pred)
     {
@@ -482,7 +544,7 @@ public:
                 // curr is start, can have only one finish - its own; unless we are still planning and have not yet added the finish. But no 2 or more finishes
                assert(current->getSuccessors().size()<=1);
                 if (current->getSuccessors().size()>0) {
-                    std::shared_ptr<Event> succFinish = current->successors.at(0).lock();
+                    std::shared_ptr<Event> succFinish = current->getCorrespondingFinish();
 
                     double oldFinishTime =  succFinish->getVisibleTimeFireForPlanning();
                     double newFinishTime = oldFinishTime + currentDiff;
@@ -533,7 +595,7 @@ public:
             double newLimitingTime = current->earliestAllowedTimeFast(fastShifts);
 
             if (current->isFinish()) {
-                auto startEv = current->getPredecessors().at(0);
+                auto startEv = current->getCorrespondingStart();
                 double startDiff = visitedShift[startEv.get()];
 
                 if (startDiff > visitedShift[current.get()]) {
@@ -600,7 +662,7 @@ public:
         else {
             // It's a Finish event
             assert(s->getPredecessors().size() == 1);
-            auto startEv = s->getPredecessors().at(0);
+            auto startEv = s->getCorrespondingStart();
 
             // Find the NEW time of the start event from our map
             auto it = fastShifts.find(startEv.get());
@@ -814,6 +876,9 @@ public:
 
     bool insert(const EventPtr& ev)
     {
+        if (ev->id=="CHECK_DESIGN_00001635-FASTQC_00001607-r-f") {
+            std::cout << "";
+        }
         // First insertion sanity checks
         if (!ev->isManaged) {
 
@@ -850,7 +915,7 @@ public:
             return true;
 
         // Runtime monotonicity enforcement
-        if (newTime < runtimeNow()) {
+        if (newTime < runtimeNow()) {//&& std::abs(newTime - runtimeNow()) > 1e-7) {
             std::string error = " Illegal backward runtime reschedule\n event: " + ev->id + "\n"
                 + "   requested: " + std::to_string(newTime) + "\n"
                 + "   runtimeNow: " + std::to_string(runtimeNow()) + "\n";
@@ -896,7 +961,7 @@ public:
 
         // 2. Handle Start-Finish lockstep immediately in the map
         if (ev->isStart()) {
-            auto myFinish = ev->getSuccessors().at(0).lock();
+            auto myFinish = ev->getCorrespondingFinish();
             if (myFinish) {
                 double finishOldTime = myFinish->getActualTimeFire();
                 double finishNewTime = finishOldTime + diff;

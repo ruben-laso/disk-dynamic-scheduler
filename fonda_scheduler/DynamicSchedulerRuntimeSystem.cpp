@@ -587,9 +587,14 @@ std::shared_ptr<Processor> findPredecessorsProcessor(const edge_t* incomingEdge,
     return addedProc;
 }
 
-void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModifiedProc)
+void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModifiedProc, double notEarlierThan)
 {
     ourModifiedProc->setAvailableMemoryDuringPreviousTask(ourModifiedProc->getAvailableMemory());
+    double startOfLastTask = ourModifiedProc->getLastComputeEvent().expired() ?
+    0:
+    (ourModifiedProc->getLastComputeEvent().lock()->predecessors.size()>0?
+       ourModifiedProc->getLastComputeEvent().lock() ->getCorrespondingStart()->getVisibleTimeFireForPlanning(): notEarlierThan);
+    ourModifiedProc->setStartOfLastTask(startOfLastTask);
     ourModifiedProc->resetPendingMemories();
     ourModifiedProc->setAvailableMemory(ourModifiedProc->getMemorySize());
     for (auto& item : ourModifiedProc->getAfterPendingMemories()) {
@@ -666,6 +671,7 @@ void Processor::setLastComputeEvent(const std::shared_ptr<Event>& lce)
 {
     this->lastComputeEvent = lce;
     this->readyTimeCompute = lce->getActualTimeFire();
+    this->setStartOfLastTask(lce->getCorrespondingStart()->getActualTimeFire());
 }
 
 double Processor::getReadyTimeCompute() const

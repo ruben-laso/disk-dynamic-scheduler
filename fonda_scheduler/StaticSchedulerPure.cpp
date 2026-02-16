@@ -279,7 +279,8 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, Schedulin
         v->name + "-f");
     eventFinishTask->addPredecessorInPlanning(eventStartTask);
     for (auto created_event : createdEvents) {
-        eventStartTask->addPredecessorInPlanning(created_event);
+        if (created_event->isFinish())
+            eventStartTask->addPredecessorInPlanning(created_event);
     }
 
 
@@ -738,11 +739,15 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
 
         if (predecessor->assignedProcessorId == ourModifiedProc->id) {
             if (!isLocatedOnThisProcessor(incomingEdge, ourModifiedProc->id, true)) {
-                const std::shared_ptr<Event>& eventFinishWriteOfThisEdge = events.find(buildEdgeName(incomingEdge) + "-w-f");
-                assert(eventFinishWriteOfThisEdge!=nullptr);
+
                 assert(isLocatedOnDisk(incomingEdge, true));
 
-                double startOfRead = std::max({ourModifiedProc->getReadyTimeRead(), (*getLocationOnDisk(incomingEdge, true)).afterWhen.value(), eventFinishWriteOfThisEdge->getExpectedTimeFire(), preparationBarrier});
+                const std::shared_ptr<Event>& eventFinishWriteOfThisEdge = events.find(buildEdgeName(incomingEdge) + "-w-f");
+                assert(eventFinishWriteOfThisEdge!=nullptr);
+
+                                double startOfRead = std::max({ourModifiedProc->getReadyTimeRead(), (*getLocationOnDisk(incomingEdge, true)).afterWhen.value(),
+                    eventFinishWriteOfThisEdge->getExpectedTimeFire(),
+                    preparationBarrier});
                 double finishOfRead = startOfRead + edgeWeightToUse / ourModifiedProc->readSpeedDisk;
                 auto readStart= Event::createEvent(nullptr, incomingEdge, OnReadStart, ourModifiedProc,startOfRead, startOfRead, false, buildEdgeName(incomingEdge) + "-r-s");
                 auto readFinish= Event::createEvent(nullptr, incomingEdge, OnReadFinish, ourModifiedProc,finishOfRead, finishOfRead, false, buildEdgeName(incomingEdge) + "-r-f");
@@ -753,6 +758,13 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                 if (startOfRead < ourModifiedProc->getReadyTimeCompute() && ourModifiedProc->getAvailableMemoryDuringPreviousTask() < incomingEdge->weight) {
                     startOfRead = ourModifiedProc->getReadyTimeCompute();
                     isDependentOnLastCompute=true;
+                }
+
+                if (!ourModifiedProc->getLastComputeEvent().expired()) {
+                    //we do not remember how much memory was before the last task, so arrange the read after it
+                    assert(ourModifiedProc->getLastComputeEvent().lock()->getPredecessors().size()==1);
+                    startOfRead = std::max(startOfRead, ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart()->getVisibleTimeFireForPlanning() );
+                    readStart->addPredecessorInPlanning(ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart())               ;
                 }
 
                 readFinish->addPredecessorInPlanning(readStart);
@@ -827,6 +839,12 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                     assert(!ourModifiedProc->getLastComputeEvent().lock()->isDone);
                     readStart->addPredecessorInPlanning(ourModifiedProc->getLastComputeEvent().lock());
                 }
+                if (!ourModifiedProc->getLastComputeEvent().expired()) {
+                    //we do not remember how much memory was before the last task, so arrange the read after it
+                    assert(ourModifiedProc->getLastComputeEvent().lock()->getPredecessors().size()==1);
+                    startOfRead = std::max(startOfRead, ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart()->getVisibleTimeFireForPlanning() );
+                    readStart->addPredecessorInPlanning(ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart())               ;
+                }
                 readStart->addPredecessorInPlanning(eventFinishWriteOfThisEdge);
 
                 ourModifiedProc->setLastReadEvent(readFinish);
@@ -891,6 +909,12 @@ void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& 
                 }
                 if (!ourModifiedProc->getLastReadEvent().expired()) {
                     readStart->addPredecessorInPlanning(ourModifiedProc->getLastReadEvent().lock());
+                }
+                if (!ourModifiedProc->getLastComputeEvent().expired()) {
+                    //we do not remember how much memory was before the last task, so arrange the read after it
+                    assert(ourModifiedProc->getLastComputeEvent().lock()->getPredecessors().size()==1);
+                    startTimeOfRead = std::max(startTimeOfRead, ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart()->getVisibleTimeFireForPlanning() );
+                    readStart->addPredecessorInPlanning(ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart())               ;
                 }
 
                 const std::shared_ptr<Event>& eventFinishPredecessorComputing = events.find(incomingEdge->tail->name + "-f");
