@@ -41,7 +41,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
         readyQ.pop();
-        std::cout<<"deal w "<<vertex->name<<std::endl;
+        //std::cout<<"deal w "<<vertex->name<<std::endl;
         numProcessedVertices++;
         SchedulingResult bestSchedulingResult(nullptr);
         SchedulingResult bestSchedulingResultIncorrect(nullptr);
@@ -58,7 +58,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
         checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         res_events.insert(res_events.end(), newevents.begin(), newevents.end());
 
-        std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
+       /* std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
         std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
 
         for (auto newevent : newevents) {
@@ -67,7 +67,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
 
         std::cout<<"for task "<<vertex->name<<" variant "<< bestSchedulingResult.resultingVar << " on proc "<< bestSchedulingResult.processorOfAssignment->id
                  <<" from "<< bestSchedulingResult.startTime <<" to "<< bestSchedulingResult.finishTime
-        <<" duration is "<<" "<< bestSchedulingResult.finishTime - bestSchedulingResult.startTime << std::endl;
+        <<" duration is "<<" "<< bestSchedulingResult.finishTime - bestSchedulingResult.startTime << std::endl; */
 
 
         assert((*newevents.rbegin())->id== vertex->name+"-f");
@@ -143,7 +143,7 @@ std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentHEFT2(vertex_t* vert
     result.finishTime = std::numeric_limits<double>::max();
 
     std::vector<std::shared_ptr<Event>> bestEvents;
-    std::cout << "assigning vertex "<< vertex->name << std::endl;
+    //std::cout << "assigning vertex "<< vertex->name << std::endl;
 
     for (const auto& [id, processor] : imaginedCluster->getProcessors()) {
         SchedulingResult tentativeResultIncorrect(imaginedClusterIncorrect->getProcessorById(id));
@@ -594,7 +594,7 @@ std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEve
         for (auto it = procCorrect->getPendingMemories().begin(); it != procCorrect->getPendingMemories().end() &&
              stillNeedsToBeEvictedToRun > 0;)
         {
-            std::cout << buildEdgeName(*it)<< " evicted from  proc " << procCorrect->id <<" to reach sumOUt for "<<v->name<< std::endl;
+          //  std::cout << buildEdgeName(*it)<< " evicted from  proc " << procCorrect->id <<" to reach sumOUt for "<<v->name<< std::endl;
             edge_t* currentEdge = *it;
 
             if (currentEdge->head->name != v->name) {

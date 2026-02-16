@@ -370,7 +370,7 @@ void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& 
         proc->loadFromNowhere(out, useImagined, schedulingResult.finishTime);
         checkIfPendingMemoryCorrect(schedulingResult.processorOfAssignment);
         if (schedulingResult.processorOfAssignment->getAvailableMemory() < 0) {
-            std::cout << "NO AVAILABLE MEMORY\n";
+            //std::cout << "NO AVAILABLE MEMORY\n";
         }
     }
 
