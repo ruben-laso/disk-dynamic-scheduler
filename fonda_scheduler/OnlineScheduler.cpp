@@ -1,4 +1,4 @@
-#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
+#include "fonda_scheduler/OnlineSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
 
 std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, std::vector<std::shared_ptr<Processor>>& bestModifiedProcs,

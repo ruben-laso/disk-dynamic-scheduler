@@ -4,7 +4,7 @@
 
 #include "../include/fonda_scheduler/common.hpp"
 
-#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
+#include "fonda_scheduler/OnlineSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
 #include "graph.hpp"
 

@@ -1,4 +1,4 @@
-#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
+#include "fonda_scheduler/OnlineSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
 #include "fonda_scheduler/algorithms.hpp"
 #include "fonda_scheduler/options.hpp"

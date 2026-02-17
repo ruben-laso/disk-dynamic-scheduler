@@ -1,9 +1,9 @@
-#include <gtest/gtest.h>
-#include "WorkflowFactory.cpp"
 #include "ClusterFactory.cpp"
 #include "EventFactory.cpp"
+#include "WorkflowFactory.cpp"
+#include "fonda_scheduler/OnlineSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
-#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
+#include <gtest/gtest.h>
 
 TEST(EventReschedulingTest, OneFinishNoChange) {
 

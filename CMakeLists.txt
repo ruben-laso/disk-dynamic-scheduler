@@ -55,10 +55,10 @@ endif ()
 add_library(fonda_logic STATIC
         "${PROJECT_SOURCE_DIR}/fonda_scheduler/io/graphWeightsBuilder.cpp"
         "${PROJECT_SOURCE_DIR}/fonda_scheduler/common.cpp"
-        "${PROJECT_SOURCE_DIR}/fonda_scheduler/StaticSchedulerPure.cpp"
-        "${PROJECT_SOURCE_DIR}/fonda_scheduler/StaticSchedulerCommon.cpp"
-        "${PROJECT_SOURCE_DIR}/fonda_scheduler/DynamicSchedulerRuntimeSystem.cpp"
-        "${PROJECT_SOURCE_DIR}/fonda_scheduler/DynamicSchedulerScheduler.cpp"
+        "${PROJECT_SOURCE_DIR}/fonda_scheduler/OfflineSchedulerAndBaseline.cpp"
+        "${PROJECT_SOURCE_DIR}/fonda_scheduler/OfflineSchedulerHelpers.cpp"
+        "${PROJECT_SOURCE_DIR}/fonda_scheduler/RuntimeSystem.cpp"
+        "${PROJECT_SOURCE_DIR}/fonda_scheduler/OnlineScheduler.cpp"
 )
 
 target_include_directories(fonda_logic PUBLIC

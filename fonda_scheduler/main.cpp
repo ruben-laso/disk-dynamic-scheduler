@@ -6,13 +6,15 @@
 #include <csignal>
 
 #include "csv/single_include/csv2/csv2.hpp"
-#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
+#include "fonda_scheduler/OnlineSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
 
 #include "fonda_scheduler/io/graphWeightsBuilder.hpp"
 #include "fonda_scheduler/options.hpp"
 #include "fonda_scheduler/utils.hpp"
 #include "memdag/src/graph.hpp"
+
+#include <complex>
 
 /*
  *
@@ -99,17 +101,16 @@ int main(const int argc, char* argv[])
     std::cout << std::setprecision(15);
     std::clog << std::setprecision(15);
 
-    start = std::chrono::system_clock::now();
-
     double runtimeDynamic = 0;
     for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
         assert(u->status==Unscheduled);
     }
-    double dynamic = 0;
+    double onlineMakespan = 0;
 
-    dynamic = dynMedih(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, true, runtimeDynamic);
-    end = std::chrono::system_clock::now();
-    elapsed_seconds = end - start;
+    assert(options.algoNumber!=0); // never use just heft, it is attached to each execution as a third option now.
+    onlineMakespan = onlineMedih(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, true, runtimeDynamic);
+
+
 
 
     for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
@@ -139,35 +140,30 @@ int main(const int argc, char* argv[])
     }
     events.clear();
     std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
-    std::cout << "makespan_dynamic " << dynamic << "\t";
+    std::cout << "makespan_dynamic " << onlineMakespan << "\t";
 
     delete actualCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
     timeInSystem=0;
     clearGraph(graphMemTopology);
-    start = std::chrono::system_clock::now();
-    double runtimeStatic = 0;
+    double runtimOffline = 0;
 
-    //HEFT should not profit from earlier finishing times of tasks and edges in case of deviations
-    if (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT) {
-        for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
-          if (u->factorForRealExecution<1) {
-              u->factorForRealExecution=1;
-          }
-        }
-        for (edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
-            if (e->factorForRealExecution<1) {
-                e->factorForRealExecution=1;
-            }
-        }
-    }
+    start = std::chrono::system_clock::now();
+
+    double stat  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimOffline);
+
+    end = std::chrono::system_clock::now();
+    elapsed_seconds = end - start;
+    std::cout << " duration_of_algorithm " << runtimOffline << " "; // << endl;
+    std::cout << "makespan_static_dynamic " << stat << '\n';
 
     delete actualCluster;
+    delete imaginedCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-
+    imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    timeInSystem=0;
     clearGraph(graphMemTopology);
-    start = std::chrono::system_clock::now();
-    runtimeStatic = 0;
+    double runtimeHeft = 0;
 
     //HEFT should not profit from earlier finishing times of tasks and edges in case of deviations
     if (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT) {
@@ -183,28 +179,11 @@ int main(const int argc, char* argv[])
         }
     }
 
-    double stat  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimeStatic);
+     double heft  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, 0, options.deviationModel, runtimeHeft);//0 is default for heft
 
-    end = std::chrono::system_clock::now();
-    elapsed_seconds = end - start;
-    std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
-    std::cout << "makespan_static_dynamic " << stat << '\n';
 
-    //std::cout<<" dyn/stat "<<(dynamic/stat)<<"\n";
-
- /*  delete actualCluster;
-   delete imaginedCluster;
-    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-    imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-    std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-    clearGraph(graphMemTopology);
-    start = std::chrono::system_clock::now();
-    runtimeStatic=0;
-    d = medih(graphMemTopology, 0, runtimeStatic);//0 is default for heft
-    end = std::chrono::system_clock::now();
-    elapsed_seconds = end - start;
-    std::cout << " duration_of_algorithm " << runtimeStatic << " "; // << endl;
-    std::cout << "makespan heft " << d << '\n'; */
+    std::cout << " duration_of_algorithm " << runtimeHeft << " "; // << endl;
+    std::cout << "makespan heft " << heft << '\n';
 
     delete graphMemTopology;
     delete imaginedCluster;

@@ -21,7 +21,7 @@ inline extern std::map<int, double> processorLoads= std::map<int, double>{};
 inline  extern std::map<int, std::vector<std::tuple<double, double>>> processorWorkTimes=std::map<int, std::vector<std::tuple<double, double>>>{};
 
 
-double dynMedih(graph_t* graph, Cluster* cluster, int algoNum, int deviationNumber, bool upw, double& runtime);
+double onlineMedih(graph_t* graph, Cluster* cluster, int algoNum, int deviationNumber, bool upw, double& runtime);
 double oflineMedihWithEvents(graph_t* graph, Cluster* cluster, int algoNum, int deviationNumber, double& runtime,std::vector<vertex_t*> & processedInThisOrder);
 double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, double& runtime);
 

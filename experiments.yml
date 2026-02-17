@@ -819,34 +819,28 @@ variants:
 
 
 experiments:
-  - name: A1-dev
+  - name: A1-10dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-p ./', '-f input/machines.csv', '-d 1', '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
     #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
-  - name: A2-dev
+  - name: A2-10dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./', '-f input/machines.csv', '-d 1', '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
     #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
-  - name: A3-dev
+  - name: A3-10dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./', '-f input/machines.csv', '-d 1', '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
     #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
-  - name: BASE-dev
-    args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft', '-p ./', '-f input/machines.csv', '-d 1', '-S' ]
-    stdout: out
-    num_nodes: 1
-    procs_per_node: 1
-    num_threads: 1
-    #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
+
 
   - name: A1-30dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', 'no', '-p ./', '-f input/machines.csv', '-d 5', '-S' ]
@@ -869,40 +863,29 @@ experiments:
     procs_per_node: 1
     num_threads: 1
     #slurm_args: [ '--priority', '1' ] #'--partition', 'core8a',
-  - name: BASE-30dev
-    args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft', '-p ./', '-f input/machines.csv', '-d 5', '-S' ]
-    stdout: out
-    num_nodes: 1
-    procs_per_node: 1
-    num_threads: 1
-    #slurm_args: [ '--priority', '1' ] #'--partition', 'core8a',
-  - name: A1-bdev
+
+  - name: A1-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', 'no', '-p ./', '-f input/machines.csv', '-d 2', '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
     #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
-  - name: A2-bdev
+  - name: A2-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./', '-f input/machines.csv', '-d 2', '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
   #  slurm_args: [ '--partition', 'core8a', 'priority', '1']
-  - name: A3-bdev
+  - name: A3-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./', '-f input/machines.csv', '-d 2', '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
     #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
-  - name: BASE-bdev
-    args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft', '-p ./', '-f input/machines.csv', '-d 2', '-S' ]
-    stdout: out
-    num_nodes: 1
-    procs_per_node: 1
-    num_threads: 1
+
 
 
   - name: A1-ndev
@@ -926,18 +909,11 @@ experiments:
     procs_per_node: 1
     num_threads: 1
     #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
-  - name: BASE-ndev
-    args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft', '-p ./', '-f input/machines.csv', '-d 3', '-S' ]
-    stdout: out
-    num_nodes: 1
-    procs_per_node: 1
-    num_threads: 1
-    #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
 
 
 
 ##
 matrix:
   include:
-    - experiments: [ A1-ndev,A2-ndev , A3-ndev,  BASE-ndev, A1-dev, A2-dev, A3-dev, BASE-dev, A1-bdev, A2-bdev, A3-bdev, BASE-bdev, A1-30dev, A2-30dev, A3-30dev, BASE-30dev] # A1-ndev, A3-ndev ] #,
+    - experiments: [ A1-ndev,A2-ndev , A3-ndev,  A1-10dev, A2-10dev, A3-10dev, A1-50dev, A2-50dev, A3-50dev, A1-30dev, A2-30dev, A3-30dev] 
       axes: [penalties]

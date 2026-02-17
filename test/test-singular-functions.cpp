@@ -1,7 +1,7 @@
 #include "ClusterFactory.cpp"
 #include "EventFactory.cpp"
 #include "WorkflowFactory.cpp"
-#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
+#include "fonda_scheduler/OnlineSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
 #include <gtest/gtest.h>
 

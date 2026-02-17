@@ -1,7 +1,7 @@
 #include <queue>
 #include <random>
 
-#include "fonda_scheduler/DynamicSchedulerHeader.hpp"
+#include "fonda_scheduler/OnlineSchedulerHeader.hpp"
 #include "fonda_scheduler/SchedulerHeader.hpp"
 #include "fonda_scheduler/algorithms.hpp"
 
@@ -77,7 +77,7 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int
     return resMakespan;
 }
 
-double dynMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, const bool upw, double& runtime)
+double onlineMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, const bool upw, double& runtime)
 {
     double resMakespan = -1;
     cluster = cluster1;
