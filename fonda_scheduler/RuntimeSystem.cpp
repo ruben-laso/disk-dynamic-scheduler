@@ -62,7 +62,7 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int
         // STEP 3: fire
         // std::cout<<"about to fire event "<<e->id<<" at " <<e->getActualTimeFire()<<" TIMES FIRED "<<e->timesFired<<std::endl;
         e->cleanupSuccessors();
-        e->fire();
+        e->fire(deviationNumber);
 
         const bool removed = events.remove(e->id);
         assert(removed);
@@ -173,7 +173,7 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const i
         // STEP 3: fire
         // std::cout<<"about to fire event "<<e->id<<" at " <<e->getActualTimeFire()<<" TIMES FIRED "<<e->timesFired<<std::endl;
         e->cleanupSuccessors();
-        e->fire();
+        e->fire(deviationNumber);
 
         const bool removed = events.remove(e->id);
         assert(removed);

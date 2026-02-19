@@ -108,7 +108,7 @@ private:
 
     void setExpectedTimeFireInternal(double t) noexcept
     {
-       // std::cout << "set expected time of "<<this->id<< " to "<<t<<std::endl;
+        //std::cout << "set expected time of "<<this->id<< " to "<<t<<std::endl;
         if (isManaged)
             throw std::logic_error("Cannot modify expectedTimeFire after insertion into EventManager");
 
@@ -404,7 +404,8 @@ public:
             // It must be at least (Start + Duration) AND >= any other data dependencies
             double limiting = std::max(current->earliestAllowedTimeFast(fastShifts), sTime + duration);
 
-            if (std::abs(limiting - currentTime) > 1e-7) {
+            double difference = limiting - currentTime;
+            if (std::abs(difference) > 1e-7) {
                 fastShifts[current.get()] = limiting;
                 // Check downstream tasks
                 for (auto& sw : current->getSuccessors()) {
@@ -415,7 +416,8 @@ public:
         else {
             // RULE: Generic I/O or other events
             double limiting = current->earliestAllowedTimeFast(fastShifts);
-            if (std::abs(limiting - currentTime) > 1e-7) {
+            double x = limiting - currentTime;
+            if (std::abs(x) > 1e-7) {
                 fastShifts[current.get()] = limiting;
                 for (auto& sw : current->getSuccessors()) {
                     if (auto next = sw.lock()) worklist.push_back(next);
@@ -488,6 +490,7 @@ public:
 
     void propagateAllSuccessorsForwardInPlanning(double diff)
     {
+        //std::cout << "propapgaget "<<diff<<" from task "<<this->id<<std::endl;;
         if (diff <= 0.0)
             return;
 
@@ -773,7 +776,7 @@ public:
         return hasCycleFrom(shared_from_this(), visited, recStack, true) || hasCycleFrom(shared_from_this(), visited, recStack, false);
     }
 
-    void fire();
+    void fire(int deviationVariant);
 
     void fireTaskStart();
     void scheduleTasksUntilFoundForThisProc();
@@ -835,7 +838,6 @@ public:
     }
 
     void printEventShort() const{
-        std::cout << std::scientific;
         std::cout << "--- Event [" << id << "] ---";
 
         std::cout << " | Processor: " << processor->id ;
@@ -901,8 +903,6 @@ public:
     }
     bool reschedulePure(const std::string& id, double newTime)
     {
-      //  std::cout<<"reschedule pure "<<id<<" to "<<newTime<<std::endl;
-
         auto it = eventById.find(id);
         if (it == eventById.end())
             return false;
@@ -913,6 +913,7 @@ public:
         if (oldTime == newTime)
             return true;
 
+        std::cout<<"reschedule pure "<<id<<" to "<<newTime<< " from "<< ev->getActualTimeFire()<<std::endl;
         // Runtime monotonicity enforcement
         if (newTime < runtimeNow()) {//&& std::abs(newTime - runtimeNow()) > 1e-7) {
             std::string error = " Illegal backward runtime reschedule\n event: " + ev->id + "\n"

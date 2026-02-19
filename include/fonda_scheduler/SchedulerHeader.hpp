@@ -84,24 +84,17 @@ std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, 
 
 double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj);
 
-std::vector<std::shared_ptr<Event>>  tentativeAssignment(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result);
 
-std::vector<std::shared_ptr<Event>>  tentativeAssignment2(vertex_t* v, SchedulingResult& result);
-
-void tentativeAssignmentHEFT(const vertex_t* v, bool shouldUseDeviatedTimes, SchedulingResult& result, SchedulingResult& resultCorrect);
-std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT2( vertex_t* v, SchedulingResult& result);
+std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, SchedulingResult& result);
 std::vector<std::shared_ptr<Event>>
 tentativeAssignmentHEFT_withCorrectionAndEvents(
     vertex_t* v,
-    SchedulingResult& result,
+    SchedulingResult& resultIncorrect,
     SchedulingResult& resultCorrect);
 
 graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>& noMemToWithMem);
 
-void processIncomingEdges(const vertex_t* v, bool shouldUseDeviatedTimes, const bool shouldUseImaginaryCluster, const std::shared_ptr<Processor>& ourModifiedProc,
-    std::vector<std::shared_ptr<Processor>>& modifiedProcs,
-    double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents);
-void processIncomingEdges2(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, std::vector<std::shared_ptr<Processor>>& modifiedProcs,
+void processIncomingEdges(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, std::vector<std::shared_ptr<Processor>>& modifiedProcs,
     double& earliestStartingTimeToComputeVertex, std::vector<std::shared_ptr<Event>>& createdEvents, bool forbidLookingIntoPast);
 void processIncomingEdgesDisregardingMemorySizes(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc,
     std::vector<std::shared_ptr<Processor>>& modifiedProcs, double& earliestStartingTimeToComputeVertex);
@@ -113,10 +106,7 @@ void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDev
 
 void checkIfPendingMemoryCorrect(const std::shared_ptr<Processor>& p);
 
-
-
-void bestTentativeAssignment(bool isHeft, const vertex_t* vertex, SchedulingResult& result, SchedulingResult& correctResultForHeftOnly);
-std::vector<std::shared_ptr<Event>>  bestTentativeAssignment2(bool isHeft,  vertex_t* vertex, SchedulingResult& result, SchedulingResult& incorrectResultForHeftOnly);
+std::vector<std::shared_ptr<Event>>  bestTentativeAssignment(bool isHeft,  vertex_t* vertex, SchedulingResult& result, SchedulingResult& incorrectResultForHeftOnly);
 
 void realSurplusOfOutgoingEdges(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, double& sumOut);
 

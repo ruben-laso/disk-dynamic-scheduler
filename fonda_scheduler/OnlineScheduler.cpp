@@ -102,6 +102,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
     }
 
     for (const auto& event : bestEvents) {
+        //event->printEventShort();
         event->processor = cluster->getProcessorById(event->processor->id);
     }
 

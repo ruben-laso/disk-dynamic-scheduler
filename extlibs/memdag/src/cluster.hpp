@@ -393,7 +393,7 @@ public:
         for (const auto& [key, value] : this->processors) {
 
                 std::cout << "Processor " << value->id
-                            //<< "with memory " << value->getMemorySize() << ", speed " << value->getProcessorSpeed()
+                            << "with memory " << value->getMemorySize() << ", speed " << value->getProcessorSpeed()
                           //<< " and busy? " << value->isBusy //<< " assigned " << (value->isBusy?value->getAssignedTaskId(): -1)
                           << " ready time compute: " << value->getReadyTimeCompute()
                           << " ready time read: " << value->getReadyTimeRead()

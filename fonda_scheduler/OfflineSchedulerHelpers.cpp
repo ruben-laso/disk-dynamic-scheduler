@@ -238,7 +238,7 @@ void realSurplusOfOutgoingEdges(const vertex_t* v, const std::shared_ptr<Process
 }
 
 double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p){
-         //std::cout<<"swap rate "<<task->swapRate<<std::endl;
+
          double result = startTime + timeToRun / p->getProcessorSpeed();
 
          double penaltyToSwap = (1 + task->swapRate) * (std::abs(amountToOffload) / task->memoryRequirement) *
@@ -249,6 +249,8 @@ double finishTimeWithMemorySwapping(double startTime, double amountToOffload, do
          if(result<startTime){
              std::cout<<"bad computed result with memory swapping on vertex "<<task->name<<std::endl;
          }
+
+        // std::cout<<"compute duration from start time  "<<startTime<<" w amountToOffload "<<amountToOffload<< "is "<< result-startTime<< "w penalty "<< penaltyToSwap <<std::endl;
          return result;
 }
 

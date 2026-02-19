@@ -42,7 +42,7 @@
 // 100000000 100 1 0.001 eager 8330435694 1 no ../ machines.csv 3
 int main(const int argc, char* argv[])
 {
-    auto start = std::chrono::system_clock::now();
+
 
     fonda::Options options = fonda::parseOptions(argc, argv);
     std::cout << "algo_nr " << options.algoNumber << " " << options.workflowName << " " << "input_size " << options.inputSize << " ";
@@ -95,9 +95,6 @@ int main(const int argc, char* argv[])
         fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);
     }
 
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end - start;
-
     std::cout << std::setprecision(15);
     std::clog << std::setprecision(15);
 
@@ -109,9 +106,6 @@ int main(const int argc, char* argv[])
 
     assert(options.algoNumber!=0); // never use just heft, it is attached to each execution as a third option now.
     onlineMakespan = onlineMedih(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, true, runtimeDynamic);
-
-
-
 
     for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
         assert(u->status==Finished);
@@ -148,14 +142,12 @@ int main(const int argc, char* argv[])
     clearGraph(graphMemTopology);
     double runtimOffline = 0;
 
-    start = std::chrono::system_clock::now();
 
     double stat  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimOffline);
 
-    end = std::chrono::system_clock::now();
-    elapsed_seconds = end - start;
+
     std::cout << " duration_of_algorithm " << runtimOffline << " "; // << endl;
-    std::cout << "makespan_static_dynamic " << stat << '\n';
+    std::cout << "makespan_static " << stat << ' ';
 
     delete actualCluster;
     delete imaginedCluster;
@@ -183,7 +175,7 @@ int main(const int argc, char* argv[])
 
 
     std::cout << " duration_of_algorithm " << runtimeHeft << " "; // << endl;
-    std::cout << "makespan heft " << heft << '\n';
+    std::cout << "makespan_heft " << heft << '\n';
 
     delete graphMemTopology;
     delete imaginedCluster;
