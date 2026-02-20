@@ -307,15 +307,7 @@ void Event::fire(int deviationVariant)
     }
     assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
 
-     // PASS 1: absolute repair, cannot be needed without deviations
-    if (deviationVariant!=3) {
-        std::vector<TimeShift> repair;
-        this->enforceSuccessorConstraints(repair);
-        // Apply any repairs
-        for (auto& s : repair) {
-            events.reschedulePure(s.ev->id, s.newTime);
-        }
-    }
+    assert(this->actualTimeFire>=runtimeNow());
 
     this->timesFired++;
 

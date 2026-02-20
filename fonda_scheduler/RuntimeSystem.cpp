@@ -8,7 +8,7 @@
 Cluster* cluster;
 EventManager events;
 ReadyQueue readyQueue;
-int devationVariant;
+
 bool usePreemptiveWrites;
 
 std::string lastEventName;
@@ -19,7 +19,7 @@ bool isHeft= false;
 double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, double& runtime)
 {
     double resMakespan = -1;
-    devationVariant = deviationNumber;
+    events.deviationVariant= deviationNumber;
     cluster = cluster1;
     isHeft = (algoNum == fonda_scheduler::ALGORITHMS::HEFT);
 
@@ -83,7 +83,7 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const i
     cluster = cluster1;
     enforce_single_source_and_target_with_minimal_weights(graph);
     compute_bottom_and_top_levels(graph);
-    devationVariant = deviationNumber;
+    events.deviationVariant = deviationNumber;
     usePreemptiveWrites = upw;
     timeInSystem = 0;
 
@@ -613,7 +613,7 @@ double getOrApplyDeviationFactor(double& factorForRealExecution, double & durati
     }else {
         // Already applied, just scale duration by the existing factor
         duration = duration * factorForRealExecution;
-        duration = (devationVariant != 3 && devationVariant != 4) ? std::max(duration, 1.0) : duration;
+        duration = (events.deviationVariant != 3 && events.deviationVariant != 4) ? std::max(duration, 1.0) : duration;
     }
     return factorForRealExecution;
 }
@@ -624,7 +624,7 @@ double applyDeviationTo(double& in)
     static std::mt19937 gen(rd()); // Mersenne Twister PRNG
 
     double stddev;
-    switch (devationVariant) {
+    switch (events.deviationVariant) {
     case 1:
         stddev = in * 0.1;
         break;
@@ -644,13 +644,13 @@ double applyDeviationTo(double& in)
 
     std::normal_distribution<double> dist(in, stddev);
     double result = dist(gen);
-    result = (devationVariant != 3 && devationVariant != 4) ? std::max(result, 1.0) : result;
-    if (devationVariant == 4) {
+    result = (events.deviationVariant != 3 && events.deviationVariant != 4) ? std::max(result, 1.0) : result;
+    if (events.deviationVariant == 4) {
         result *= 2;
     }
     const double factor = result / in;
     in = result;
-    if (devationVariant == 3)
+    if (events.deviationVariant == 3)
         assert(factor == 1);
     return factor;
 }
