@@ -929,5 +929,5 @@ experiments:
 ##
 matrix:
   include:
-    - experiments: [ A1-ndev] #,A2-ndev , A3-ndev,  A1-10dev, A2-10dev, A3-10dev, A1-50dev, A2-50dev, A3-50dev, A1-30dev, A2-30dev, A3-30dev]
+    - experiments: [ A1-ndev,A2-ndev , A3-ndev,  A1-10dev, A2-10dev, A3-10dev, A1-50dev, A2-50dev, A3-50dev, A1-30dev, A2-30dev, A3-30dev]
       axes: [memSizes, preemptiveWrites, taskReleasePolicy]
