@@ -120,26 +120,19 @@ graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>
 
 double calculateSimpleBottomUpRank(vertex_t* task)
 {
-    //    cout<<"rank for "<<task->name<<" ";
-
     double maxCost = 0.0;
     for (const auto& out_edge : task->out_edges) {
         const double communicationCost = out_edge->weight;
-        // cout<<communicationCost<<" ";
         if (out_edge->head->bottom_level == -1) {
-            // cout<<"-1"<<endl;
             out_edge->head->bottom_level = calculateSimpleBottomUpRank(out_edge->head);
-            // cout<<"then "<<task->out_edges[j]->head->bottom_level<<endl;
         }
-        const double successorCost = out_edge->head->bottom_level; // calculateSimpleBottomUpRank(task->out_edges[j]->head);
+        const double successorCost = out_edge->head->bottom_level;
         double cost = communicationCost + successorCost;
         maxCost = std::max(maxCost, cost);
     }
-    // cout<<endl;
     const double retur = (task->time + maxCost);
     task->bottom_level = retur;
     task->rank= retur;
-    // cout<<"result "<<retur<<endl;
     return retur;
 }
 
@@ -353,7 +346,7 @@ void applySchedulingResultToImaginedCluster(vertex_t* vertex, SchedulingResult& 
 
         const int onWhichProcessor = whatProcessorIsLocatedOn(ine, useImagined);
         assert(onWhichProcessor == -1 || onWhichProcessor == schedulingResult.processorOfAssignment->id ||
-            cluster->getProcessorById(onWhichProcessor)->getPendingMemories().find(ine) == cluster->getProcessorById(onWhichProcessor)->getPendingMemories().end());
+            ourCluster->getProcessorById(onWhichProcessor)->getPendingMemories().find(ine) == ourCluster->getProcessorById(onWhichProcessor)->getPendingMemories().end());
 
         if (onWhichProcessor == proc->id) {
             proc->delocateToNowhereOptionally(ine, useImagined);

@@ -10,18 +10,21 @@ EventManager events;
 ReadyQueue readyQueue;
 
 bool usePreemptiveWrites;
+int taskReleasePolicy;
 
 std::string lastEventName;
 double runtimeOfScheduler;
 double timeInSystem;
-bool isHeft= false;
+bool isHeft = false;
 
 double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, double& runtime)
 {
     double resMakespan = -1;
-    events.deviationVariant= deviationNumber;
+    events.deviationVariant = deviationNumber;
     cluster = cluster1;
     isHeft = (algoNum == fonda_scheduler::ALGORITHMS::HEFT);
+    usePreemptiveWrites=false;
+    taskReleasePolicy = 0;
 
     const auto start = std::chrono::system_clock::now();
     std::vector<std::shared_ptr<Event>> newEvents = medih2(graph, algoNum, runtime);
@@ -32,7 +35,7 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int
     runtimeOfScheduler += elapsed_seconds.count();
 
     int cntr = 0;
-    int numEvents= events.size();
+    int numEvents = events.size();
     while (!events.empty()) {
 
         cntr++;
@@ -40,7 +43,9 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int
 
         auto e = events.earliestReady(); // earliest by time
         if (!e) {
+            events.queueDump();
             throw std::runtime_error("Deadlock: no ready events");
+
         }
 
         // STEP 1: resolve readiness
@@ -62,7 +67,7 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int
         // STEP 3: fire
         // std::cout<<"about to fire event "<<e->id<<" at " <<e->getActualTimeFire()<<" TIMES FIRED "<<e->timesFired<<std::endl;
         e->cleanupSuccessors();
-        e->fire(deviationNumber);
+        e->fire();
 
         const bool removed = events.remove(e->id);
         assert(removed);
@@ -77,19 +82,20 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int
     return resMakespan;
 }
 
-double onlineMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, const bool upw, double& runtime)
+double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, double& runtime)
 {
     double resMakespan = -1;
     cluster = cluster1;
     enforce_single_source_and_target_with_minimal_weights(graph);
     compute_bottom_and_top_levels(graph);
-    events.deviationVariant = deviationNumber;
-    usePreemptiveWrites = upw;
+    events.deviationVariant = options.deviationModel;
+    usePreemptiveWrites = options.usePreemptiveWrites;
+    taskReleasePolicy= options.taskReleasePolicy;
     timeInSystem = 0;
 
     const auto start = std::chrono::system_clock::now();
     vertex_t* vertex = graph->first_vertex;
-    switch (algoNum) {
+    switch (options.algoNumber) {
     case fonda_scheduler::HEFT:
     case fonda_scheduler::HEFT_BL: {
         while (vertex != nullptr) {
@@ -126,14 +132,14 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const i
         // Schedule events without predecessors (i.e., starting tasks)
         if (vertex->in_edges.empty()) {
             //  cout << "starting task " << vertex->name << endl;
-    std::vector<std::shared_ptr<Processor>> bestModifiedProcs;
-    std::shared_ptr<Processor> bestProcessorToAssign;
-    int bestResultingVar;
+            std::vector<std::shared_ptr<Processor>> bestModifiedProcs;
+            std::shared_ptr<Processor> bestProcessorToAssign;
+            int bestResultingVar;
             std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(vertex, bestModifiedProcs, bestProcessorToAssign, 0, bestResultingVar);
 
-    for (auto& item : newEvents) {
-        events.insert(item);
-    }
+            for (auto& item : newEvents) {
+                events.insert(item);
+            }
             vertex->status = Status::Scheduled;
         }
         vertex = vertex->next;
@@ -173,7 +179,7 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, const int algoNum, const i
         // STEP 3: fire
         // std::cout<<"about to fire event "<<e->id<<" at " <<e->getActualTimeFire()<<" TIMES FIRED "<<e->timesFired<<std::endl;
         e->cleanupSuccessors();
-        e->fire(deviationNumber);
+        e->fire();
 
         const bool removed = events.remove(e->id);
         assert(removed);
@@ -206,7 +212,6 @@ void Event::fireTaskStart()
     const double factor = getOrApplyDeviationFactor(this->task->factorForRealExecution, durationTask);
     assert(factor > 0);
     this->task->factorForRealExecution = factor;
-
 
     // Clean expired successors
     cleanupSuccessors();
@@ -262,8 +267,6 @@ void Event::fireTaskStart()
     }
 }
 
-
-
 void Event::fireTaskFinish()
 {
     const vertex_t* thisTask = this->task;
@@ -288,7 +291,7 @@ void Event::fireTaskFinish()
         bool isReady = true;
         for (const auto& in_edge : childTask->in_edges) {
             if (in_edge->tail->status == Status::Unscheduled) {
-               // std::cout<<"unscheduled parent "<<in_edge->tail->name<<"\n";
+                // std::cout<<"unscheduled parent "<<in_edge->tail->name<<"\n";
                 isReady = false;
             }
         }
@@ -297,12 +300,17 @@ void Event::fireTaskFinish()
 
         if (isReady && childTask->status == Status::Unscheduled) {
             // std::cout<<"inserting child task "<<childTask->name<<" into ready "<<std::endl;
-            readyQueue.readyTasks.insert(childTask);
+            readyQueue.readyTasks.push(childTask);
         }
 
         if (usePreemptiveWrites) {
             cluster->getProcessorById(this->processor->id)->writingQueue.emplace_back(out_edge);
         }
+    }
+
+    if (!this->processor->getLastComputeEvent().expired() &&
+        this->processor->getLastComputeEvent().lock()->id== this->id) {
+        this->processor-> setReadyTimeCompute(this->getActualTimeFire());
     }
 
     scheduleTasksUntilFoundForThisProc();
@@ -342,6 +350,12 @@ void Event::fireReadFinish()
     locateToThisProcessorFromDisk(this->edge, this->processor->id, false, this->getActualTimeFire());
     this->isDone = true;
     this->edge->accountedFor = true;
+
+    if (!this->processor->getLastReadEvent().expired() &&
+       this->processor->getLastReadEvent().lock()->id== this->id) {
+        this->processor-> setReadyTimeRead(this->getActualTimeFire());
+       }
+
 }
 
 void Event::fireWriteStart()
@@ -365,7 +379,7 @@ void Event::fireWriteStart()
     }
 
     events.reschedule(finishWrite->id, actualTimeFireFinish);
-    assert(abs(finishWrite->getActualTimeFire() - actualTimeFireFinish)<0.001);
+    assert(abs(finishWrite->getActualTimeFire() - actualTimeFireFinish) < 0.001);
 
     assert(!finishWrite->checkCycleFromEvent());
 
@@ -398,16 +412,36 @@ void Event::fireWriteFinish()
 
     this->isDone = true;
 
+    if (!this->processor->getLastWriteEvent().expired() &&
+      this->processor->getLastWriteEvent().lock()->id== this->id) {
+        this->processor-> setReadyTimeWrite(this->getActualTimeFire());
+      }
+
     if (this->processor->writingQueue.empty()) {
         return;
     }
 
-    edge_t* edgeToWriteJustInCase = this->processor->writingQueue.at(0);
+    if (usePreemptiveWrites) {
+         edge_t* edgeToWriteJustInCase = nullptr;
 
-    if (events.find(buildEdgeName(edgeToWriteJustInCase) + "-w-s") != nullptr || events.find(buildEdgeName(edgeToWriteJustInCase) + "-w-f") != nullptr
-        || this->processor->getPendingMemories().find(edgeToWriteJustInCase) == this->processor->getPendingMemories().end()) {
-        // std:: cout << "event for " << buildEdgeName(edgeToWriteJustInCase) << " already in queue" << endl;
-        this->processor->writingQueue.erase(this->processor->writingQueue.begin());
+    while (!this->processor->writingQueue.empty()) {
+        edge_t* candidate = this->processor->writingQueue.at(0);
+        // Check if the event for this edge is already in the queue OR if it's not in pending memories
+        bool alreadyHandled = (events.find(buildEdgeName(candidate) + "-w-s") != nullptr) ||
+                              (events.find(buildEdgeName(candidate) + "-w-f") != nullptr);
+
+        bool notPending = (this->processor->getPendingMemories().find(candidate) == this->processor->getPendingMemories().end());
+
+        if (alreadyHandled || notPending) {
+            // This edge is invalid/already processed, remove it and keep looking
+            this->processor->writingQueue.erase(this->processor->writingQueue.begin());
+        } else {
+            edgeToWriteJustInCase = candidate;
+            break;
+        }
+    }
+
+    if (edgeToWriteJustInCase == nullptr) {
         return;
     }
 
@@ -426,7 +460,7 @@ void Event::fireWriteFinish()
         }
     }
 
-    if (this->getActualTimeFire() + presumedLength < startOfNextWrite && usePreemptiveWrites) {
+    if (this->getActualTimeFire() + presumedLength < startOfNextWrite ) {
         // can fit
         // std::cout << "scheduling extra write for " << buildEdgeName(edgeToWriteJustInCase) << std::endl;
         assert(events.find(buildEdgeName(edgeToWriteJustInCase) + "-w-s") == nullptr);
@@ -445,6 +479,8 @@ void Event::fireWriteFinish()
         //     cout<<buildEdgeName(item)<<endl;
         //  }
     }
+    }
+
 }
 
 void Event::removeFromPredecessors()
@@ -521,9 +557,16 @@ bool Event::cleanupPredecessors()
 void Event::scheduleTasksUntilFoundForThisProc()
 {
     bool foundTaskForThisProc = false;
+    int counterTaskRelease=0;
+    bool continueWithNextTask=true;
 
     while (!readyQueue.readyTasks.empty()) {
-        vertex_t* v = *readyQueue.readyTasks.begin();
+        vertex_t* v = readyQueue.readyTasks.top();
+
+        if (v->status==Scheduled) {
+                readyQueue.readyTasks.pop();
+                continue;
+        }
 
         std::vector<std::shared_ptr<Processor>> modified;
         std::shared_ptr<Processor> assigned;
@@ -537,28 +580,44 @@ void Event::scheduleTasksUntilFoundForThisProc()
             bestVar);
 
         v->status = Status::Scheduled;
-        readyQueue.readyTasks.erase(v);
+        readyQueue.readyTasks.pop();
 
         if (assigned->id == this->processor->id) {
             foundTaskForThisProc = true;
         }
+        counterTaskRelease++;
 
         for (auto& e : newEvents) {
-            events.insert(e); // SAFE: new events only
+            events.insert(e);
         }
 
-        if (foundTaskForThisProc) {
+        switch(taskReleasePolicy) {
+            //1 - scheduler all task's children when they are ready
+            //2 - schedule only as many children as there are processors in the cluster
+            //3 - schedule only until we find the next task for our processor
+
+        case 2:
+                if (counterTaskRelease>=cluster->getProcessors().size() ) {
+                    continueWithNextTask=false;
+                }
             break;
+        case 3:
+            if (foundTaskForThisProc) {
+                continueWithNextTask=false;
+            }
+           bool idleExists = std::any_of(
+           cluster->getProcessors().begin(),
+           cluster->getProcessors().end(),
+           [&](const auto& p) {
+               return p.second->getReadyTimeCompute() <= this->getActualTimeFire();
+           });
+
+            if (!idleExists) {
+                continueWithNextTask=false;
+            }
         }
 
-        bool idleExists = std::any_of(
-            cluster->getProcessors().begin(),
-            cluster->getProcessors().end(),
-            [&](const auto& p) {
-                return p.second->getReadyTimeCompute() <= this->getActualTimeFire();
-            });
-
-        if (!idleExists) {
+        if (!continueWithNextTask) {
             break;
         }
     }
@@ -590,10 +649,7 @@ std::shared_ptr<Processor> findPredecessorsProcessor(const edge_t* incomingEdge,
 void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModifiedProc, double notEarlierThan)
 {
     ourModifiedProc->setAvailableMemoryDuringPreviousTask(ourModifiedProc->getAvailableMemory());
-    double startOfLastTask = ourModifiedProc->getLastComputeEvent().expired() ?
-    0:
-    (ourModifiedProc->getLastComputeEvent().lock()->predecessors.size()>0?
-       ourModifiedProc->getLastComputeEvent().lock() ->getCorrespondingStart()->getVisibleTimeFireForPlanning(): notEarlierThan);
+    double startOfLastTask = ourModifiedProc->getLastComputeEvent().expired() ? 0 : (ourModifiedProc->getLastComputeEvent().lock()->predecessors.size() > 0 ? ourModifiedProc->getLastComputeEvent().lock()->getCorrespondingStart()->getVisibleTimeFireForPlanning() : notEarlierThan);
     ourModifiedProc->setStartOfLastTask(startOfLastTask);
     ourModifiedProc->resetPendingMemories();
     ourModifiedProc->setAvailableMemory(ourModifiedProc->getMemorySize());
@@ -605,15 +661,15 @@ void transferAfterMemoriesToBefore(const std::shared_ptr<Processor>& ourModified
     ourModifiedProc->setAfterAvailableMemory(ourModifiedProc->getMemorySize());
 }
 
-double getOrApplyDeviationFactor(double& factorForRealExecution, double & duration)
+double getOrApplyDeviationFactor(double& factorForRealExecution, double& duration)
 {
     if (factorForRealExecution == -1) {
         // Not yet applied, compute new factor
         factorForRealExecution = applyDeviationTo(duration);
-    }else {
+    } else {
         // Already applied, just scale duration by the existing factor
         duration = duration * factorForRealExecution;
-        duration = (events.deviationVariant != 3 && events.deviationVariant != 4) ? std::max(duration, 1.0) : duration;
+        duration = (events.deviationVariant != 1 && events.deviationVariant != 5) ? std::max(duration, 1.0) : duration;
     }
     return factorForRealExecution;
 }
@@ -625,17 +681,17 @@ double applyDeviationTo(double& in)
 
     double stddev;
     switch (events.deviationVariant) {
-    case 1:
+    case 2:
         stddev = in * 0.1;
         break;
-    case 2:
+    case 3:
         stddev = in * 0.5;
         break;
-    case 3:
-    case 4:
+    case 1:
+    case 5:
         stddev = 0;
         break;
-    case 5:
+    case 4:
         stddev = in * 0.3;
         break;
     default:
@@ -644,13 +700,13 @@ double applyDeviationTo(double& in)
 
     std::normal_distribution<double> dist(in, stddev);
     double result = dist(gen);
-    result = (events.deviationVariant != 3 && events.deviationVariant != 4) ? std::max(result, 1.0) : result;
-    if (events.deviationVariant == 4) {
+    result = (events.deviationVariant != 1 && events.deviationVariant != 5) ? std::max(result, 1.0) : result;
+    if (events.deviationVariant == 5) {
         result *= 2;
     }
     const double factor = result / in;
     in = result;
-    if (events.deviationVariant == 3)
+    if (events.deviationVariant == 1)
         assert(factor == 1);
     return factor;
 }

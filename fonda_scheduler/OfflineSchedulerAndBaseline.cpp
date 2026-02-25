@@ -25,7 +25,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
     std::priority_queue<
         vertex_t*,
         std::vector<vertex_t*>,
-        PriorityRankComparator> readyQ;
+       PriorityRankComparator> readyQ;
 
     for (auto v : graph->vertices_by_id) {
         remaining_preds[v.second] = v.second->in_edges.size();
@@ -38,6 +38,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
     int numberWithEvictedCases = 0;
 
     std::vector<std::shared_ptr<Event>> res_events;
+
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
         readyQ.pop();
@@ -59,7 +60,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
         checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         res_events.insert(res_events.end(), newevents.begin(), newevents.end());
 
-    /*    std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
+        /*std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
         std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
 
         for (auto newevent : newevents) {
@@ -67,7 +68,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
         }
 
         std::cout<<"for task "<<vertex->name<<" variant "<< bestSchedulingResult.resultingVar << " on proc "<< bestSchedulingResult.processorOfAssignment->id
-                 <<" from "<< bestSchedulingResult.startTime <<" to "<< bestSchedulingResult.finishTime
+                <<" from "<< bestSchedulingResult.startTime <<" to "<< bestSchedulingResult.finishTime
         <<" duration is "<<" "<< bestSchedulingResult.finishTime - bestSchedulingResult.startTime << std::endl; */
 
 

@@ -17,8 +17,9 @@ sed -i ':a;N;$!ba;s/[[:space:]]*\n[[:space:]]*\(duration_of_algorithm\)/ \1/g' *
 sed -Ei 's/.*(algo_nr)/\1/' *.txt
 
 sed -i 's/ input_size//g' *.txt
-sed -i 's/ makespan_1//g' *.txt
-sed -i 's/ makespan_2//g' *.txt
+sed -i 's/ makespan_dynamic//g' *.txt
+sed -i 's/ makespan_static//g' *.txt
+sed -i 's/ makespan_heft//g' *.txt
 sed -i 's/ duration_of_algorithm//g' *.txt
 sed -i 's/ ms perceived//g' *.txt
 sed -i 's/algo_nr //g' *.txt
@@ -27,5 +28,5 @@ find . -type f -exec sed -i 's/INVALID SWAP RATE: ON VERTEX[^.]*ratio\.//g' {} +
 sed -i 's/ makespan_static//g' *.txt
 sed -i 's/ makespan_dynamic//g' *.txt
 
-sed -i '1i algo_nr wf_name inp_size dur_alg1 ms_1 ms_perc dur_alg2 ms_2' *.txt
+sed -i '1i algo_nr wf_name inp_size dur_alg1 ms_1 ms_perc dur_alg2 ms_2 dur_alg3 ms_3' *.txt
 sed -i 's/  \+/ /g' *.txt

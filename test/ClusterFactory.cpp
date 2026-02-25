@@ -42,6 +42,30 @@ public:
         return cluster;
     }
 
+    // A cluster with one "Thick Node" with much memory and slow processor and "Tiny Node" with little memory and fast processor.
+    static Cluster*  CreateMidBottleneckCluster() {
+        auto* cluster = new Cluster();
+
+        // The Super Node
+        auto p0 = std::make_shared<Processor>(100.0, 10.0, 0);
+        p0->setAvailableMemory(100.0);
+        p0->setAfterAvailableMemory(100.0);
+        cluster->addProcessor(p0);
+
+        // The Weak Node
+        auto p1 = std::make_shared<Processor>(20.0, 50.0, 1);
+        p1->setAvailableMemory(20.0);
+        p1->setAfterAvailableMemory(20.0);
+        cluster->addProcessor(p1);
+
+        p0->writeSpeedDisk=10;
+        p0->readSpeedDisk=10;
+        p1->writeSpeedDisk=10;
+        p1->readSpeedDisk=10;
+
+        return cluster;
+    }
+
     static std::shared_ptr<Processor> createSingleProcessor(double mem, double speed, double id=0) {
         auto p = std::make_shared<Processor>(mem, speed, id);
         p->name = "SingleProc";

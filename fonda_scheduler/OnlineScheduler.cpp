@@ -10,8 +10,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
         numTasksComputedPredecessors++;
     }
 
-
-   // std::cout << "!!!START BEST tent assign for " << vertex->name << std::endl;
+    //std::cout << "!!!START BEST tent assign for " << vertex->name <<" at "<<notEarlierThan<< std::endl;
     double bestStartTime = std::numeric_limits<double>::max();
     double bestFinishTime = std::numeric_limits<double>::max();
     double bestReallyUsedMem = std::numeric_limits<double>::max();
@@ -54,6 +53,14 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
                     isBetterTieBreak = true;
                 }
             }
+        }
+
+        if (!processor->getLastComputeEvent().expired() &&
+        !processor->getLastComputeEvent().lock()->isDone    &&
+        processor->getLastComputeEvent().lock()->getExpectedTimeFire()<notEarlierThan //do not trust processors where the last compute task started, but did not end yet, though it should have
+        ) {
+            //will only be assigned there if there is actual improvement in time
+            isBetterTieBreak=false;
         }
 
         if (isBetterTime || isBetterTieBreak) {
@@ -115,8 +122,13 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
     processorWorkTimes[bestProcessorToAssign->id].emplace_back(bestStartTime,
         bestFinishTime);
 
-  //  std::cout << "\n [DYNAMIC] Vertex " << vertex->name << " can start at: " << bestStartTime <<" on proc "<<bestProcessorToAssign->id  <<" end at " <<bestFinishTime<< " variant "<< bestResultingVar<< std::endl;
-    // cout << "resulting var " << resultingVar<<" on "<<bestProcessorToAssign->id << endl;
+   /* std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
+    std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
+
+    for (auto newevent : bestEvents) {
+        newevent->printEventShort();
+    } */
+
     return bestEvents;
 }
 
@@ -125,6 +137,8 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
     double& finTime, double& startTime, int& resultingVar, std::vector<std::shared_ptr<Event>>& newEvents,
     double& actuallyUsedMemory, double notEarlierThan)
 {
+
+
     // cout << "try " << ourModifiedProc->id << " for " << vertex->name << endl;
     assert(ourModifiedProc->getAvailableMemory() <= ourModifiedProc->getMemorySize());
 
@@ -390,6 +404,11 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
     //  cout << "SET LAST COMPUTE EVENT TO " << eventFinishTask->id << endl;
     ourModifiedProc->setLastComputeEvent(eventFinishTask);
     finTime = ourModifiedProc->getReadyTimeCompute();
+
+  //  std::cout<<"for proc "<<ourModifiedProc->id<<" for task "<<vertex->name<<std::endl;
+  //  for ( auto event : newEvents) {
+   //     event->printEventShort();
+   // }
 
     return modifiedProcs;
 }

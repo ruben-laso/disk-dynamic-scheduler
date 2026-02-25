@@ -34,12 +34,19 @@ struct Options {
     bool scaleToFit = false; // Default to not scaling to fit
 
     // Deviation models:
-    // 1 - normal deviation function around historical value with 10% deviation
-    // 2 - normal deviation function around historical value with 50% deviation
-    // 3 - no deviation
-    // 4 - everything x2 (times x2)
-    // 5 - 30% deviation
-    int deviationModel = 3; // Default deviation model
+    // 1 -  no deviation
+    // 2 - normal deviation function around historical value with 10% deviation
+    // 3 - 30% deviation
+    // 4 - normal deviation function around historical value with 50% deviation
+    // 5 - everything x2 (times x2)
+    int deviationModel = 1; // Default deviation model
+
+    bool usePreemptiveWrites = false; // Default to not using preemptive writes
+
+    //1 - scheduler all task's children when they are ready
+    //2 - schedule only as many children as there are processors in the cluster
+    //3 - schedule only until we find the next task for our processor
+    int taskReleasePolicy = 1;
 };
 
 // List of options
@@ -55,6 +62,8 @@ static const struct option long_options[] = {
     { "traces-file", required_argument, nullptr, 't' },
     { "deviation-model", required_argument, nullptr, 'd' },
     { "scale-to-fit", no_argument, nullptr, 'S' },
+    { "preemptive-writes", no_argument, nullptr, 'E' },
+    {"task-release-policy", required_argument, nullptr, 'q'},
     { "help", no_argument, nullptr, 'h' },
     { nullptr, 0, nullptr, 0 } // End of options
 };
@@ -71,6 +80,8 @@ static const char* short_options = "" //
                                    "t:" // traces-file
                                    "d:" // deviation
                                    "S" // scale-to-fit
+                                   "E" // preemptive writes
+                                   "q:" // task release policy
                                    "h"; // help
 
 inline void printHelp(const char* program_name)
@@ -94,6 +105,8 @@ inline void printHelp(const char* program_name)
               << "                                           4. Everything x2.\n"
               << "                                           5. Normal 30%.\n"
               << "  -S, --scale-to-fit                   Scale task's memory to fit the machine. Default: false\n"
+              << "  -E, --preemptive-writes              Use preemptive (-E-xtra) writes. Default: false\n"
+              << "  -q, --task-release-policy <variant>  Set task release policy. Default: 1\n"
               << "  -h, --help                           Show this help message and exit\n";
 }
 
@@ -117,7 +130,7 @@ inline Options parseOptions(int argc, char* argv[])
     while ((c = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1) {
         switch (c) {
         case 'm':
-            parseArg("memory-multiplicator", optarg, options.memoryMultiplicator, [](const char* arg) { return std::stoi(arg); });
+            parseArg("memory-multiplicator", optarg, options.memoryMultiplicator, [](const char* arg) { return std::stod(arg); });
             break;
         case 's':
             parseArg("speed-multiplicator", optarg, options.speedMultiplicator, [](const char* arg) { return std::stoi(arg); });
@@ -149,6 +162,12 @@ inline Options parseOptions(int argc, char* argv[])
         case 'd':
             parseArg("deviation-model", optarg, options.deviationModel, [](const char* arg) { return std::stoi(arg); });
             break;
+        case 'E':
+            parseArg("preemptive-writes", optarg, options.deviationModel, [](const char* arg) { return std::stoi(arg); });
+            break;
+        case 'q':
+                parseArg("task-release-policy", optarg, options.taskReleasePolicy, [](const char* arg) { return std::stoi(arg);});
+                break;
         case 'S':
             options.scaleToFit = true;
             break;

@@ -17,6 +17,26 @@ public:
         return g;
     }
 
+    // Creates: (A) -> (B)
+    //             -> (C) or more tasks depending on breadth
+    static graph_t* CreateFork(int breadth, double taskTime, double taskMemory, double edgeWeight) {
+        graph_t* g = new_graph();
+
+        vertex_t* head = new_vertex2Weights(g, "Task_Head", taskTime, taskMemory, nullptr);
+        g->source = head;
+
+        for (int i = 0; i < breadth; ++i) {
+            vertex_t* curr = new_vertex2Weights(g, ("Task_" + std::to_string(i)).c_str(), taskTime, taskMemory, nullptr);
+            if (head) {
+                new_edge(g, head, curr, edgeWeight, nullptr);
+            }
+            g->target = curr;
+        }
+
+      //  enforce_single_source_and_target(g, "");
+        return g;
+    }
+
     // Creates a "Diamond" - useful for testing parallel execution limits
     static graph_t* CreateDiamondWithQuarterSides( double taskTime, double taskMemory, double edgeWeight) {
         graph_t* g = new_graph();

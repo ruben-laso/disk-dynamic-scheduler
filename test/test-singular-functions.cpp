@@ -316,3 +316,31 @@ TEST(processIncomingEdgesWithoutTimes, CannotBePLacedBeforeLastEventButIs)
     delete task3;
     delete task4;
 }
+
+TEST(computeSwapPenalty, PenaltyOnTwoProccessors)
+{
+
+    graph_t* dag = WorkflowFactory::CreateDiamondWithQuarterSides( 100.0, 100.0, 10.0);
+    imaginedCluster = ClusterFactory::CreateMidBottleneckCluster();
+    actualCluster = ClusterFactory::CreateMidBottleneckCluster();
+
+    for (auto vertices_by_id : dag->vertices_by_id) {
+        auto v  = vertices_by_id.second;
+        v->swapRate = 0.1;
+    }
+
+
+    EXPECT_NO_THROW({
+
+        //If place source on smallerProcessor
+        double finishTime = finishTimeWithMemorySwapping( 0,80,100,dag->vertices_by_id.at(0), imaginedCluster->processors.at(1));
+        ASSERT_EQ(abs(finishTime- 9.04)<1e-6, true);
+
+        //If place left on smallerProcessor, while the right's file is there: from 20 memory 10 is occupied with a file, left's mem req is 22
+        finishTime = finishTimeWithMemorySwapping( 0,12,25,dag->vertices_by_id.at(1), imaginedCluster->processors.at(1));
+        ASSERT_EQ(abs(finishTime- 1.22)<1e-6, true);
+
+    });
+
+
+}

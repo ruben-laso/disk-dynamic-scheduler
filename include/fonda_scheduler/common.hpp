@@ -9,6 +9,7 @@
 #include <regex>
 #include <unordered_set>
 #include <utility>
+#include <queue>
 
 extern double timeInSystem;
 
@@ -779,7 +780,7 @@ public:
         return hasCycleFrom(shared_from_this(), visited, recStack, true) || hasCycleFrom(shared_from_this(), visited, recStack, false);
     }
 
-    void fire(int deviationVariant);
+    void fire();
 
     void fireTaskStart();
     void scheduleTasksUntilFoundForThisProc();
@@ -843,12 +844,12 @@ public:
 
     void printEventShort() const
     {
-        std::cout << "--- Event [" << id << "] ---";
+        std::cout << id << ": ";
 
-        std::cout << " | Processor: " << processor->id;
+        std::cout << " Processor: " << processor->id;
         std::cout << "  Expected Fire: " << expectedTimeFire;
-        std::cout << "  Actual Fire:   " << actualTimeFire;
-        std::cout << "--------------------------" << std::endl;
+        //std::cout << "  Actual Fire:   " << actualTimeFire;
+        std::cout << std::endl;
     }
 };
 
@@ -866,7 +867,7 @@ class EventManager {
 public:
     using EventPtr = std::shared_ptr<Event>;
     using EventSet = std::set<EventPtr, CompareByTimestamp>;
-    int deviationVariant = 3; // default is no devations
+    int deviationVariant = 1; // default is no devations
 
 private:
     EventSet eventSet; // ordered by timestamp
@@ -902,7 +903,7 @@ public:
         // First insertion sanity checks
         if (firstInsertion) {
             // PASS 1: absolute repair, cannot be needed without deviations
-            if (deviationVariant != 3  ) {
+            if (deviationVariant != 1  ) {
                 if (ev->isStart()) {
 
                 }
@@ -1095,6 +1096,15 @@ public:
         }
     }
 
+    void queueDump()
+    {
+        for (const auto& e : eventSet) {
+            std::cout << "  " << e->id
+                      << " @ " << e->getActualTimeFire()
+                      << "\n";
+        }
+    }
+
     void verifySchedule(std::unordered_map<int, vertex_t*> allVertices)
     {
         // std::cout << "--- Starting Event-Based Verification ---" << std::endl;
@@ -1178,12 +1188,11 @@ private:
     }
 };
 
-struct CompareByRank {
 
-    bool operator()(const vertex_t* a, const vertex_t* b) const
-    {
-        assert(a->rank != -1);
-        assert(b->rank != -1);
+struct PriorityRankComparator {
+    bool operator()(const vertex_t* a, const vertex_t* b) const {
+        assert(a->rank!=-1);
+        assert(b->rank!=-1);
 
         if (a->rank != b->rank)
             return a->rank < b->rank; // max-heap
@@ -1201,7 +1210,11 @@ struct CompareByRank {
 
 class ReadyQueue {
 public:
-    std::set<vertex_t*, CompareByRank> readyTasks;
+   // std::set<vertex_t*, CompareByRank> readyTasks;
+    std::priority_queue<
+        vertex_t*,
+        std::vector<vertex_t*>,
+       PriorityRankComparator> readyTasks;
 };
 
 std::shared_ptr<Event> findTaskStart(const std::vector<std::shared_ptr<Event>>& someEvents);

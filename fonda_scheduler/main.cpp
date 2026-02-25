@@ -42,7 +42,10 @@
 // 100000000 100 1 0.001 eager 8330435694 1 no ../ machines.csv 3
 int main(const int argc, char* argv[])
 {
+   // for(int i = 1; i < argc; i++)
+   //     printf("%s\n", argv[i]);
 
+    //std::cout<<std::endl;
 
     fonda::Options options = fonda::parseOptions(argc, argv);
     std::cout << "algo_nr " << options.algoNumber << " " << options.workflowName << " " << "input_size " << options.inputSize << " ";
@@ -104,8 +107,10 @@ int main(const int argc, char* argv[])
     }
     double onlineMakespan = 0;
 
+
+
     assert(options.algoNumber!=0); // never use just heft, it is attached to each execution as a third option now.
-    onlineMakespan = onlineMedih(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, true, runtimeDynamic);
+    onlineMakespan =  onlineMedih(graphMemTopology, actualCluster, options, runtimeDynamic);
 
     for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
         assert(u->status==Finished);
@@ -138,11 +143,13 @@ int main(const int argc, char* argv[])
 
     delete actualCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-    timeInSystem=0;
+    timeInSystem=0; events.clear();
     clearGraph(graphMemTopology);
+    enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
+    compute_bottom_and_top_levels(graphMemTopology);
+
+
     double runtimOffline = 0;
-
-
     double stat  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimOffline);
 
 
@@ -153,8 +160,10 @@ int main(const int argc, char* argv[])
     delete imaginedCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
     imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-    timeInSystem=0;
+    timeInSystem=0; events.clear();
     clearGraph(graphMemTopology);
+    enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
+    compute_bottom_and_top_levels(graphMemTopology);
     double runtimeHeft = 0;
 
     //HEFT should not profit from earlier finishing times of tasks and edges in case of deviations

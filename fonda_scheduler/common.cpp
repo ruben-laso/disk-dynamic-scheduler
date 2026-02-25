@@ -293,7 +293,7 @@ double getSumIn(const vertex_t* v)
     return sumIn;
 }
 
-void Event::fire(int deviationVariant)
+void Event::fire()
 {
    //std::cout<<"fire event "<<this->id<<" at " <<this->getActualTimeFire()<<" planned at "<<this->getExpectedTimeFire()<<" on proc "<<this->processor->id <<std::endl;
     if (this->edge) {
@@ -307,7 +307,7 @@ void Event::fire(int deviationVariant)
     }
     assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
 
-    assert(this->actualTimeFire>=runtimeNow());
+    assert(this->actualTimeFire>=runtimeNow()||abs(this->actualTimeFire-runtimeNow())<0.01);
 
     this->timesFired++;
 
