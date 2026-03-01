@@ -163,7 +163,7 @@ inline Options parseOptions(int argc, char* argv[])
             parseArg("deviation-model", optarg, options.deviationModel, [](const char* arg) { return std::stoi(arg); });
             break;
         case 'E':
-            parseArg("preemptive-writes", optarg, options.deviationModel, [](const char* arg) { return std::stoi(arg); });
+            options.usePreemptiveWrites = true;
             break;
         case 'q':
                 parseArg("task-release-policy", optarg, options.taskReleasePolicy, [](const char* arg) { return std::stoi(arg);});
