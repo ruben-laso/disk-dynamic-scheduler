@@ -29,15 +29,77 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
 
     for (auto v : graph->vertices_by_id) {
         remaining_preds[v.second] = v.second->in_edges.size();
-        if (remaining_preds[v.second] == 0) {
-            readyQ.push(v.second);
-        }
     }
 
     double makespan = 0;int numProcessedVertices=0;
     int numberWithEvictedCases = 0;
 
     std::vector<std::shared_ptr<Event>> res_events;
+
+    for (auto v : graph->vertices_by_id) {
+        remaining_preds[v.second] = v.second->in_edges.size();
+    }
+
+
+   auto  vertex = graph->first_vertex;
+    while (vertex != nullptr) {
+        // Schedule events without predecessors (i.e., starting tasks)
+        if (vertex->in_edges.empty()) {
+            SchedulingResult bestSchedulingResult(nullptr);
+            SchedulingResult bestSchedulingResultIncorrect(nullptr);
+            std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(isHeft, vertex, bestSchedulingResult, bestSchedulingResultIncorrect);
+            numProcessedVertices++;
+            /*std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
+            std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
+
+            for (auto newevent : newEvents) {
+                newevent->printEventShort();
+            } */
+
+           /* std::cout<<"for task "<<vertex->name<<" variant "<< bestSchedulingResult.resultingVar << " on proc "<< bestSchedulingResult.processorOfAssignment->id
+                    <<" from "<< bestSchedulingResult.startTime <<" to "<< bestSchedulingResult.finishTime
+            <<" duration is "<<" "<< bestSchedulingResult.finishTime - bestSchedulingResult.startTime << std::endl; */
+
+
+            applySchedulingResultToImaginedCluster(vertex, bestSchedulingResult, imaginedCluster, numberWithEvictedCases, isHeft);
+            if (isHeft)
+                applySchedulingResultToImaginedCluster(vertex, bestSchedulingResultIncorrect, imaginedClusterIncorrect, numberWithEvictedCases, isHeft);
+
+            for (auto& item : newEvents) {
+                item->processor = imaginedCluster->getProcessorById(item->processor->id);
+            }
+
+            auto taskSTart = findTaskStart(newEvents);
+            assert(taskSTart!=nullptr);
+            taskSTart->memoryVariant= bestSchedulingResult.resultingVar;
+
+            for (auto& item : newEvents) {
+                events.insert(item);
+            }
+
+            res_events.insert(res_events.end(), newEvents.begin(), newEvents.end());
+
+            vertex->makespanPerceived = bestSchedulingResult.finishTime;
+            assert(bestSchedulingResult.startTime < bestSchedulingResult.finishTime);
+
+            if (makespan < bestSchedulingResult.finishTime)
+                makespan = bestSchedulingResult.finishTime;
+
+            vertex->status = Status::Scheduled;
+
+            for (const auto& out_edge : vertex->out_edges) {
+                vertex_t* succ = out_edge->head;
+                remaining_preds[succ]--;
+                if (remaining_preds[succ] == 0) {
+                    readyQ.push(succ);
+                }
+            }
+        }
+        vertex = vertex->next;
+    }
+
+
+
 
     while (!readyQ.empty()) {
         vertex_t* vertex = readyQ.top();
@@ -60,7 +122,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
         checkIfPendingMemoryCorrect(bestSchedulingResult.processorOfAssignment);
         res_events.insert(res_events.end(), newevents.begin(), newevents.end());
 
-        /*std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
+      /*  std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
         std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
 
         for (auto newevent : newevents) {
@@ -69,26 +131,11 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
 
         std::cout<<"for task "<<vertex->name<<" variant "<< bestSchedulingResult.resultingVar << " on proc "<< bestSchedulingResult.processorOfAssignment->id
                 <<" from "<< bestSchedulingResult.startTime <<" to "<< bestSchedulingResult.finishTime
-        <<" duration is "<<" "<< bestSchedulingResult.finishTime - bestSchedulingResult.startTime << std::endl; */
+        <<" duration is "<<" "<< bestSchedulingResult.finishTime - bestSchedulingResult.startTime << std::endl;*/
 
 
         assert((*newevents.rbegin())->id== vertex->name+"-f");
         assert((*newevents.rbegin())->getExpectedTimeFire()== bestSchedulingResult.finishTime);
-
-        /*    std::cout  << vertex->name << " " <<
-                     " "<< bestSchedulingResult.startTime << " --- "
-                         << bestSchedulingResult.finishTime << " on "
-                          << bestSchedulingResult.processorOfAssignment->id
-                          << " variant " << bestSchedulingResult.resultingVar
-                              <<std::endl;*/
-       /* std::cout << "REAL " << vertex->name << " " << bestSchedulingResultOnReal.startTime //<< " --- "
-                  << " " << bestSchedulingResultOnReal.finishTime //<< " on proc "
-                  << " " << bestSchedulingResultOnReal.processorOfAssignment->id
-                  << " duration " << bestSchedulingResultOnReal.finishTime - bestSchedulingResultOnReal.startTime
-                  << " variant " << bestSchedulingResultOnReal.resultingVar
-                  // <<" with av mem "<<bestSchedulingResultOnReal.processorOfAssignment->getAvailableMemory()
-                  << std::endl;
-*/
 
         applySchedulingResultToImaginedCluster(vertex, bestSchedulingResult, imaginedCluster, numberWithEvictedCases, isHeft);
         if (isHeft)

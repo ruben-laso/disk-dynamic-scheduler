@@ -194,7 +194,7 @@ public:
     std::set<edge_t*, decltype(comparePendingMemories)*>::iterator
     removePendingMemory(edge_t* edgeToRemove)
     {
-        // cout<<"removing pending memory "<<buildEdgeName(edgeToRemove)<<" from proc "<<this->id<<endl;
+        //std::cout<<"removing pending memory "<<buildEdgeName(edgeToRemove)<<" from proc "<<this->id<<std::endl;
 
         const auto it = pendingMemories.find(edgeToRemove);
         if (it == pendingMemories.end()) {
@@ -249,7 +249,7 @@ public:
     // bool
     removePendingMemoryAfter(edge_t* edgeToRemove)
     {
-
+        //std::cout<<"removing pending memory after "<<buildEdgeName(edgeToRemove)<<" from proc "<<this->id<<std::endl;
         auto it = afterPendingMemories.find(edgeToRemove);
         if (it == afterPendingMemories.end()) {
             throw std::runtime_error("not found edge in pending after" + buildEdgeName(edgeToRemove));

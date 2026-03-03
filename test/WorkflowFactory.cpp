@@ -37,6 +37,66 @@ public:
         return g;
     }
 
+    // Creates: a join with bradth number of tasks sinking into the sink task
+    static graph_t* CreateThickDiamond(int breadth, double taskTime, double taskMemory, double edgeWeight) {
+        graph_t* g = new_graph();
+
+        vertex_t* sink = new_vertex2Weights(g, "Sink", taskTime, taskMemory, nullptr);
+        g->target = sink;
+
+        vertex_t* head = new_vertex2Weights(g, "Source", taskTime, taskMemory, nullptr);
+        g->source = head;
+
+        for (int i = 0; i < breadth; ++i) {
+            vertex_t* curr = new_vertex2Weights(g, ("Task_" + std::to_string(i)).c_str(), taskTime, taskMemory, nullptr);
+
+            new_edge(g, curr, sink, edgeWeight, nullptr);
+            new_edge(g, head, curr, edgeWeight, nullptr);
+
+        }
+
+        enforce_single_source_and_target(g, "");
+        return g;
+    }
+
+    // Creates: a join with bradth number of tasks sinking into the sink task
+    static graph_t* CreateLongDiamond(double taskTime, double taskMemory, double edgeWeight) {
+        graph_t* g = new_graph();
+
+        vertex_t* sink = new_vertex2Weights(g, "Sink", taskTime, taskMemory, nullptr);
+        g->target = sink;
+
+        vertex_t* head = new_vertex2Weights(g, "Source", taskTime, taskMemory, nullptr);
+        g->source = head;
+
+        for (int i = 0; i < 2; ++i) {
+            vertex_t* curr1 = new_vertex2Weights(g, ("Branch_" + std::to_string(i)+"_Task_1").c_str(), taskTime, taskMemory, nullptr);
+            vertex_t* curr2= new_vertex2Weights(g, ("Branch_" + std::to_string(i)+"_Task_2").c_str(), taskTime, taskMemory, nullptr);
+            vertex_t* curr3 = new_vertex2Weights(g, ("Branch_" + std::to_string(i)+"_Task_3").c_str(), taskTime, taskMemory, nullptr);
+
+            new_edge(g, head, curr1, edgeWeight, nullptr);
+            new_edge(g, curr1, curr2, edgeWeight, nullptr);
+            new_edge(g, curr2, curr3, edgeWeight, nullptr);
+            new_edge(g, curr3, sink, edgeWeight, nullptr);
+        }
+
+        enforce_single_source_and_target(g, "");
+
+        for (auto vertices_by_id : g->vertices_by_id) {
+            vertices_by_id.second->factorForRealExecution = 1;
+        }
+
+        auto e = g->first_edge;
+        while (e != nullptr) {
+            e->factorForRealExecution = 1;
+            e = e->next;
+        }
+        return g;
+    }
+
+
+
+
     // Creates a "Diamond" - useful for testing parallel execution limits
     static graph_t* CreateDiamondWithQuarterSides( double taskTime, double taskMemory, double edgeWeight) {
         graph_t* g = new_graph();

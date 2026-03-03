@@ -115,7 +115,7 @@ TEST(TestWithDeviations, SpreadForkNoDeviations)
     free_graph(dag);
 }
 
-TEST(TestWithDeviations, ChainSpreadDueToDeviation)
+TEST(TestWithDeviations, ForkNoDeviation)
 {
     graph_t* dag = WorkflowFactory::CreateFork(4, 100.0, 100.0, 50.0);
     imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
@@ -133,46 +133,231 @@ TEST(TestWithDeviations, ChainSpreadDueToDeviation)
         actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
         timeInSystem = 0;
         events.clear();
+    });
+
+    free_graph(dag);
+}
+
+TEST(TestWithDeviations, ForkTriesSpreadWithDeviationsButCannot)
+{
+    graph_t* dag = WorkflowFactory::CreateFork(3, 100.0, 100.0, 20.0);
+    imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+    actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+    // left task (task_0) is seriously delayed
+    dag->vertices_by_id.at(1)->factorForRealExecution = 10;
+    dag->vertices_by_id.at(0)->factorForRealExecution = 1;
+    dag->vertices_by_id.at(2)->factorForRealExecution = 1;
+    dag->vertices_by_id.at(3)->factorForRealExecution = 1;
+
+    dag->first_edge->factorForRealExecution = 1;
+    dag->first_edge->next->factorForRealExecution = 1;
+    dag->first_edge->next->next->factorForRealExecution = 1;
+
+    EXPECT_NO_THROW({
+        double runtime;
+
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
+        ASSERT_EQ(msOffline, 120); //
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateFork(3, 100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
 
         // left task (task_0) is seriously delayed
         dag->vertices_by_id.at(1)->factorForRealExecution = 10;
         dag->vertices_by_id.at(0)->factorForRealExecution = 1;
         dag->vertices_by_id.at(2)->factorForRealExecution = 1;
         dag->vertices_by_id.at(3)->factorForRealExecution = 1;
-        dag->vertices_by_id.at(4)->factorForRealExecution = 1;
 
         dag->first_edge->factorForRealExecution = 1;
         dag->first_edge->next->factorForRealExecution = 1;
         dag->first_edge->next->next->factorForRealExecution = 1;
-        dag->first_edge->next->next->next->factorForRealExecution = 1;
-
-        // we still put all tasks on the same processor and wait
-        msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
-        ASSERT_EQ(msOffline, 130); //
-
-        // with deviations, online scheduler spreads tasks to the second processor
-        dag = WorkflowFactory::CreateFork(4, 100.0, 100.0, 50.0);
-        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
-        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
-        timeInSystem = 0;
-
-        dag->vertices_by_id.at(1)->factorForRealExecution = 10;
-        dag->vertices_by_id.at(0)->factorForRealExecution = 1;
-        dag->vertices_by_id.at(2)->factorForRealExecution = 1;
-        dag->vertices_by_id.at(3)->factorForRealExecution = 1;
-        dag->vertices_by_id.at(4)->factorForRealExecution = 1;
-        dag->first_edge->factorForRealExecution = 1;
-        dag->first_edge->next->factorForRealExecution = 1;
-        dag->first_edge->next->next->factorForRealExecution = 1;
-        dag->first_edge->next->next->next->factorForRealExecution = 1;
 
         fonda::Options options;
-        options.usePreemptiveWrites = true;
         options.algoNumber = 2;
-        options.deviationModel = 2;
+        options.taskReleasePolicy = 2; // only schedulet asks until we find one for our processor
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
 
         double msOnline = onlineMedih(dag, actualCluster, options, runtime);
-        ASSERT_EQ(msOnline, 131); // online scheduler adds the graph-target, but its generally the same results
+        ASSERT_EQ(msOnline, 121); // online scheduler adds the graph-target, but its generally the same results
+    });
+
+    free_graph(dag);
+}
+
+TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
+{
+    graph_t* dag = WorkflowFactory::CreateThickDiamond(3, 100.0, 100.0, 20.0);
+    imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+    actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+    // left task (task_0) is seriously delayed
+    dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+    dag->vertices_by_id.at(0)->factorForRealExecution = 1;
+    dag->vertices_by_id.at(2)->factorForRealExecution = 1;
+    dag->vertices_by_id.at(1)->factorForRealExecution = 1;
+
+    auto e = dag->first_edge;
+
+    while (e != nullptr) {
+        e->factorForRealExecution = 1;
+        e = e->next;
+    }
+
+    EXPECT_NO_THROW({
+        double runtime;
+
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
+        ASSERT_EQ(msOffline, 128); //
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateThickDiamond(3, 100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+        // left task (task_0) is seriously delayed
+        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+        dag->vertices_by_id.at(0)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(2)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(1)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(4)->factorForRealExecution = 1;
+
+        e = dag->first_edge;
+        while (e != nullptr) {
+            e->factorForRealExecution = 1;
+            e = e->next;
+        }
+
+        fonda::Options options;
+        options.algoNumber = 2;
+        options.taskReleasePolicy = 3; // only schedulet asks until we find one for our processor
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+
+        double msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 140); // online scheduler is worse, because it schedules one task at a atime and puts all on the same processor
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateThickDiamond(3, 100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+        // left task (task_0) is seriously delayed
+        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+        dag->vertices_by_id.at(0)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(2)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(1)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(4)->factorForRealExecution = 1;
+
+        e = dag->first_edge;
+        while (e != nullptr) {
+            e->factorForRealExecution = 1;
+            e = e->next;
+        }
+
+        options.algoNumber = 2;
+        options.taskReleasePolicy = 1; // releases all tasks
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+
+        msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 128); // releases all at once, schedules all at once - like offline scheduler
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateThickDiamond(3, 100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+        // left task (task_0) is seriously delayed
+        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+        dag->vertices_by_id.at(0)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(2)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(1)->factorForRealExecution = 1;
+        dag->vertices_by_id.at(4)->factorForRealExecution = 1;
+
+        e = dag->first_edge;
+        while (e != nullptr) {
+            e->factorForRealExecution = 1;
+            e = e->next;
+        }
+
+        options.algoNumber = 2;
+        options.taskReleasePolicy = 2; // releases as many as processors (2)
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+
+        msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 128); // also like offline scheduler
+    });
+
+    free_graph(dag);
+}
+
+
+TEST(TestWithDeviations, LongDiamondTriesSpreadWithDeviationsButCannot)
+{
+    graph_t* dag = WorkflowFactory::CreateLongDiamond( 100.0, 100.0, 20.0);
+    imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+    actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+    print_graph_to_cout(dag);
+
+    dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+
+
+    EXPECT_NO_THROW({
+        double runtime;
+
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
+        ASSERT_EQ(msOffline, 129); //
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateLongDiamond( 100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+        // left task (task_0) is seriously delayed
+        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+
+
+        fonda::Options options;
+        options.algoNumber = 2;
+        options.taskReleasePolicy = 3; // only schedulet asks until we find one for our processor
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+
+        double msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 140); // online scheduler is worse, because it schedules one task at a atime and puts all on the same processor
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateLongDiamond(100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+        // left task (task_0) is seriously delayed
+        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+
+
+        options.algoNumber = 2;
+        options.taskReleasePolicy = 1; // releases all tasks
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+
+        msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 128); // releases all at once, schedules all at once - like offline scheduler
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateLongDiamond( 100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+        // left task (task_0) is seriously delayed
+        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
+
+
+        options.algoNumber = 2;
+        options.taskReleasePolicy = 2; // releases as many as processors (2)
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+
+        msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 128); // also like offline scheduler
     });
 
     free_graph(dag);

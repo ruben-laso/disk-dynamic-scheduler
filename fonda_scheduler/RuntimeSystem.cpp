@@ -124,7 +124,8 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, do
 
     if (findVertexByName(graph, "GRAPH_SOURCE") != nullptr) {
         remove_vertex(graph, findVertexByName(graph, "GRAPH_SOURCE"));
-        remove_vertex(graph, findVertexByName(graph, "GRAPH_TARGET"));
+        if (findVertexByName(graph, "GRAPH_TARGET") != nullptr)
+            remove_vertex(graph, findVertexByName(graph, "GRAPH_TARGET"));
     }
 
     vertex = graph->first_vertex;
@@ -563,7 +564,7 @@ void Event::scheduleTasksUntilFoundForThisProc()
     while (!readyQueue.readyTasks.empty()) {
         vertex_t* v = readyQueue.readyTasks.top();
 
-        if (v->status==Scheduled) {
+        if (v->status!=Unscheduled) {
                 readyQueue.readyTasks.pop();
                 continue;
         }

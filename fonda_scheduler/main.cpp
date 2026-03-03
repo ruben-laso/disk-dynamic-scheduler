@@ -52,7 +52,7 @@ int main(const int argc, char* argv[])
 
     const auto workflow_rows = fonda_scheduler::loadTracesFile(options.pathPrefix + options.tracesFile);
 
-    // Theoretical perfect (static schedule)
+
     imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
     imaginedClusterIncorrect =  Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
 
@@ -139,7 +139,7 @@ int main(const int argc, char* argv[])
     }
     events.clear();
     std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
-    std::cout << "makespan_dynamic " << onlineMakespan << "\t";
+    std::cout << "makespan_online " << onlineMakespan << "\t";
 
     delete actualCluster;
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
@@ -150,11 +150,11 @@ int main(const int argc, char* argv[])
 
 
     double runtimOffline = 0;
-    double stat  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimOffline);
+    double offline  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimOffline);
 
 
     std::cout << " duration_of_algorithm " << runtimOffline << " "; // << endl;
-    std::cout << "makespan_static " << stat << ' ';
+    std::cout << "makespan_offline " << offline << ' ';
 
     delete actualCluster;
     delete imaginedCluster;

@@ -152,9 +152,7 @@ void delocateFromThisProcessorToDisk(edge_t* edge, int id, const bool imaginary,
         });
     if (it == locations.end()) {
         throw std::runtime_error(
-            "Edge " + buildEdgeName(edge) +
-            " not located on processor " + std::to_string(id)
-        );
+            "Edge " + buildEdgeName(edge) + " not located on processor " + std::to_string(id));
     }
 
     locations.erase(it);
@@ -166,7 +164,7 @@ void delocateFromThisProcessorToDisk(edge_t* edge, int id, const bool imaginary,
 
 void delocateFromThisProcessorToNowhere(edge_t* edge, int id, const bool imaginary)
 {
-    //std::cout << buildEdgeName(edge)<<" delocate from proc "<<id<<" to nowhere imagine? "<<(imaginary?"yes":"no")<<std::endl;
+    // std::cout << buildEdgeName(edge)<<" delocate from proc "<<id<<" to nowhere imagine? "<<(imaginary?"yes":"no")<<std::endl;
     auto& locations = imaginary ? edge->imaginedLocations : edge->locations;
 
     auto it = std::find_if(
@@ -179,9 +177,7 @@ void delocateFromThisProcessorToNowhere(edge_t* edge, int id, const bool imagina
 
     if (it == locations.end()) {
         throw std::runtime_error(
-            "Edge " + buildEdgeName(edge) +
-            " not located on processor " + std::to_string(id)
-        );
+            "Edge " + buildEdgeName(edge) + " not located on processor " + std::to_string(id));
     }
 
     locations.erase(it);
@@ -194,10 +190,7 @@ void locateToThisProcessorFromDisk(edge_t* edge, int id, const bool imaginary, d
 
     if (!isLocatedOnDisk(edge, imaginary)) {
         throw std::runtime_error(
-            "Cannot locate edge " + buildEdgeName(edge) +
-            " to processor " + std::to_string(id) +
-            " because it is not located on disk"
-        );
+            "Cannot locate edge " + buildEdgeName(edge) + " to processor " + std::to_string(id) + " because it is not located on disk");
     }
 
     if (!isLocatedOnThisProcessor(edge, id, imaginary)) {
@@ -211,8 +204,7 @@ Location* getLocationOnProcessor(edge_t* edge, int id, const bool imaginary)
 
     auto it = std::find_if(locations.begin(), locations.end(),
         [id](const Location& location) {
-            return location.locationType == LocationType::OnProcessor &&
-                   location.processorId == id;
+            return location.locationType == LocationType::OnProcessor && location.processorId == id;
         });
 
     if (it == locations.end())
@@ -230,15 +222,13 @@ Location* getLocationOnAnyProcessor(edge_t* edge, bool imaginary)
         locations.end(),
         [](const Location& location) {
             return location.locationType == LocationType::OnProcessor;
-        }
-    );
+        });
 
     if (it == locations.end())
         return nullptr;
 
-    return &*it;   // pointer to Location inside vector
+    return &*it; // pointer to Location inside vector
 }
-
 
 Location* getLocationOnDisk(edge_t* edge, bool imaginary)
 {
@@ -249,8 +239,7 @@ Location* getLocationOnDisk(edge_t* edge, bool imaginary)
         locations.end(),
         [](const Location& location) {
             return location.locationType == LocationType::OnDisk;
-        }
-    );
+        });
 
     if (it == locations.end())
         return nullptr;
@@ -276,7 +265,7 @@ void locateToDisk(edge_t* edge, const bool imaginary, double afterWhen)
 double getSumOut(const vertex_t* v)
 {
     double sumOut = 0;
-    for (auto & out_edge : v->out_edges) {
+    for (auto& out_edge : v->out_edges) {
         sumOut += out_edge->weight;
         //      cout<<sumOut<<" by "<<v->out_edges[i]->weight<<endl;
     }
@@ -286,7 +275,7 @@ double getSumOut(const vertex_t* v)
 double getSumIn(const vertex_t* v)
 {
     double sumIn = 0;
-    for (auto & in_edge : v->in_edges) {
+    for (auto& in_edge : v->in_edges) {
         sumIn += in_edge->weight;
         //      cout<<sumOut<<" by "<<v->out_edges[i]->weight<<endl;
     }
@@ -297,30 +286,30 @@ void Event::fire()
 {
    //std::cout<<"fire event "<<this->id<<" at " <<this->getActualTimeFire()<<" planned at "<<this->getExpectedTimeFire()<<" on proc "<<this->processor->id <<std::endl;
     if (this->edge) {
-        assert(this->edge->locations.size()>=0);
-        assert(this->edge->imaginedLocations.size()>=0);
+        assert(this->edge->locations.size() >= 0);
+        assert(this->edge->imaginedLocations.size() >= 0);
     }
 
     if (cluster->getProcessorById(this->processor->id).use_count() != this->processor.use_count()) {
-        assert(this->timesFired==0); // jsut came in with a processor from a wrong cluster
-        this->processor= cluster->getProcessorById(this->processor->id);
+        assert(this->timesFired == 0); // jsut came in with a processor from a wrong cluster
+        this->processor = cluster->getProcessorById(this->processor->id);
     }
     assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
 
-    assert(this->actualTimeFire>=runtimeNow()||abs(this->actualTimeFire-runtimeNow())<0.01);
+    assert(this->actualTimeFire >= runtimeNow() || abs(this->actualTimeFire - runtimeNow()) < 0.01);
 
     this->timesFired++;
 
-    if (this->type==OnTaskFinish && !this->processor->getLastComputeEvent().expired() && this->processor->getLastComputeEvent().lock()->id==this->id) {
-        //we are last compute event
+    if (this->type == OnTaskFinish && !this->processor->getLastComputeEvent().expired() && this->processor->getLastComputeEvent().lock()->id == this->id) {
+        // we are last compute event
         this->processor->setReadyTimeCompute(this->getActualTimeFire());
     }
-    if (this->type==OnReadFinish && !this->processor->getLastReadEvent().expired() && this->processor->getLastReadEvent().lock()->id==this->id) {
-        //we are last read event
+    if (this->type == OnReadFinish && !this->processor->getLastReadEvent().expired() && this->processor->getLastReadEvent().lock()->id == this->id) {
+        // we are last read event
         this->processor->setReadyTimeRead(this->getActualTimeFire());
     }
-    if (this->type==OnWriteFinish && !this->processor->getLastWriteEvent().expired() && this->processor->getLastWriteEvent().lock()->id==this->id) {
-        //we are last write event
+    if (this->type == OnWriteFinish && !this->processor->getLastWriteEvent().expired() && this->processor->getLastWriteEvent().lock()->id == this->id) {
+        // we are last write event
         this->processor->setReadyTimeWrite(this->getActualTimeFire());
     }
 
@@ -360,8 +349,8 @@ void Processor::updateFrom(const Processor& other)
 
     assert(other.availableMemory <= other.getMemorySize() || std::abs(other.availableMemory - other.getMemorySize()) < 1);
     this->availableMemory = other.availableMemory;
-   this->availableMemoryDuringPreviousTask = other.availableMemoryDuringPreviousTask;
-   this->startOfLastTask = other.startOfLastTask;
+    this->availableMemoryDuringPreviousTask = other.availableMemoryDuringPreviousTask;
+    this->startOfLastTask = other.startOfLastTask;
     std::set<edge_t*, std::function<bool(edge_t*, edge_t*)>> updatedMemories(comparePendingMemories);
     // First, add elements that exist in both and new ones from 'other'
     for (auto* mem : other.pendingMemories) {
@@ -400,7 +389,7 @@ void clearGraph(const graph_t* graphMemTopology)
         vertex->actuallyUsedMemory = -1;
         vertex->rank = -1;
         vertex->bottom_level = -1;
-
+        vertex->assignedProcessorId = -1;
         vertex = vertex->next;
     }
 

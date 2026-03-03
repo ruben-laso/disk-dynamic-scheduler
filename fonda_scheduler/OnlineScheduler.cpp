@@ -83,13 +83,11 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
         throw std::runtime_error("No suitable processor found for "+ vertex->name);
     }
 
-    /*std::cout  << vertex->name << " best " <<
-       " "<< bestStartTime << " --- "
-           << bestFinishTime
-              // << " duration "<< bestFinishTime
-             <<   " on "
-             << bestProcessorToAssign->id
-            << " variant " << bestResultingVar<<std::endl; */
+    //std::cout<<"for task "<<vertex->name<<" variant "<< bestResultingVar << " on proc "<< bestProcessorToAssign->id
+    //                <<" from "<< bestStartTime <<" to "<< bestFinishTime
+    //        <<" duration is "<<" "<< bestFinishTime - bestStartTime << std::endl;
+
+
     //  <<" with av mem "<<bestSchedulingResult.processorOfAssignment->getAvailableMemory()<<std::endl;
 
     // Assert that the best processor is not empty and has enough memory
@@ -405,7 +403,7 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
     ourModifiedProc->setLastComputeEvent(eventFinishTask);
     finTime = ourModifiedProc->getReadyTimeCompute();
 
-  //  std::cout<<"for proc "<<ourModifiedProc->id<<" for task "<<vertex->name<<std::endl;
+   //std::cout<<"for proc "<<ourModifiedProc->id<<" for task "<<vertex->name<< " fin time "<< finTime<<std::endl;
   //  for ( auto event : newEvents) {
    //     event->printEventShort();
    // }
