@@ -58,10 +58,10 @@ double calculateSimpleBottomUpRank(vertex_t* task);
 double calculateBLCBottomUpRank( vertex_t* task);
 
 std::vector<std::pair<vertex_t*, double>> calculateMMBottomUpRank(graph_t* graphWMems);
+double calculateLRank(vertex_t* task);
 
-double medih(graph_t* graph, int algoNum, double& runtime, std::vector<vertex_t*> & processedInThisOrder);
 
-std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& runtime);
+std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, fonda::Options options, double& runtime);
 
 std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, int algoNum);
 

@@ -40,6 +40,8 @@
 // 100000000 100 1 1 chipseq_2000 3793245764 1 yes ../ machines.csv
 // 1000000 100 1 0.001 eager_2000 25705994498 1 no ../ machines.csv
 // 100000000 100 1 0.001 eager 8330435694 1 no ../ machines.csv 3
+
+//-m 100000000 -s 100 -r 10 -w eager -i 19132169434 -a heft-mm -p ../ -d 1 -q 3 -S -f input/machines.csv
 int main(const int argc, char* argv[])
 {
    // for(int i = 1; i < argc; i++)
@@ -150,7 +152,7 @@ int main(const int argc, char* argv[])
 
 
     double runtimOffline = 0;
-    double offline  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options.algoNumber, options.deviationModel, runtimOffline);
+    double offline  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options, runtimOffline);
 
 
     std::cout << " duration_of_algorithm " << runtimOffline << " "; // << endl;
@@ -180,7 +182,9 @@ int main(const int argc, char* argv[])
         }
     }
 
-     double heft  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, 0, options.deviationModel, runtimeHeft);//0 is default for heft
+     options.algoNumber=0;
+     options.reverseOrdering=false;
+     double heft  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options, runtimeHeft);//0 is default for heft
 
 
     std::cout << " duration_of_algorithm " << runtimeHeft << " "; // << endl;

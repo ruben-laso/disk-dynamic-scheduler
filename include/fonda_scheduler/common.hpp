@@ -1204,17 +1204,93 @@ struct PriorityRankComparator {
         if (a->out_edges.size() != b->out_edges.size())
             return a->out_edges.size() < b->out_edges.size();
 
-        return a->id > b->id;
+        if (a->id != b->id)
+            return a->id < b->id;
+
+        return a < b; // The ultimate fallback: memory address
     }
 };
 
-class ReadyQueue {
+/*class ReadyQueue {
+private:
+    bool usePQ;
+    std::priority_queue<vertex_t*, std::vector<vertex_t*>, PriorityRankComparator> pq;
+    std::set<vertex_t*, PriorityRankComparator> s;
+    std::unordered_set<vertex_t*> debugSeen;
+
 public:
-   // std::set<vertex_t*, CompareByRank> readyTasks;
-    std::priority_queue<
-        vertex_t*,
-        std::vector<vertex_t*>,
-       PriorityRankComparator> readyTasks;
+    ReadyQueue(bool usePriorityQueue=true) : usePQ(usePriorityQueue) {}
+
+    void push(vertex_t* v) {
+        if (debugSeen.find(v) != debugSeen.end()) {
+            std::cerr << "WARNING: Duplicate task push detected! Task ID: " << v->id << std::endl;
+        }
+        debugSeen.insert(v);
+
+        if (usePQ) pq.push(v);
+        else s.insert(v);
+    }
+
+    vertex_t* pop() {
+        if (usePQ) {
+            if (pq.empty()) return nullptr;
+            vertex_t* v = pq.top();
+            pq.pop();
+            return v;
+        } else {
+            if (s.empty()) return nullptr;
+            vertex_t* v = *s.begin();
+            s.erase(s.begin());
+            return v;
+        }
+    }
+
+    bool empty() const {
+        return usePQ ? pq.empty() : s.empty();
+    }
+
+    size_t size() const {
+        return usePQ ? pq.size() : s.size();
+    }
+}; */
+
+class ReadyQueue {
+private:
+    // The set keeps everything sorted according to your PriorityRankComparator
+    std::set<vertex_t*, PriorityRankComparator> tasks;
+    bool useSmallest;
+
+public:
+    // Constructor defines the default behavior
+    ReadyQueue(bool useSmallestRank = false ) : useSmallest(useSmallestRank) {}
+
+    // Allow changing the strategy at runtime if needed
+    void setStrategy(bool smallFirst) { useSmallest = smallFirst; }
+
+    void push(vertex_t* v) {
+        if (v) tasks.insert(v);
+    }
+
+    vertex_t* pop() {
+        if (tasks.empty()) return nullptr;
+
+        vertex_t* v = nullptr;
+        if (useSmallest) {
+            // Get the first element (smallest rank)
+            auto it = tasks.begin();
+            v = *it;
+            tasks.erase(it);
+        } else {
+            // Get the last element (largest rank / critical path)
+            auto it = std::prev(tasks.end());
+            v = *it;
+            tasks.erase(it);
+        }
+        return v;
+    }
+
+    bool empty() const { return tasks.empty(); }
+    size_t size() const { return tasks.size(); }
 };
 
 std::shared_ptr<Event> findTaskStart(const std::vector<std::shared_ptr<Event>>& someEvents);

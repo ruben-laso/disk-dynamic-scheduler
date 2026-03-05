@@ -13,7 +13,8 @@ enum ALGORITHMS {
     HEFT,
     HEFT_BL,
     HEFT_BLC,
-    HEFT_MM
+    HEFT_MM,
+    HEFT_L
 };
 
 inline int algoNameToNumber(std::string algoName)
@@ -28,7 +29,11 @@ inline int algoNameToNumber(std::string algoName)
         return HEFT_BLC;
     } else if (algoName == "heft-mm") {
         return HEFT_MM;
-    } else {
+    }
+    else if (algoName == "heft-l") {
+        return HEFT_L;
+    }
+    else {
         throw std::invalid_argument("Unknown algorithm name: " + algoName);
     }
 }

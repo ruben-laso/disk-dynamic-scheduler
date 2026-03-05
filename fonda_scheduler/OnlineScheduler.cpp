@@ -127,6 +127,8 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
         newevent->printEventShort();
     } */
 
+
+
     return bestEvents;
 }
 

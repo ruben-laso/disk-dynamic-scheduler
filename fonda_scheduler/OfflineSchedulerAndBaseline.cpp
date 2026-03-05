@@ -11,21 +11,18 @@ Cluster* imaginedClusterIncorrect;
 
 Cluster* actualCluster;
 
-std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& runtime){
-    const bool isHeft = (algoNum == fonda_scheduler::ALGORITHMS::HEFT);
+std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, fonda::Options options, double& runtime){
+    const bool isHeft = (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT);
     if (isHeft) {
         imaginedClusterIncorrect->mayBecomeInvalid();
     }
     auto start = std::chrono::system_clock::now();
-    std::vector<std::pair<vertex_t*, double>> ranks = calculateBottomLevels(graph, algoNum);
+    std::vector<std::pair<vertex_t*, double>> ranks = calculateBottomLevels(graph, options.algoNumber);
     removeSourceAndTarget(graph, ranks);
 
 
     std::unordered_map<vertex_t*, int> remaining_preds;
-    std::priority_queue<
-        vertex_t*,
-        std::vector<vertex_t*>,
-       PriorityRankComparator> readyQ;
+    ReadyQueue readyQueueMedih= ReadyQueue(options.reverseOrdering);
 
     for (auto v : graph->vertices_by_id) {
         remaining_preds[v.second] = v.second->in_edges.size();
@@ -91,7 +88,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
                 vertex_t* succ = out_edge->head;
                 remaining_preds[succ]--;
                 if (remaining_preds[succ] == 0) {
-                    readyQ.push(succ);
+                    readyQueueMedih.push(succ);
                 }
             }
         }
@@ -101,9 +98,8 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
 
 
 
-    while (!readyQ.empty()) {
-        vertex_t* vertex = readyQ.top();
-        readyQ.pop();
+    while (!readyQueueMedih.empty()) {
+        vertex_t* vertex = readyQueueMedih.pop();
         //std::cout<<"deal w "<<vertex->name<<std::endl;
         numProcessedVertices++;
         SchedulingResult bestSchedulingResult(nullptr);
@@ -164,7 +160,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, int algoNum, double& 
             vertex_t* succ = out_edge->head;
             remaining_preds[succ]--;
             if (remaining_preds[succ] == 0) {
-                readyQ.push(succ);
+                readyQueueMedih.push(succ);
             }
         }
 

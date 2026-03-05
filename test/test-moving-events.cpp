@@ -1013,6 +1013,7 @@ TEST(enforceSuccessorConstraintsTest, DiamondPullsBack) {
     events.insert(c_s);    events.insert(c_f);
     events.insert(m_s);    events.insert(m_f);
 
+    //events.canPullEarlier= true;
 
     EXPECT_NO_THROW({
 

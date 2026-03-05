@@ -7,7 +7,7 @@
 
 Cluster* cluster;
 EventManager events;
-ReadyQueue readyQueue;
+ReadyQueue readyQueue= ReadyQueue();
 
 bool usePreemptiveWrites;
 int taskReleasePolicy;
@@ -17,17 +17,17 @@ double runtimeOfScheduler;
 double timeInSystem;
 bool isHeft = false;
 
-double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1, const int algoNum, const int deviationNumber, double& runtime)
+double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1,  fonda::Options options,  double& runtime)
 {
     double resMakespan = -1;
-    events.deviationVariant = deviationNumber;
+    events.deviationVariant = options.deviationModel;
     cluster = cluster1;
-    isHeft = (algoNum == fonda_scheduler::ALGORITHMS::HEFT);
+    isHeft = (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT);
     usePreemptiveWrites=false;
     taskReleasePolicy = 0;
 
     const auto start = std::chrono::system_clock::now();
-    std::vector<std::shared_ptr<Event>> newEvents = medih2(graph, algoNum, runtime);
+    std::vector<std::shared_ptr<Event>> newEvents = medih2(graph, options, runtime);
     events.verifySchedule(graph->vertices_by_id);
 
     const auto end = std::chrono::system_clock::now();
@@ -93,6 +93,8 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, do
     taskReleasePolicy= options.taskReleasePolicy;
     timeInSystem = 0;
 
+    readyQueue= ReadyQueue(options.reverseOrdering);
+
     const auto start = std::chrono::system_clock::now();
     vertex_t* vertex = graph->first_vertex;
     switch (options.algoNumber) {
@@ -116,6 +118,14 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, do
         std::for_each(ranks.begin(), ranks.end(), [](const std::pair<vertex_t*, double>& pair) {
             pair.first->rank = pair.second;
         });
+        break;
+    }
+
+    case fonda_scheduler::HEFT_L: {
+        while (vertex != nullptr) {
+            vertex->rank = calculateLRank(vertex);
+            vertex = vertex->next;
+        }
         break;
     }
     default:
@@ -301,7 +311,7 @@ void Event::fireTaskFinish()
 
         if (isReady && childTask->status == Status::Unscheduled) {
             // std::cout<<"inserting child task "<<childTask->name<<" into ready "<<std::endl;
-            readyQueue.readyTasks.push(childTask);
+            readyQueue.push(childTask);
         }
 
         if (usePreemptiveWrites) {
@@ -561,11 +571,10 @@ void Event::scheduleTasksUntilFoundForThisProc()
     int counterTaskRelease=0;
     bool continueWithNextTask=true;
 
-    while (!readyQueue.readyTasks.empty()) {
-        vertex_t* v = readyQueue.readyTasks.top();
+    while (!readyQueue.empty()) {
+        vertex_t* v = readyQueue.pop();
 
         if (v->status!=Unscheduled) {
-                readyQueue.readyTasks.pop();
                 continue;
         }
 
@@ -577,11 +586,11 @@ void Event::scheduleTasksUntilFoundForThisProc()
             v,
             modified,
             assigned,
-            this->getActualTimeFire(),
+             this->getActualTimeFire(),
             bestVar);
 
         v->status = Status::Scheduled;
-        readyQueue.readyTasks.pop();
+
 
         if (assigned->id == this->processor->id) {
             foundTaskForThisProc = true;

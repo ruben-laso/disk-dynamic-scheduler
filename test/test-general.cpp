@@ -12,7 +12,10 @@ TEST(SchedulerLogicTest, DoesNotExceedMemoryLimit)
     double runtime = 0;
 
     EXPECT_NO_THROW({
-        std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, 1, runtime);
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, options, runtime);
         ASSERT_EQ(events.size(), 6); // only task start and finish events for 3 tasks
         for (auto e : eventsMedih) {
             e->printEventShort();
@@ -34,7 +37,11 @@ TEST(SchedulerLogicTest, ExceedsMemory)
 
     double runtime = 0;
     EXPECT_NO_THROW({
-        std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, 1, runtime);
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
+        std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, options, runtime);
         ASSERT_EQ(eventsMedih.size(), 16);
     });
 
@@ -49,7 +56,11 @@ TEST(BaselineTest, ExceedsMemory)
 
     double runtime = 0;
     EXPECT_NO_THROW({
-        std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, 1, runtime);
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
+        std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, options, runtime);
         ASSERT_EQ(eventsMedih.size(), 16);
         for (auto e : eventsMedih) {
             e->printEventShort();
@@ -58,7 +69,8 @@ TEST(BaselineTest, ExceedsMemory)
         imaginedCluster = ClusterFactory::CreateBottleneckCluster();
         imaginedClusterIncorrect = ClusterFactory::CreateBottleneckCluster();
 
-        std::vector<std::shared_ptr<Event>> eventsHeft = medih2(dag, 0, runtime);
+        options.algoNumber = 0;
+        std::vector<std::shared_ptr<Event>> eventsHeft = medih2(dag, options, runtime);
 
         for (auto e : eventsHeft) {
             e->printEventShort();
@@ -79,7 +91,11 @@ TEST(TestWithRuntime, ExceedsMemory)
     EXPECT_NO_THROW({
         // std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, 1, runtime);
         double runtimeHeft;
-        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 1, 3, runtimeHeft);
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, options, runtimeHeft);
 
         clearGraph(dag);
         // dag = WorkflowFactory::CreateDiamondWithQuarterSides( 100.0, 100.0, 10.0);
@@ -87,7 +103,8 @@ TEST(TestWithRuntime, ExceedsMemory)
         imaginedClusterIncorrect = ClusterFactory::CreateBottleneckCluster();
         timeInSystem = 0;
 
-        double msHeft = correctOflineMedihWithEvents(dag, actualCluster, 0, 3, runtimeHeft);
+        options.algoNumber = 0; // HEFT
+        double msHeft = correctOflineMedihWithEvents(dag, actualCluster, options, runtimeHeft);
     });
 
     free_graph(dag);
@@ -101,7 +118,11 @@ TEST(TestWithDeviations, SpreadForkNoDeviations)
 
     EXPECT_NO_THROW({
         double runtime;
-        auto eventsBL = medih2(dag, 2, runtime);
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
+        auto eventsBL = medih2(dag, options, runtime);
 
         ASSERT_EQ(eventsBL.size(), 14); //
         ASSERT_EQ(eventsBL.at(2)->processor->id, 0);
@@ -124,8 +145,13 @@ TEST(TestWithDeviations, ForkNoDeviation)
     EXPECT_NO_THROW({
         double runtime;
 
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
+
         // no deviations, all on one processor except for 3
-        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, options, runtime);
         ASSERT_EQ(msOffline, 40); // 3 times runtime of 100/10 = 10 (no memory effects, no communication)
 
         dag = WorkflowFactory::CreateFork(4, 100.0, 100.0, 50.0);
@@ -157,7 +183,12 @@ TEST(TestWithDeviations, ForkTriesSpreadWithDeviationsButCannot)
     EXPECT_NO_THROW({
         double runtime;
 
-        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
+
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, options, runtime);
         ASSERT_EQ(msOffline, 120); //
 
         // with deviations, online scheduler spreads tasks to the second processor
@@ -175,7 +206,6 @@ TEST(TestWithDeviations, ForkTriesSpreadWithDeviationsButCannot)
         dag->first_edge->next->factorForRealExecution = 1;
         dag->first_edge->next->next->factorForRealExecution = 1;
 
-        fonda::Options options;
         options.algoNumber = 2;
         options.taskReleasePolicy = 2; // only schedulet asks until we find one for our processor
         options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
@@ -209,7 +239,12 @@ TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
     EXPECT_NO_THROW({
         double runtime;
 
-        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
+        fonda::Options options;
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
+
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, options, runtime);
         ASSERT_EQ(msOffline, 128); //
 
         // with deviations, online scheduler spreads tasks to the second processor
@@ -230,8 +265,7 @@ TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
             e = e->next;
         }
 
-        fonda::Options options;
-        options.algoNumber = 2;
+        options.algoNumber = 1;
         options.taskReleasePolicy = 3; // only schedulet asks until we find one for our processor
         options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
 
@@ -292,10 +326,9 @@ TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
     free_graph(dag);
 }
 
-
 TEST(TestWithDeviations, LongDiamondTriesSpreadWithDeviationsButCannot)
 {
-    graph_t* dag = WorkflowFactory::CreateLongDiamond( 100.0, 100.0, 20.0);
+    graph_t* dag = WorkflowFactory::CreateLongDiamond(100.0, 100.0, 20.0);
     imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
     actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
 
@@ -303,29 +336,16 @@ TEST(TestWithDeviations, LongDiamondTriesSpreadWithDeviationsButCannot)
 
     dag->vertices_by_id.at(3)->factorForRealExecution = 10;
 
-
     EXPECT_NO_THROW({
         double runtime;
 
-        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, 2, 1, runtime);
-        ASSERT_EQ(msOffline, 129); //
-
-        // with deviations, online scheduler spreads tasks to the second processor
-        dag = WorkflowFactory::CreateLongDiamond( 100.0, 100.0, 20.0);
-        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
-        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
-
-        // left task (task_0) is seriously delayed
-        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
-
-
         fonda::Options options;
-        options.algoNumber = 2;
-        options.taskReleasePolicy = 3; // only schedulet asks until we find one for our processor
-        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+        options.algoNumber = 1; // HEFT-BL
+        options.reverseOrdering = false;
+        options.deviationModel = 1;
 
-        double msOnline = onlineMedih(dag, actualCluster, options, runtime);
-        ASSERT_EQ(msOnline, 140); // online scheduler is worse, because it schedules one task at a atime and puts all on the same processor
+        double msOffline = correctOflineMedihWithEvents(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOffline, 144); //
 
         // with deviations, online scheduler spreads tasks to the second processor
         dag = WorkflowFactory::CreateLongDiamond(100.0, 100.0, 20.0);
@@ -335,29 +355,42 @@ TEST(TestWithDeviations, LongDiamondTriesSpreadWithDeviationsButCannot)
         // left task (task_0) is seriously delayed
         dag->vertices_by_id.at(3)->factorForRealExecution = 10;
 
-
         options.algoNumber = 2;
-        options.taskReleasePolicy = 1; // releases all tasks
+        options.taskReleasePolicy = 3; // only schedulet asks until we find one for our processor
         options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
 
-        msOnline = onlineMedih(dag, actualCluster, options, runtime);
-        ASSERT_EQ(msOnline, 128); // releases all at once, schedules all at once - like offline scheduler
+        double msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 170); // online scheduler is worse, because it schedules one task at a atime and puts all on the same processor
 
         // with deviations, online scheduler spreads tasks to the second processor
-        dag = WorkflowFactory::CreateLongDiamond( 100.0, 100.0, 20.0);
+        dag = WorkflowFactory::CreateLongDiamond(100.0, 100.0, 20.0);
         imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
         actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
 
         // left task (task_0) is seriously delayed
         dag->vertices_by_id.at(3)->factorForRealExecution = 10;
 
+        options.algoNumber = 2;
+        options.taskReleasePolicy = 1; // releases all tasks
+        options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
+
+        msOnline = onlineMedih(dag, actualCluster, options, runtime);
+        ASSERT_EQ(msOnline, 148); // releases all at once, schedules all at once - like offline scheduler
+
+        // with deviations, online scheduler spreads tasks to the second processor
+        dag = WorkflowFactory::CreateLongDiamond(100.0, 100.0, 20.0);
+        imaginedCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+        actualCluster = ClusterFactory::CreateHomogeneous(2, 420, 10);
+
+        // left task (task_0) is seriously delayed
+        dag->vertices_by_id.at(3)->factorForRealExecution = 10;
 
         options.algoNumber = 2;
         options.taskReleasePolicy = 2; // releases as many as processors (2)
         options.deviationModel = 2; // doesnt matter, we fixated the deviations directly on the graph
 
         msOnline = onlineMedih(dag, actualCluster, options, runtime);
-        ASSERT_EQ(msOnline, 128); // also like offline scheduler
+        ASSERT_EQ(msOnline, 148); // also like offline scheduler
     });
 
     free_graph(dag);

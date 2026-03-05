@@ -77,6 +77,15 @@ std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, 
     case fonda_scheduler::ALGORITHMS::HEFT_MM:
         ranks = calculateMMBottomUpRank(graph);
         break;
+    case fonda_scheduler::ALGORITHMS::HEFT_L: {
+        vertex_t* vertex = graph->first_vertex;
+        while (vertex != nullptr) {
+            double rank = calculateLRank(vertex);
+            ranks.emplace_back(vertex, rank);
+            vertex = vertex->next;
+        }
+        break;
+    }
     default:
         throw std::runtime_error("unknown algorithm");
     }
@@ -157,6 +166,17 @@ double calculateBLCBottomUpRank(vertex_t* task)
     task->rank = retur;
     return retur;
 }
+
+double calculateLRank(vertex_t* task)
+{    double inputCost = 0.0;
+    for (const auto in_edge : task->in_edges) {
+        inputCost += in_edge->weight;
+    }
+    double retur = inputCost;
+    task->rank = retur;
+    return retur;
+}
+
 
 std::vector<std::pair<vertex_t*, double>> calculateMMBottomUpRank(graph_t* graphWMems)
 {
