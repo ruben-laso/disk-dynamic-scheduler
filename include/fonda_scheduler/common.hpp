@@ -355,7 +355,7 @@ public:
         }
     }
 
-    void enforceSuccessorConstraints(std::vector<TimeShift>& outShifts)
+    void enforceSuccessorConstraints(std::vector<TimeShift>& outShifts, bool canPullEarlier = false)
     {
         std::deque<std::shared_ptr<Event>> worklist;
         // Map of Event* -> NewTime (O(1) lookups)
@@ -378,7 +378,8 @@ public:
                 // RULE: Start must wait for predecessors
                 double limiting = current->earliestAllowedTimeFast(fastShifts);
 
-                if (std::abs(limiting - currentTime) > 1e-7) {
+                double diffOnS = limiting - currentTime;
+                 if (std::abs(diffOnS) > 1e-7 &&  (diffOnS>0|| canPullEarlier)) {
                     double diff = limiting - current->getActualTimeFire();
                     fastShifts[current.get()] = limiting;
 
@@ -405,7 +406,7 @@ public:
                 double limiting = std::max(current->earliestAllowedTimeFast(fastShifts), sTime + duration);
 
                 double difference = limiting - currentTime;
-                if (std::abs(difference) > 1e-7) {
+                if (std::abs(difference) > 1e-7 &&  (difference>0|| canPullEarlier)) {
                     fastShifts[current.get()] = limiting;
                     // Check downstream tasks
                     for (auto& sw : current->getSuccessors()) {
@@ -417,7 +418,7 @@ public:
                 // RULE: Generic I/O or other events
                 double limiting = current->earliestAllowedTimeFast(fastShifts);
                 double x = limiting - currentTime;
-                if (std::abs(x) > 1e-7) {
+                if (std::abs(x) > 1e-7&&  (x>0|| canPullEarlier)) {
                     fastShifts[current.get()] = limiting;
                     for (auto& sw : current->getSuccessors()) {
                         if (auto next = sw.lock())
@@ -868,6 +869,7 @@ public:
     using EventPtr = std::shared_ptr<Event>;
     using EventSet = std::set<EventPtr, CompareByTimestamp>;
     int deviationVariant = 1; // default is no devations
+    bool canPullEarlier = true; // whether we can pull events earlier, or only push later
 
 private:
     EventSet eventSet; // ordered by timestamp
@@ -902,7 +904,6 @@ public:
 
         // First insertion sanity checks
         if (firstInsertion) {
-            // PASS 1: absolute repair, cannot be needed without deviations
             if (deviationVariant != 1  ) {
                 if (ev->isStart()) {
 
@@ -914,7 +915,7 @@ public:
                         if (predecessor->isManaged && predecessor->getActualTimeFire() != predecessor->getExpectedTimeFire() &&
                             predecessor->getActualTimeFire() != ourStart->getActualTimeFire()) {
                             std::vector<TimeShift> repair;
-                            predecessor->enforceSuccessorConstraints(repair);
+                            predecessor->enforceSuccessorConstraints(repair, canPullEarlier);
                             // Apply any repairs
                             for (auto& s : repair) {
                                 this->reschedulePure(s.ev->id, s.newTime);
@@ -984,13 +985,16 @@ public:
 
         // Use a map for all propagation calculations
         std::unordered_map<Event*, double> fastShifts;
-        fastShifts[ev.get()] = newTime;
+
+        if (newTime> oldTime|| canPullEarlier) {
+            fastShifts[ev.get()] = newTime;
+        }
 
         double diff = newTime - oldTime;
         EventPtr eventToPropagateFrom = ev;
 
         // 2. Handle Start-Finish lockstep immediately in the map
-        if (ev->isStart()) {
+        if (ev->isStart() && (newTime> oldTime|| canPullEarlier)) {
             auto myFinish = ev->getCorrespondingFinish();
             if (myFinish) {
                 double finishOldTime = myFinish->getActualTimeFire();
@@ -1004,11 +1008,10 @@ public:
         if (diff > 0) {
             eventToPropagateFrom->propagateAllSuccessorsForwardInExecution(diff, fastShifts);
         } else {
-            // You should refactor propagatePullEarlierRuntime to use the map similarly
-            eventToPropagateFrom->propagatePullEarlierRuntimeFast(fastShifts);
+            if (canPullEarlier)
+                eventToPropagateFrom->propagatePullEarlierRuntimeFast(fastShifts);
         }
 
-        // 4. Batch Update (The Performance Winner)
         for (auto& s : fastShifts) {
             //std::cout << "shifts: move "<<s.first->id<<" from "<<s. first->getActualTimeFire()<< " to "<<s.second<<", ";
             reschedulePure(s.first->id, s.second);
@@ -1211,7 +1214,8 @@ struct PriorityRankComparator {
     }
 };
 
-/*class ReadyQueue {
+/*
+class ReadyQueue {
 private:
     bool usePQ;
     std::priority_queue<vertex_t*, std::vector<vertex_t*>, PriorityRankComparator> pq;

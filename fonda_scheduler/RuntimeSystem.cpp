@@ -21,6 +21,7 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1,  fonda::O
 {
     double resMakespan = -1;
     events.deviationVariant = options.deviationModel;
+    events.canPullEarlier=false;
     cluster = cluster1;
     isHeft = (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT);
     usePreemptiveWrites=false;
@@ -89,6 +90,7 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, do
     enforce_single_source_and_target_with_minimal_weights(graph);
     compute_bottom_and_top_levels(graph);
     events.deviationVariant = options.deviationModel;
+    events.canPullEarlier= true;
     usePreemptiveWrites = options.usePreemptiveWrites;
     taskReleasePolicy= options.taskReleasePolicy;
     timeInSystem = 0;

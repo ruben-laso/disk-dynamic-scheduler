@@ -887,6 +887,7 @@ TEST(enforceSuccessorConstraintsTest, DiamondBothBranchesPushForward) {
     events.insert(c_s);    events.insert(c_f);
     events.insert(m_s);    events.insert(m_f);
 
+    events.canPullEarlier= true;
 
     EXPECT_NO_THROW({
 
@@ -899,7 +900,7 @@ TEST(enforceSuccessorConstraintsTest, DiamondBothBranchesPushForward) {
 
         //we explicitly repair the constraints before firing a-f
         std::vector<TimeShift> repair;
-        a_f->enforceSuccessorConstraints(repair);
+        a_f->enforceSuccessorConstraints(repair, events.canPullEarlier);
         for (auto& s : repair) {
             events.reschedulePure(s.ev->id, s.newTime);
         }
@@ -1026,7 +1027,7 @@ TEST(enforceSuccessorConstraintsTest, DiamondPullsBack) {
 
         //we explicitly repair the constraints before firing a-f
         std::vector<TimeShift> repair;
-        a_f->enforceSuccessorConstraints(repair);
+        a_f->enforceSuccessorConstraints(repair, true);
         for (auto& s : repair) {
             events.reschedulePure(s.ev->id, s.newTime);
         }
