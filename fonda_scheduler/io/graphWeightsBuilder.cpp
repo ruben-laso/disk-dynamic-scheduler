@@ -227,7 +227,7 @@ void retrieveEdgeWeights(const graph_t* graphMemTopology)
             edge_t* incomingEdge = vertex->in_edges.at(j);
             const vertex_t* predecessor = incomingEdge->tail;
             incomingEdge->weight = (predecessor->wchar / totalOutput) * vertex->taskinputsize;
-            incomingEdge->factorForRealExecution = 1;
+           // incomingEdge->factorForRealExecution = 1;
         }
         vertex = vertex->next;
     }
