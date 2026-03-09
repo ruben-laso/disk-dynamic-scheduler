@@ -176,9 +176,12 @@ TEST(TestWithDeviations, ForkTriesSpreadWithDeviationsButCannot)
     dag->vertices_by_id.at(2)->factorForRealExecution = 1;
     dag->vertices_by_id.at(3)->factorForRealExecution = 1;
 
-    dag->first_edge->factorForRealExecution = 1;
-    dag->first_edge->next->factorForRealExecution = 1;
-    dag->first_edge->next->next->factorForRealExecution = 1;
+    dag->first_edge->factorForRealExecutionRead = 1;
+    dag->first_edge->factorForRealExecutionWrite = 1;
+    dag->first_edge->next->factorForRealExecutionRead = 1;
+    dag->first_edge->next->factorForRealExecutionWrite = 1;
+    dag->first_edge->next->next->factorForRealExecutionRead = 1;
+    dag->first_edge->next->next->factorForRealExecutionWrite = 1;
 
     EXPECT_NO_THROW({
         double runtime;
@@ -202,9 +205,12 @@ TEST(TestWithDeviations, ForkTriesSpreadWithDeviationsButCannot)
         dag->vertices_by_id.at(2)->factorForRealExecution = 1;
         dag->vertices_by_id.at(3)->factorForRealExecution = 1;
 
-        dag->first_edge->factorForRealExecution = 1;
-        dag->first_edge->next->factorForRealExecution = 1;
-        dag->first_edge->next->next->factorForRealExecution = 1;
+        dag->first_edge->factorForRealExecutionRead = 1;
+        dag->first_edge->factorForRealExecutionWrite = 1;
+        dag->first_edge->next->factorForRealExecutionRead = 1;
+        dag->first_edge->next->factorForRealExecutionWrite = 1;
+        dag->first_edge->next->next->factorForRealExecutionRead = 1;
+        dag->first_edge->next->next->factorForRealExecutionWrite = 1;
 
         options.algoNumber = 2;
         options.taskReleasePolicy = 2; // only schedulet asks until we find one for our processor
@@ -232,7 +238,8 @@ TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
     auto e = dag->first_edge;
 
     while (e != nullptr) {
-        e->factorForRealExecution = 1;
+        e->factorForRealExecutionRead = 1;
+        e->factorForRealExecutionWrite = 1;
         e = e->next;
     }
 
@@ -261,7 +268,8 @@ TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
 
         e = dag->first_edge;
         while (e != nullptr) {
-            e->factorForRealExecution = 1;
+            e->factorForRealExecutionRead = 1;
+            e->factorForRealExecutionWrite = 1;
             e = e->next;
         }
 
@@ -286,7 +294,8 @@ TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
 
         e = dag->first_edge;
         while (e != nullptr) {
-            e->factorForRealExecution = 1;
+            e->factorForRealExecutionRead = 1;
+            e->factorForRealExecutionWrite = 1;
             e = e->next;
         }
 
@@ -311,7 +320,8 @@ TEST(TestWithDeviations, ThickDiamondTriesSpreadWithDeviationsButCannot)
 
         e = dag->first_edge;
         while (e != nullptr) {
-            e->factorForRealExecution = 1;
+            e->factorForRealExecutionRead = 1;
+           e->factorForRealExecutionWrite = 1;
             e = e->next;
         }
 

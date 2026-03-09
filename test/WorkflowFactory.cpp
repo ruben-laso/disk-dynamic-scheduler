@@ -88,7 +88,8 @@ public:
 
         auto e = g->first_edge;
         while (e != nullptr) {
-            e->factorForRealExecution = 1;
+            e->factorForRealExecutionRead = 1;
+            e->factorForRealExecutionWrite = 1;
             e = e->next;
         }
         return g;

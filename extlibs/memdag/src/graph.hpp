@@ -149,7 +149,8 @@ struct edge_t {
     edge_status_t status;
     /* user data */
     void* data = nullptr;
-    double factorForRealExecution = -1;
+    double factorForRealExecutionWrite = -1;
+    double factorForRealExecutionRead = -1;
     ///\cond HIDDEN_SYMBOLS
     /* other data used for graph algorithms */
     void* generic_pointer = nullptr;

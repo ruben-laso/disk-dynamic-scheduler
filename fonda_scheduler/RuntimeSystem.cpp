@@ -334,10 +334,10 @@ void Event::fireReadStart()
     assert(isLocatedOnDisk(this->edge, false));
 
     double durationOfRead = this->edge->weight / this->processor->readSpeedDisk;
-    const double factor = getOrApplyDeviationFactor(this->edge->factorForRealExecution, durationOfRead);
+    const double factor = getOrApplyDeviationFactor(this->edge->factorForRealExecutionRead, durationOfRead);
     assert(factor > 0);
 
-    this->edge->factorForRealExecution = factor;
+    this->edge->factorForRealExecutionRead = factor;
     const double expectedTimeFireFinish = this->actualTimeFire + durationOfRead;
 
     this->isDone = true;
@@ -378,9 +378,9 @@ void Event::fireWriteStart()
     assert(cluster->getProcessorById(this->processor->id).use_count() == this->processor.use_count());
 
     double durationOfWrite = this->edge->weight / this->processor->writeSpeedDisk;
-    const double factor = getOrApplyDeviationFactor(this->edge->factorForRealExecution, durationOfWrite);
+    const double factor = getOrApplyDeviationFactor( this->edge->factorForRealExecutionWrite, durationOfWrite);
     assert(factor > 0);
-    this->edge->factorForRealExecution = factor;
+    this->edge->factorForRealExecutionWrite = factor;
     assert(factor > 0);
 
     const double actualTimeFireFinish = this->actualTimeFire + durationOfWrite;
@@ -389,6 +389,9 @@ void Event::fireWriteStart()
 
     if (finishWrite == nullptr) {
         throw std::runtime_error("NO write finish found for " + this->id);
+    }
+    if (finishWrite->id=="MAKE_GENOME_FILTER-MERGED_LIB_BAM_FILTER-w-f") {
+        std::cout << "";
     }
 
     events.reschedule(finishWrite->id, actualTimeFireFinish);
@@ -697,14 +700,14 @@ double applyDeviationTo(double& in)
         stddev = in * 0.1;
         break;
     case 3:
-        stddev = in * 0.5;
+        stddev = in * 0.3;
         break;
     case 1:
     case 5:
         stddev = 0;
         break;
     case 4:
-        stddev = in * 0.3;
+        stddev = in * 0.5;
         break;
     default:
         throw std::runtime_error("unknown deviation variant");
@@ -717,6 +720,7 @@ double applyDeviationTo(double& in)
         result *= 2;
     }
     const double factor = result / in;
+    //std::cout << " instead of " << in <<  " got " << result << " factor " << factor << std::endl;
     in = result;
     if (events.deviationVariant == 1)
         assert(factor == 1);

@@ -63,7 +63,7 @@ int main(const int argc, char* argv[])
 
    // actualCluster->printProcessors();
 
-    const double biggestMem = imaginedCluster->getMemBiggestFreeProcessor()->getMemorySize();
+    double biggestMem = imaginedCluster->getMemBiggestFreeProcessor()->getMemorySize();
 
     // QUESTION: Why not reading directly from the options.workflowName?
     std::string filename;
@@ -176,12 +176,15 @@ int main(const int argc, char* argv[])
             }
         }
         for (edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
-            if (e->factorForRealExecution<1) {
-                e->factorForRealExecution=1;
+            if (e->factorForRealExecutionRead<1) {
+                e->factorForRealExecutionRead=1;
+            }
+            if (e->factorForRealExecutionWrite<1) {
+                e->factorForRealExecutionWrite=1;
             }
         }
     }
-
+    double oldAlgoNum= options.algoNumber;
      options.algoNumber=0;
      options.reverseOrdering=false;
      double heft  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options, runtimeHeft);//0 is default for heft
@@ -193,4 +196,158 @@ int main(const int argc, char* argv[])
     delete graphMemTopology;
     delete imaginedCluster;
     delete actualCluster;
+
+
+
+
+    options.deviationModel=4;
+    options.algoNumber= oldAlgoNum;
+    std::cout << "algo_nr " << options.algoNumber << " " << options.workflowName << " " << "input_size " << options.inputSize << " ";
+
+    auto workflow_rows1 = fonda_scheduler::loadTracesFile(options.pathPrefix + options.tracesFile);
+
+
+    imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    imaginedClusterIncorrect =  Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+
+    // With deviations
+    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+
+   // actualCluster->printProcessors();
+
+    biggestMem = imaginedCluster->getMemBiggestFreeProcessor()->getMemorySize();
+
+    // QUESTION: Why not reading directly from the options.workflowName?
+
+    if (options.workflowName.rfind("/home", 0) == 0 || options.workflowName.rfind("/work", 0) == 0) {
+        filename = options.workflowName.substr(0, options.workflowName.find("//") + 1) + options.workflowName.substr(options.workflowName.find("//") + 2, options.workflowName.size());
+    } else {
+        filename = options.pathPrefix + "input/";
+        // string suffix = "00";
+        //  bool isGenerated = workflowName.substr(workflowName.size() - suffix.size()) == suffix;
+        // if (isGenerated) {
+        filename += "generated/"; //+filename;
+        //  }
+        filename += options.workflowName;
+
+        if (const size_t pos = filename.find(".dot"); pos == std::string::npos) {
+            filename += ".dot";
+        }
+    }
+
+    graphMemTopology = read_dot_graph(filename.c_str(), nullptr, nullptr, nullptr,"swaps");
+    checkForZeroMemories(graphMemTopology);
+
+    const auto i11 = options.workflowName.find("//");
+    options.workflowName = i11 == std::string::npos ? options.workflowName : options.workflowName.substr(i11 + 2, options.workflowName.size());
+    // remove the size from name: atacseq_2000 -> atacseq
+    const auto n44 = options.workflowName.find('_');
+    options.workflowName = options.workflowName.substr(0, n44);
+
+    // 10, 100                                                               memShorteningDivision, ioShorteningCoef
+    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows1, imaginedCluster, 1, 1, options);
+    //print_graph_to_cout(graphMemTopology);
+
+    if (options.scaleToFit) {
+        fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);
+    }
+
+    std::cout << std::setprecision(15);
+    std::clog << std::setprecision(15);
+
+    runtimeDynamic = 0;
+    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+        assert(u->status==Unscheduled);
+    }
+    onlineMakespan = 0;
+
+
+
+    assert(options.algoNumber!=0); // never use just heft, it is attached to each execution as a third option now.
+    onlineMakespan =  onlineMedih(graphMemTopology, actualCluster, options, runtimeDynamic);
+
+    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+        assert(u->status==Finished);
+    }
+    for (const edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
+     if (e->accountedFor) {
+      //   std::cout<<" accounted for!  ";print_edge(e);
+     }
+        else {
+            if (e->locations.size()>0 && e->locations.at(0).locationType==LocationType::OnProcessor && e->locations.at(0).processorId==e->head->assignedProcessorId){}
+            else {
+                std::cout<<" unaccounted for ";print_edge(e);
+                if (e->locations.at(0).locationType==LocationType::OnDisk) {
+                    std::cout<<"on disk"<<std::endl;
+                }
+                if (e->locations.at(0).locationType==LocationType::OnProcessor) {
+                    std::cout<<"on proc "<<e->locations.at(0).processorId.value()<<std::endl;
+                }
+                if (e->locations.at(0).locationType==LocationType::Nowhere) {
+                    std::cout<<"on nowhere "<<std::endl;
+                }
+
+                std::cout<< e->locations.size()<<std::endl;
+            }
+        }
+    }
+    events.clear();
+    std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
+    std::cout << "makespan_online " << onlineMakespan << "\t";
+
+    delete actualCluster;
+    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    timeInSystem=0; events.clear();
+    clearGraph(graphMemTopology);
+    enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
+    compute_bottom_and_top_levels(graphMemTopology);
+
+
+     runtimOffline = 0;
+     offline  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options, runtimOffline);
+
+
+    std::cout << " duration_of_algorithm " << runtimOffline << " "; // << endl;
+    std::cout << "makespan_offline " << offline << ' ';
+
+    delete actualCluster;
+    delete imaginedCluster;
+    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    timeInSystem=0; events.clear();
+    clearGraph(graphMemTopology);
+    enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
+    compute_bottom_and_top_levels(graphMemTopology);
+     runtimeHeft = 0;
+
+    //HEFT should not profit from earlier finishing times of tasks and edges in case of deviations
+    if (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT) {
+        for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+            if (u->factorForRealExecution<1) {
+                u->factorForRealExecution=1;
+            }
+        }
+        for (edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
+            if (e->factorForRealExecutionRead<1) {
+                e->factorForRealExecutionRead=1;
+            }
+            if (e->factorForRealExecutionWrite<1) {
+                e->factorForRealExecutionWrite=1;
+            }
+        }
+    }
+
+     options.algoNumber=0;
+     options.reverseOrdering=false;
+      heft  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options, runtimeHeft);//0 is default for heft
+
+
+    std::cout << " duration_of_algorithm " << runtimeHeft << " "; // << endl;
+    std::cout << "makespan_heft " << heft << '\n';
+
+    delete graphMemTopology;
+    delete imaginedCluster;
+    delete actualCluster;
 }
+
+

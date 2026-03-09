@@ -986,15 +986,18 @@ public:
         // Use a map for all propagation calculations
         std::unordered_map<Event*, double> fastShifts;
 
-        if (newTime> oldTime|| canPullEarlier) {
-            fastShifts[ev.get()] = newTime;
-        }
+
+        //reschedule our task no matter if we can or cannot pull earlier, because one task can still finish earlier.
+        //However, we will not propagate this pull
+        fastShifts[ev.get()] = newTime;
+
 
         double diff = newTime - oldTime;
         EventPtr eventToPropagateFrom = ev;
 
         // 2. Handle Start-Finish lockstep immediately in the map
-        if (ev->isStart() && (newTime> oldTime|| canPullEarlier)) {
+        //also pull ealier even if canPullEarlier=false, because we need to keep the duration
+        if (ev->isStart()) {
             auto myFinish = ev->getCorrespondingFinish();
             if (myFinish) {
                 double finishOldTime = myFinish->getActualTimeFire();
@@ -1009,6 +1012,7 @@ public:
             eventToPropagateFrom->propagateAllSuccessorsForwardInExecution(diff, fastShifts);
         } else {
             if (canPullEarlier)
+                //that's where we do not propagate
                 eventToPropagateFrom->propagatePullEarlierRuntimeFast(fastShifts);
         }
 
