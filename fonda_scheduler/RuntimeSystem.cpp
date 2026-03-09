@@ -26,6 +26,8 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1,  fonda::O
     isHeft = (options.algoNumber == fonda_scheduler::ALGORITHMS::HEFT);
     usePreemptiveWrites=false;
     taskReleasePolicy = 0;
+    timeInSystem=0;
+    runtimeOfScheduler=0;
 
     const auto start = std::chrono::system_clock::now();
     std::vector<std::shared_ptr<Event>> newEvents = medih2(graph, options, runtime);
@@ -94,6 +96,7 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, do
     usePreemptiveWrites = options.usePreemptiveWrites;
     taskReleasePolicy= options.taskReleasePolicy;
     timeInSystem = 0;
+    runtimeOfScheduler=0;
 
     readyQueue= ReadyQueue(options.reverseOrdering);
 
@@ -586,13 +589,17 @@ void Event::scheduleTasksUntilFoundForThisProc()
         std::vector<std::shared_ptr<Processor>> modified;
         std::shared_ptr<Processor> assigned;
         int bestVar;
-
+        const auto start = std::chrono::system_clock::now();
         auto newEvents = bestTentativeAssignment(
             v,
             modified,
             assigned,
              this->getActualTimeFire(),
             bestVar);
+
+        const auto end = std::chrono::system_clock::now();
+        const std::chrono::duration<double> elapsed_seconds = end - start;
+        runtimeOfScheduler += elapsed_seconds.count();
 
         v->status = Status::Scheduled;
 
