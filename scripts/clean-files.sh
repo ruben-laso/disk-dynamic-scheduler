@@ -30,6 +30,7 @@ for dir in "$parent_dir"/*; do
                     # Loop through all text files found and append them to the merged file
                     for file in $txt_files; do
                         cat "$file" >> "$merged_file"
+                        echo "" >> "$merged_file"
                     done
                 else
                     echo "No .out files found in $dir"
