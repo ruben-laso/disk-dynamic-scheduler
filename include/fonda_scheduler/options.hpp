@@ -49,6 +49,8 @@ struct Options {
     //2 - schedule only as many children as there are processors in the cluster
     //3 - schedule only until we find the next task for our processor
     int taskReleasePolicy = 1;
+
+    bool useMinimalEdgeWeights=false;
 };
 
 // List of options
@@ -67,6 +69,7 @@ static const struct option long_options[] = {
     { "preemptive-writes", no_argument, nullptr, 'E' },
     { "reverse-ordering", no_argument, nullptr, 'O' },
     {"task-release-policy", required_argument, nullptr, 'q'},
+    { "minimal-weights", no_argument, nullptr, 'M' },
     { "help", no_argument, nullptr, 'h' },
     { nullptr, 0, nullptr, 0 } // End of options
 };
@@ -85,7 +88,8 @@ static const char* short_options = "" //
                                    "S" // scale-to-fit
                                    "E" // preemptive writes
                                    "q:" // task release policy
-                                    "O" //reverse ordering
+                                   "O" //reverse ordering
+                                   "M" // minimal edge weights
                                    "h"; // help
 
 inline void printHelp(const char* program_name)
@@ -111,6 +115,7 @@ inline void printHelp(const char* program_name)
               << "  -S, --scale-to-fit                   Scale task's memory to fit the machine. Default: false\n"
               << "  -E, --preemptive-writes              Use preemptive (-E-xtra) writes. Default: false\n"
               << "  -O, --reverse-ordering               Use the rank ordering in the reverse (prefer tasks with smallest ranks). Default: false\n"
+              << " -M, --minimal-weights              Use minimal edge weights (1) instead of real ones. Default: false\n"
               << "  -q, --task-release-policy <variant>  Set task release policy. Default: 1\n"
               << "  -h, --help                           Show this help message and exit\n";
 }
@@ -172,6 +177,9 @@ inline Options parseOptions(int argc, char* argv[])
             break;
         case 'O':
             options.reverseOrdering = true;
+            break;
+        case 'M':
+            options.useMinimalEdgeWeights = true;
             break;
         case 'q':
                 parseArg("task-release-policy", optarg, options.taskReleasePolicy, [](const char* arg) { return std::stoi(arg);});

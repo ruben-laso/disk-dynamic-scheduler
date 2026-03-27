@@ -198,7 +198,7 @@ void fillGraphWeightsFromExternalSource(const graph_t* graphMemTopology,
             setSwapRateFromText(v, options);
         }
     }
-    retrieveEdgeWeights(graphMemTopology);
+    retrieveEdgeWeights(graphMemTopology, options);
 }
 void setSwapRateFromText(vertex_t* v, const fonda::Options& options)
 {
@@ -214,8 +214,10 @@ void setSwapRateFromText(vertex_t* v, const fonda::Options& options)
     }
 }
 
-void retrieveEdgeWeights(const graph_t* graphMemTopology)
+void retrieveEdgeWeights(const graph_t* graphMemTopology, const fonda::Options& options)
 {
+    double minEdgeWeight= std::numeric_limits<double>::max();
+
     const vertex_t* vertex = graphMemTopology->first_vertex;
     while (vertex != nullptr) {
         double totalOutput = 1;
@@ -227,9 +229,16 @@ void retrieveEdgeWeights(const graph_t* graphMemTopology)
             edge_t* incomingEdge = vertex->in_edges.at(j);
             const vertex_t* predecessor = incomingEdge->tail;
             incomingEdge->weight = (predecessor->wchar / totalOutput) * vertex->taskinputsize;
+            minEdgeWeight = std::min(minEdgeWeight, incomingEdge->weight);
            // incomingEdge->factorForRealExecution = 1;
         }
         vertex = vertex->next;
+    }
+
+    if (options.useMinimalEdgeWeights) {
+         for (edge_t* edge = graphMemTopology->first_edge; edge != nullptr; edge = edge->next) {
+            edge->weight = minEdgeWeight;
+         }
     }
 }
 
