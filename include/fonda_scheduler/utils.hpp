@@ -81,7 +81,7 @@ inline void scaleToFit(const graph_t* graphMemTopology, double biggestMem)
 {
     static constexpr auto MEMORY_EPSILON = 1000;
     static constexpr auto MEMORY_DIVISION_FACTOR = 4;
-    static constexpr auto N_TRIALS = 3;
+    static constexpr auto N_TRIALS = 10;
 
     vertex_t* pv = graphMemTopology->first_vertex;
 
