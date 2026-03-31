@@ -40,6 +40,7 @@
 // 100000000 100 1 1 chipseq_2000 3793245764 1 yes ../ machines.csv
 // 1000000 100 1 0.001 eager_2000 25705994498 1 no ../ machines.csv
 // 100000000 100 1 0.001 eager 8330435694 1 no ../ machines.csv 3
+//-m 100000000 -s 100 -r 10 -w atacseq -i 14091675276 -a heft-bl -p ../ -d 1 -q 3 -S -f input/machines.csv -E -M
 
 //-m 100000000 -s 100 -r 10 -w eager -i 19132169434 -a heft-mm -p ../ -d 1 -q 3 -S -f input/machines.csv
 int main(const int argc, char* argv[])
@@ -82,19 +83,25 @@ int main(const int argc, char* argv[])
             filename += ".dot";
         }
     }
+    graph_t* graphMemTopology ;
+    if (filename.find("dag") != std::string::npos) {
+        graphMemTopology = read_dot_graph(filename.c_str(), "weight", "C", "M","swaps");
+        checkForZeroMemories(graphMemTopology);
+    }else {
+       graphMemTopology = read_dot_graph(filename.c_str(), nullptr, nullptr, nullptr,"swaps");
+        checkForZeroMemories(graphMemTopology);
 
-    graph_t* graphMemTopology = read_dot_graph(filename.c_str(), nullptr, nullptr, nullptr,"swaps");
-    checkForZeroMemories(graphMemTopology);
+        const auto i1 = options.workflowName.find("//");
+        options.workflowName = i1 == std::string::npos ? options.workflowName : options.workflowName.substr(i1 + 2, options.workflowName.size());
+        // remove the size from name: atacseq_2000 -> atacseq
+        const auto n4 = options.workflowName.find('_');
+        options.workflowName = options.workflowName.substr(0, n4);
 
-    const auto i1 = options.workflowName.find("//");
-    options.workflowName = i1 == std::string::npos ? options.workflowName : options.workflowName.substr(i1 + 2, options.workflowName.size());
-    // remove the size from name: atacseq_2000 -> atacseq
-    const auto n4 = options.workflowName.find('_');
-    options.workflowName = options.workflowName.substr(0, n4);
+        // 10, 100                                                               memShorteningDivision, ioShorteningCoef
+        Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, imaginedCluster, 1, 1, options);
+        //print_graph_to_cout(graphMemTopology);
+    }
 
-    // 10, 100                                                               memShorteningDivision, ioShorteningCoef
-    Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, imaginedCluster, 1, 1, options);
-    //print_graph_to_cout(graphMemTopology);
 
     if (options.scaleToFit) {
         fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);
