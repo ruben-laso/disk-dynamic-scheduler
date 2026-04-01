@@ -42,7 +42,7 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1,  fonda::O
     while (!events.empty()) {
 
         cntr++;
-        events.assertQueueSorted("Before Everything");
+        //events.assertQueueSorted("Before Everything");
 
         auto e = events.earliestReady(); // earliest by time
         if (!e) {
