@@ -245,7 +245,7 @@ void retrieveEdgeWeights(const graph_t* graphMemTopology, const fonda::Options& 
 
     if (options.useMinimalEdgeWeights) {
          for (edge_t* edge = graphMemTopology->first_edge; edge != nullptr; edge = edge->next) {
-            edge->weight = minEdgeWeight;
+            edge->weight = maxEdgeWeight;
          }
     }
 }
