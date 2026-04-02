@@ -379,7 +379,7 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
 
     eventFinishTask->adjustBothPlannedFireTimes(finishTime);
 
-    if (eventStartTask->getExpectedTimeFire() >= eventFinishTask->getExpectedTimeFire()) {
+    if (eventStartTask->getExpectedTimeFire() > eventFinishTask->getExpectedTimeFire()) {
         std::cout << " BAD START/FINSH TIME TASK " << eventStartTask->getExpectedTimeFire() << " "
                   << eventFinishTask->getExpectedTimeFire()
                   << "FOR TASK " << vertex->name << " vertex time  " << vertex->time << '\n';

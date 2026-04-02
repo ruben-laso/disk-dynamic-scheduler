@@ -1023,8 +1023,8 @@ variants:
        extra_args: [ '-q 3' ]
   - axis: 'useMinMem'
     items:
-     # - name: 'MM'
-     #   extra_args: [ '-M' ]
+      - name: 'MM'
+        extra_args: [ '-M' ]
       - name: 'NoMM'
         extra_args: [ '' ]
 
