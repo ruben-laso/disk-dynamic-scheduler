@@ -989,7 +989,381 @@ instances:
       - name: dag_30000_4
         files: [ ]
         extra_args: [ '-w dag_30000_4.dot', '-i 1' ]
+  - repo: local
+    set: [ long ]
+    items:
+      # --- Long Family ---
+      - name: dag_50_long_0
+        files: [ ]
+        extra_args: [ '-w dag_50_long_0.dot', '-i 1' ]
+      - name: dag_50_long_1
+        files: [ ]
+        extra_args: [ '-w dag_50_long_1.dot', '-i 1' ]
+      - name: dag_50_long_2
+        files: [ ]
+        extra_args: [ '-w dag_50_long_2.dot', '-i 1' ]
+      - name: dag_50_long_3
+        files: [ ]
+        extra_args: [ '-w dag_50_long_3.dot', '-i 1' ]
+      - name: dag_50_long_4
+        files: [ ]
+        extra_args: [ '-w dag_50_long_4.dot', '-i 1' ]
+      - name: dag_100_long_0
+        files: [ ]
+        extra_args: [ '-w dag_100_long_0.dot', '-i 1' ]
+      - name: dag_100_long_1
+        files: [ ]
+        extra_args: [ '-w dag_100_long_1.dot', '-i 1' ]
+      - name: dag_100_long_2
+        files: [ ]
+        extra_args: [ '-w dag_100_long_2.dot', '-i 1' ]
+      - name: dag_100_long_3
+        files: [ ]
+        extra_args: [ '-w dag_100_long_3.dot', '-i 1' ]
+      - name: dag_100_long_4
+        files: [ ]
+        extra_args: [ '-w dag_100_long_4.dot', '-i 1' ]
+      - name: dag_200_long_0
+        files: [ ]
+        extra_args: [ '-w dag_200_long_0.dot', '-i 1' ]
+      - name: dag_200_long_1
+        files: [ ]
+        extra_args: [ '-w dag_200_long_1.dot', '-i 1' ]
+      - name: dag_200_long_2
+        files: [ ]
+        extra_args: [ '-w dag_200_long_2.dot', '-i 1' ]
+      - name: dag_200_long_3
+        files: [ ]
+        extra_args: [ '-w dag_200_long_3.dot', '-i 1' ]
+      - name: dag_200_long_4
+        files: [ ]
+        extra_args: [ '-w dag_200_long_4.dot', '-i 1' ]
+      - name: dag_1000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_1000_long_0.dot', '-i 1' ]
+      - name: dag_1000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_1000_long_1.dot', '-i 1' ]
+      - name: dag_1000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_1000_long_2.dot', '-i 1' ]
+      - name: dag_1000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_1000_long_3.dot', '-i 1' ]
+      - name: dag_1000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_1000_long_4.dot', '-i 1' ]
+      - name: dag_2000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_2000_long_0.dot', '-i 1' ]
+      - name: dag_2000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_2000_long_1.dot', '-i 1' ]
+      - name: dag_2000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_2000_long_2.dot', '-i 1' ]
+      - name: dag_2000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_2000_long_3.dot', '-i 1' ]
+      - name: dag_2000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_2000_long_4.dot', '-i 1' ]
+      - name: dag_4000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_4000_long_0.dot', '-i 1' ]
+      - name: dag_4000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_4000_long_1.dot', '-i 1' ]
+      - name: dag_4000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_4000_long_2.dot', '-i 1' ]
+      - name: dag_4000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_4000_long_3.dot', '-i 1' ]
+      - name: dag_4000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_4000_long_4.dot', '-i 1' ]
+      - name: dag_8000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_8000_long_0.dot', '-i 1' ]
+      - name: dag_8000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_8000_long_1.dot', '-i 1' ]
+      - name: dag_8000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_8000_long_2.dot', '-i 1' ]
+      - name: dag_8000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_8000_long_3.dot', '-i 1' ]
+      - name: dag_8000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_8000_long_4.dot', '-i 1' ]
+      - name: dag_10000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_10000_long_0.dot', '-i 1' ]
+      - name: dag_10000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_10000_long_1.dot', '-i 1' ]
+      - name: dag_10000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_10000_long_2.dot', '-i 1' ]
+      - name: dag_10000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_10000_long_3.dot', '-i 1' ]
+      - name: dag_10000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_10000_long_4.dot', '-i 1' ]
+      - name: dag_15000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_15000_long_0.dot', '-i 1' ]
+      - name: dag_15000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_15000_long_1.dot', '-i 1' ]
+      - name: dag_15000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_15000_long_2.dot', '-i 1' ]
+      - name: dag_15000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_15000_long_3.dot', '-i 1' ]
+      - name: dag_15000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_15000_long_4.dot', '-i 1' ]
+      - name: dag_20000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_20000_long_0.dot', '-i 1' ]
+      - name: dag_20000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_20000_long_1.dot', '-i 1' ]
+      - name: dag_20000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_20000_long_2.dot', '-i 1' ]
+      - name: dag_20000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_20000_long_3.dot', '-i 1' ]
+      - name: dag_20000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_20000_long_4.dot', '-i 1' ]
+      - name: dag_25000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_25000_long_0.dot', '-i 1' ]
+      - name: dag_25000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_25000_long_1.dot', '-i 1' ]
+      - name: dag_25000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_25000_long_2.dot', '-i 1' ]
+      - name: dag_25000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_25000_long_3.dot', '-i 1' ]
+      - name: dag_25000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_25000_long_4.dot', '-i 1' ]
+      - name: dag_30000_long_0
+        files: [ ]
+        extra_args: [ '-w dag_30000_long_0.dot', '-i 1' ]
+      - name: dag_30000_long_1
+        files: [ ]
+        extra_args: [ '-w dag_30000_long_1.dot', '-i 1' ]
+      - name: dag_30000_long_2
+        files: [ ]
+        extra_args: [ '-w dag_30000_long_2.dot', '-i 1' ]
+      - name: dag_30000_long_3
+        files: [ ]
+        extra_args: [ '-w dag_30000_long_3.dot', '-i 1' ]
+      - name: dag_30000_long_4
+        files: [ ]
+        extra_args: [ '-w dag_30000_long_4.dot', '-i 1' ]
+  - repo: local
+    set: [ wide ]
+    items:
+      # --- Wide Family ---
+      - name: dag_50_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_50_wide_0.dot', '-i 1' ]
+      - name: dag_50_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_50_wide_1.dot', '-i 1' ]
+      - name: dag_50_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_50_wide_2.dot', '-i 1' ]
+      - name: dag_50_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_50_wide_3.dot', '-i 1' ]
+      - name: dag_50_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_50_wide_4.dot', '-i 1' ]
+      - name: dag_100_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_100_wide_0.dot', '-i 1' ]
+      - name: dag_100_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_100_wide_1.dot', '-i 1' ]
+      - name: dag_100_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_100_wide_2.dot', '-i 1' ]
+      - name: dag_100_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_100_wide_3.dot', '-i 1' ]
+      - name: dag_100_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_100_wide_4.dot', '-i 1' ]
+      - name: dag_200_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_200_wide_0.dot', '-i 1' ]
+      - name: dag_200_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_200_wide_1.dot', '-i 1' ]
+      - name: dag_200_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_200_wide_2.dot', '-i 1' ]
+      - name: dag_200_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_200_wide_3.dot', '-i 1' ]
+      - name: dag_200_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_200_wide_4.dot', '-i 1' ]
+      - name: dag_1000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_1000_wide_0.dot', '-i 1' ]
+      - name: dag_1000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_1000_wide_1.dot', '-i 1' ]
+      - name: dag_1000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_1000_wide_2.dot', '-i 1' ]
+      - name: dag_1000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_1000_wide_3.dot', '-i 1' ]
+      - name: dag_1000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_1000_wide_4.dot', '-i 1' ]
+      - name: dag_2000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_2000_wide_0.dot', '-i 1' ]
+      - name: dag_2000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_2000_wide_1.dot', '-i 1' ]
+      - name: dag_2000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_2000_wide_2.dot', '-i 1' ]
+      - name: dag_2000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_2000_wide_3.dot', '-i 1' ]
+      - name: dag_2000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_2000_wide_4.dot', '-i 1' ]
+      - name: dag_4000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_4000_wide_0.dot', '-i 1' ]
+      - name: dag_4000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_4000_wide_1.dot', '-i 1' ]
+      - name: dag_4000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_4000_wide_2.dot', '-i 1' ]
+      - name: dag_4000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_4000_wide_3.dot', '-i 1' ]
+      - name: dag_4000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_4000_wide_4.dot', '-i 1' ]
+      - name: dag_8000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_8000_wide_0.dot', '-i 1' ]
+      - name: dag_8000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_8000_wide_1.dot', '-i 1' ]
+      - name: dag_8000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_8000_wide_2.dot', '-i 1' ]
+      - name: dag_8000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_8000_wide_3.dot', '-i 1' ]
+      - name: dag_8000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_8000_wide_4.dot', '-i 1' ]
+      - name: dag_10000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_10000_wide_0.dot', '-i 1' ]
+      - name: dag_10000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_10000_wide_1.dot', '-i 1' ]
+      - name: dag_10000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_10000_wide_2.dot', '-i 1' ]
+      - name: dag_10000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_10000_wide_3.dot', '-i 1' ]
+      - name: dag_10000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_10000_wide_4.dot', '-i 1' ]
+      - name: dag_15000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_15000_wide_0.dot', '-i 1' ]
+      - name: dag_15000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_15000_wide_1.dot', '-i 1' ]
+      - name: dag_15000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_15000_wide_2.dot', '-i 1' ]
+      - name: dag_15000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_15000_wide_3.dot', '-i 1' ]
+      - name: dag_15000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_15000_wide_4.dot', '-i 1' ]
+      - name: dag_20000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_20000_wide_0.dot', '-i 1' ]
+      - name: dag_20000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_20000_wide_1.dot', '-i 1' ]
+      - name: dag_20000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_20000_wide_2.dot', '-i 1' ]
+      - name: dag_20000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_20000_wide_3.dot', '-i 1' ]
+      - name: dag_20000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_20000_wide_4.dot', '-i 1' ]
+      - name: dag_25000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_25000_wide_0.dot', '-i 1' ]
+      - name: dag_25000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_25000_wide_1.dot', '-i 1' ]
+      - name: dag_25000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_25000_wide_2.dot', '-i 1' ]
+      - name: dag_25000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_25000_wide_3.dot', '-i 1' ]
+      - name: dag_25000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_25000_wide_4.dot', '-i 1' ]
+      - name: dag_30000_wide_0
+        files: [ ]
+        extra_args: [ '-w dag_30000_wide_0.dot', '-i 1' ]
+      - name: dag_30000_wide_1
+        files: [ ]
+        extra_args: [ '-w dag_30000_wide_1.dot', '-i 1' ]
+      - name: dag_30000_wide_2
+        files: [ ]
+        extra_args: [ '-w dag_30000_wide_2.dot', '-i 1' ]
+      - name: dag_30000_wide_3
+        files: [ ]
+        extra_args: [ '-w dag_30000_wide_3.dot', '-i 1' ]
+      - name: dag_30000_wide_4
+        files: [ ]
+        extra_args: [ '-w dag_30000_wide_4.dot', '-i 1' ]
 
+  #- repo: local
+  #  set: [ low-io ]
+  #  items:
+  #    - name: dag_30000_wide_4
+  #      files: [ ]
+  #      extra_args: [ '-w dag_30000_wide_4.dot', '-i 1' ]
 
 instdir: 'input/generated'
 
@@ -1105,35 +1479,35 @@ experiments:
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
   - name: A2-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./', '-f input/machines.csv', '-d 4' , '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high']
+    # slurm_args: ['--qos','high']
   - name: A3-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./', '-f input/machines.csv', '-d 4', '-S'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
   - name: A4-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-l', '-p ./', '-f input/machines.csv', '-d 4', '-S'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
   - name: A5-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O', '-p ./', '-f input/machines.csv', '-d 4', '-S']
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
 
 
   - name: A1-ndev
@@ -1142,35 +1516,35 @@ experiments:
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
   - name: A2-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./', '-f input/machines.csv', '-d 1', '-S' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
   - name: A3-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./', '-f input/machines.csv', '-d 1', '-S'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
   - name: A4-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-l', '-p ./', '-f input/machines.csv', '-d 1', '-S']
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
   - name: A5-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O',  '-p ./', '-f input/machines.csv', '-d 1', '-S']
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
 
 
 
