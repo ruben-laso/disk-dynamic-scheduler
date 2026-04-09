@@ -59,6 +59,8 @@ void removeSourceAndTarget(graph_t* graph, std::vector<std::pair<vertex_t*, doub
 
 void clearGraph(const graph_t* graphMemTopology);
 
+int findBestAlgorithmForDag(graph_t* dag, bool deviationsExist);
+
 class EventManager;
 
 enum eventType {

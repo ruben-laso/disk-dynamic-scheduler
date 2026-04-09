@@ -400,3 +400,161 @@ void clearGraph(const graph_t* graphMemTopology)
         edge = edge->next;
     }
 }
+
+
+double computeOutDegreeVariance(graph_t* dag) {
+    std::vector<int> outDegrees;
+    int totalNodes = 0;
+    double sum = 0;
+
+    // 1. Collect all out-degrees
+    vertex_t* vertex = dag->first_vertex;
+    while (vertex != nullptr) {
+        int degree = vertex->out_edges.size();
+        outDegrees.push_back(degree);
+        sum += degree;
+        totalNodes++;
+        vertex = vertex->next;
+    }
+
+    if (totalNodes == 0) return 0.0;
+
+    // 2. Calculate Mean
+    double mean = sum / totalNodes;
+
+    // 3. Calculate Variance (The Average of squared differences)
+    double varianceSum = 0;
+    for (int degree : outDegrees) {
+        varianceSum += std::pow(degree - mean, 2);
+    }
+
+    // !!! FIX: You must divide by totalNodes to get the actual Variance
+    double actualVariance = varianceSum / totalNodes;
+
+    // 4. Calculate Scaled Hub Score (Coefficient of Variation squared)
+    if (mean == 0) return 0.0;
+
+    // This is now scale-resistant
+    double scaledHubScore = actualVariance / (mean * mean);
+
+    return scaledHubScore;
+}
+/*
+ *
+ * 1 - offline BL
+ * 2 - offline BLC
+ * 3 - offline MM
+ * 4 - offline L
+ * 5 - offline BL-R
+ * 6 - online BL
+ * 7 - online BLC
+ * 8 - online MM
+ * 9 - online L
+ * 10 - online BL-R
+ *
+ */
+ int findBestAlgorithmForDag(graph_t* dag, bool deviationsExist)
+{
+    bool existsBypassBranch=false;
+    vertex_t* vertex = dag->first_vertex;
+    while (vertex != nullptr) {
+        if (vertex->in_edges.size()==1 && vertex->out_edges.size()==1
+        && vertex->in_edges.at(0)->tail->in_edges.empty()  && vertex->out_edges.at(0)->head->out_edges.empty()
+        ) {
+            existsBypassBranch=true;
+            break;
+        }
+        vertex = vertex->next;
+    }
+
+
+    std::set<vertex_t*> firstLevelChildren;
+    std::set<vertex_t*> secondLevelChildren;
+
+    double avgEdgeWeightOnFirstTwoLevels= 0;
+    int numEdgesOnFirst2Levels=0;
+
+    double averageEdgeWeight=0;
+    float allTaskMemoryRequirements=0;
+    float allEdgeWeights=0;
+    float allComputations=0;
+
+    vertex = dag->first_vertex;
+    while (vertex != nullptr) {
+        allTaskMemoryRequirements+= vertex->memoryRequirement;
+        allComputations+= vertex->time;
+
+        bool isChildOfSource=false;
+        for (auto in_edge : vertex->in_edges) {
+            if (in_edge->tail->in_edges.size()==0) {
+               firstLevelChildren.insert(vertex);
+               isChildOfSource=true;
+                avgEdgeWeightOnFirstTwoLevels+= in_edge->weight;
+                numEdgesOnFirst2Levels++;
+            }
+            allEdgeWeights+= in_edge->weight;
+        }
+        if (isChildOfSource) {
+            //all its children are second children of source
+            for (auto out_edge : vertex->out_edges) {
+                secondLevelChildren.insert(out_edge->head);
+                avgEdgeWeightOnFirstTwoLevels+= out_edge->weight;
+                numEdgesOnFirst2Levels++;
+            }
+        }
+        vertex = vertex->next;
+    }
+
+    avgEdgeWeightOnFirstTwoLevels/=numEdgesOnFirst2Levels;
+    averageEdgeWeight= allEdgeWeights / dag->number_of_edges;
+
+
+
+    int singleChildNodes = 0;
+    vertex = dag->first_vertex;
+    while (vertex != nullptr) {
+        if (vertex->out_edges.size() == 1) {
+            singleChildNodes++;
+        }
+        vertex = vertex->next;
+    }
+
+    double chainProbability = (double)singleChildNodes / dag->vertices_by_id.size();
+
+    double hubScore = computeOutDegreeVariance(dag);
+
+    if (chainProbability>0.45) {
+        //thin workflows, need online methods
+        return 6; //any online method will do
+    }
+
+    if (hubScore<0.87) {
+        if (chainProbability<0.2) {
+            return 1;
+        }
+        return 3;   //offline MM
+    }
+
+    if (existsBypassBranch && avgEdgeWeightOnFirstTwoLevels>averageEdgeWeight*2) {
+        //large weights on top and a bypass branch
+        if (dag->vertices_by_id.size()<200) {
+            //for very small graphs, online is better
+            return 9;
+        }
+        return 5; // offline BLR
+    }
+
+    if (allTaskMemoryRequirements > allComputations * 100) {
+        // memory-heavy
+        return 4; // offline L
+    }
+
+    if (allEdgeWeights > allTaskMemoryRequirements * 10) {
+        // io-heavy
+        return 3; // offline MM
+    }
+    if (deviationsExist) {
+        return 6; // fallback - online BL
+    }
+    return 1; // fallback - offline BL
+}

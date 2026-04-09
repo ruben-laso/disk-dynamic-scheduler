@@ -15,7 +15,7 @@
 #include "memdag/src/graph.hpp"
 
 #include <complex>
-
+bool checkCycleInGraph(graph_t* dag);
 /*
  *
  *  Call: memoryMultiplicator speedMultiplicator readWritePenalty offloadPenalty,workflow, inputSize, algorithmNumber, isBaseline, root directory, machines file, number of deviation function, yes/no for preemptive writes
@@ -45,24 +45,23 @@
 //-m 100000000 -s 100 -r 10 -w eager -i 19132169434 -a heft-mm -p ../ -d 1 -q 3 -S -f input/machines.csv
 int main(const int argc, char* argv[])
 {
-   // for(int i = 1; i < argc; i++)
-   //     printf("%s\n", argv[i]);
+    // for(int i = 1; i < argc; i++)
+    //     printf("%s\n", argv[i]);
 
-    //std::cout<<std::endl;
+    // std::cout<<std::endl;
 
     fonda::Options options = fonda::parseOptions(argc, argv);
     std::cout << "algo_nr " << options.algoNumber << " " << options.workflowName << " " << "input_size " << options.inputSize << " ";
 
     const auto workflow_rows = fonda_scheduler::loadTracesFile(options.pathPrefix + options.tracesFile);
 
-
     imaginedCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-    imaginedClusterIncorrect =  Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+    imaginedClusterIncorrect = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
 
     // With deviations
     actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
 
-   // actualCluster->printProcessors();
+    // actualCluster->printProcessors();
 
     double biggestMem = imaginedCluster->getMemBiggestFreeProcessor()->getMemorySize();
 
@@ -83,12 +82,13 @@ int main(const int argc, char* argv[])
             filename += ".dot";
         }
     }
-    graph_t* graphMemTopology ;
+    graph_t* graphMemTopology;
     if (filename.find("dag") != std::string::npos) {
-        graphMemTopology = read_dot_graph(filename.c_str(), "weight", "C", "M","swaps");
+        graphMemTopology = read_dot_graph(filename.c_str(), "weight", "C", "M", "swaps");
         checkForZeroMemories(graphMemTopology);
-    }else {
-       graphMemTopology = read_dot_graph(filename.c_str(), nullptr, nullptr, nullptr,"swaps");
+        //  print_graph_to_cout(graphMemTopology);
+    } else {
+        graphMemTopology = read_dot_graph(filename.c_str(), nullptr, nullptr, nullptr, "swaps");
         checkForZeroMemories(graphMemTopology);
 
         const auto i1 = options.workflowName.find("//");
@@ -99,74 +99,155 @@ int main(const int argc, char* argv[])
 
         // 10, 100                                                               memShorteningDivision, ioShorteningCoef
         Fonda::fillGraphWeightsFromExternalSource(graphMemTopology, workflow_rows, imaginedCluster, 1, 1, options);
-        //print_graph_to_cout(graphMemTopology);
+        // print_graph_to_cout(graphMemTopology);
     }
+    if (
+        checkCycleInGraph(graphMemTopology)) {
+        return -1;
+    };
 
+    if (options.autoChoice) {
+        options.algoNumber = findBestAlgorithmForDag(graphMemTopology, options.deviationModel != 1);
 
-    if (options.scaleToFit) {
-        fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);
-    }
+        switch (options.algoNumber) {
+        case 1:
+            std::cout << "1 Offline MeDiH-BL\n";
+            break;
+        case 2:
+            std::cout << "2 Offline MeDiH-BLC\n";
+            break;
+        case 3:
+            std::cout << "3 Offline MeDiH-MM\n";
+            break;
+        case 4:
+            std::cout << "4 Offline MeDiH-I\n";
+            break;
+        case 5:
+            std::cout << "5 Offline MeDiH-BL-R\n";
+            break;
+        case 6:
+            std::cout << "6 Online MeDiH-BL\n";
+            break;
+        case 7:
+            std::cout << "7 Online MeDiH-BLC\n";
+            break;
+        case 8:
+            std::cout << "8 Online MeDiH-MM\n";
+            break;
+        case 9:
+            std::cout << "9 Online MeDiH-I\n";
+            break;
+        case 10:
+            std::cout << "10 Online MeDiH-BL-R\n";
+            break;
+        default:
+            std::cout << "auto_chose_unknown_algo ";
+        }
+    } else {
+        if (options.scaleToFit) {
+            fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);
+        }
 
-    std::cout << std::setprecision(15);
-    std::clog << std::setprecision(15);
+        std::cout << std::setprecision(15);
+        std::clog << std::setprecision(15);
 
-    double runtimeDynamic = 0;
-    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
-        assert(u->status==Unscheduled);
-    }
-    double onlineMakespan = 0;
+        double runtimeDynamic = 0;
+        for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+            assert(u->status == Unscheduled);
+        }
+        double onlineMakespan = 0;
 
+        assert(options.algoNumber != 0); // never use just heft, it is attached to each execution as a third option now.
+        onlineMakespan = onlineMedih(graphMemTopology, actualCluster, options, runtimeDynamic);
 
+        for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
+            assert(u->status == Finished);
+        }
+        for (const edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
+            if (e->accountedFor) {
+                //   std::cout<<" accounted for!  ";print_edge(e);
+            } else {
+                if (e->locations.size() > 0 && e->locations.at(0).locationType == LocationType::OnProcessor && e->locations.at(0).processorId == e->head->assignedProcessorId) {
+                } else {
+                    std::cout << " unaccounted for ";
+                    print_edge(e);
+                    if (e->locations.at(0).locationType == LocationType::OnDisk) {
+                        std::cout << "on disk" << std::endl;
+                    }
+                    if (e->locations.at(0).locationType == LocationType::OnProcessor) {
+                        std::cout << "on proc " << e->locations.at(0).processorId.value() << std::endl;
+                    }
+                    if (e->locations.at(0).locationType == LocationType::Nowhere) {
+                        std::cout << "on nowhere " << std::endl;
+                    }
 
-    assert(options.algoNumber!=0); // never use just heft, it is attached to each execution as a third option now.
-    onlineMakespan =  onlineMedih(graphMemTopology, actualCluster, options, runtimeDynamic);
-
-    for (vertex_t* u = graphMemTopology->first_vertex; u; u = u->next) {
-        assert(u->status==Finished);
-    }
-    for (const edge_t* e = graphMemTopology->first_edge; e; e = e->next) {
-     if (e->accountedFor) {
-      //   std::cout<<" accounted for!  ";print_edge(e);
-     }
-        else {
-            if (e->locations.size()>0 && e->locations.at(0).locationType==LocationType::OnProcessor && e->locations.at(0).processorId==e->head->assignedProcessorId){}
-            else {
-                std::cout<<" unaccounted for ";print_edge(e);
-                if (e->locations.at(0).locationType==LocationType::OnDisk) {
-                    std::cout<<"on disk"<<std::endl;
+                    std::cout << e->locations.size() << std::endl;
                 }
-                if (e->locations.at(0).locationType==LocationType::OnProcessor) {
-                    std::cout<<"on proc "<<e->locations.at(0).processorId.value()<<std::endl;
-                }
-                if (e->locations.at(0).locationType==LocationType::Nowhere) {
-                    std::cout<<"on nowhere "<<std::endl;
-                }
+            }
+        }
+        events.clear();
+        std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
+        std::cout << "makespan_online " << onlineMakespan << "\t";
 
-                std::cout<< e->locations.size()<<std::endl;
+        delete actualCluster;
+        actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
+        timeInSystem = 0;
+        events.clear();
+        clearGraph(graphMemTopology);
+        enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
+        compute_bottom_and_top_levels(graphMemTopology);
+
+        double runtimOffline = 0;
+        double offline = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options, runtimOffline);
+
+        std::cout << " duration_of_algorithm " << runtimOffline << " "; // << endl;
+        std::cout << "makespan_offline " << offline << ' ';
+        delete graphMemTopology;
+        delete imaginedCluster;
+        delete actualCluster;
+    }
+}
+
+static bool hasCycleFrom(vertex_t* task, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recStack,
+    const bool checkPredecessors)
+{
+    if (recStack.find(task->name) != recStack.end()) {
+        std::cout << "Cycle detected at event: " << task->name << '\n';
+        return true; // Cycle detected!
+    }
+
+    if (visited.find(task->name) != visited.end()) {
+        return false; // Already checked, no cycle found
+    }
+
+    visited.insert(task->name);
+    recStack.insert(task->name);
+
+    // Choose to check either predecessors or successors
+    if (checkPredecessors) {
+        for (const auto& predecessor : task->in_edges) {
+            if (hasCycleFrom(predecessor->tail, visited, recStack, checkPredecessors)) {
+                std::cout << "found cycle from " << predecessor->tail->name << " to " << task->name << std::endl;
+                return true;
+            }
+        }
+    } else {
+        for (const auto& successor : task->out_edges) {
+            if (hasCycleFrom(successor->head, visited, recStack, checkPredecessors)) {
+                std::cout << "found cycle from " << task->name << " to " << successor->head->name << std::endl;
+                return true;
             }
         }
     }
-    events.clear();
-    std::cout << " duration_of_algorithm " << runtimeDynamic << " "; // << endl;
-    std::cout << "makespan_online " << onlineMakespan << "\t";
 
-    delete actualCluster;
-    actualCluster = Fonda::buildClusterFromCsv(options.pathPrefix + options.machinesFile, options);
-    timeInSystem=0; events.clear();
-    clearGraph(graphMemTopology);
-    enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
-    compute_bottom_and_top_levels(graphMemTopology);
-
-
-    double runtimOffline = 0;
-    double offline  = correctOflineMedihWithEvents(graphMemTopology, actualCluster, options, runtimOffline);
-
-
-    std::cout << " duration_of_algorithm " << runtimOffline << " "; // << endl;
-    std::cout << "makespan_offline " << offline << ' ';
-    delete graphMemTopology;
-    delete imaginedCluster;
-    delete actualCluster;
+    recStack.erase(task->name); // Remove from recursion stack after processing
+    return false;
 }
 
+bool checkCycleInGraph(graph_t* dag)
+{
+    std::unordered_set<std::string> visited;
+    std::unordered_set<std::string> recStack; // Tracks the current path
 
+    return hasCycleFrom(dag->first_vertex, visited, recStack, true) || hasCycleFrom(dag->first_vertex, visited, recStack, false);
+}

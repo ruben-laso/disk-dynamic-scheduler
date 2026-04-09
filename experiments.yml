@@ -836,21 +836,6 @@ instances:
       - name: dag_1000_4
         files: [ ]
         extra_args: [ '-w dag_1000_4.dot', '-i 1' ]
-      - name: dag_100_0
-        files: [ ]
-        extra_args: [ '-w dag_100_0.dot', '-i 1' ]
-      - name: dag_100_1
-        files: [ ]
-        extra_args: [ '-w dag_100_1.dot', '-i 1' ]
-      - name: dag_100_2
-        files: [ ]
-        extra_args: [ '-w dag_100_2.dot', '-i 1' ]
-      - name: dag_100_3
-        files: [ ]
-        extra_args: [ '-w dag_100_3.dot', '-i 1' ]
-      - name: dag_100_4
-        files: [ ]
-        extra_args: [ '-w dag_100_4.dot', '-i 1' ]
       - name: dag_2000_0
         files: [ ]
         extra_args: [ '-w dag_2000_0.dot', '-i 1' ]
@@ -1524,8 +1509,8 @@ variants:
     items:
       - name: 'MM'
         extra_args: [ '-M' ]
-      - name: 'NoMM'
-        extra_args: [ '' ]
+     # - name: 'NoMM'
+     #   extra_args: [ '' ]
 
 
 experiments:
@@ -1670,11 +1655,17 @@ experiments:
     procs_per_node: 1
     num_threads: 1
     # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+  - name: autochoice
+    args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O',  '-p ./', '-f input/machines.csv', '-d 1', '-S' ]
+    stdout: out
+    num_nodes: 1
+    procs_per_node: 1
+    num_threads: 1
 
 
 
 ##
 matrix:
   include:
-    - experiments: [ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ] # A1-10dev, A2-10dev, A3-10dev,  A1-30dev, A2-30dev, A3-30dev,A4-10dev, A4-30dev, A5-10dev, A5-30dev,
+    - experiments: [autochoice] #[ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ] # A1-10dev, A2-10dev, A3-10dev,  A1-30dev, A2-30dev, A3-30dev,A4-10dev, A4-30dev, A5-10dev, A5-30dev,
       axes: [memSizes, preemptiveWrites, taskReleasePolicy, useMinMem]

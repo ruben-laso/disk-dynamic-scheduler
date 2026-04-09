@@ -51,6 +51,8 @@ struct Options {
     int taskReleasePolicy = 1;
 
     bool useMinimalEdgeWeights=false;
+
+    bool autoChoice=false;
 };
 
 // List of options
@@ -70,6 +72,7 @@ static const struct option long_options[] = {
     { "reverse-ordering", no_argument, nullptr, 'O' },
     {"task-release-policy", required_argument, nullptr, 'q'},
     { "minimal-weights", no_argument, nullptr, 'M' },
+    { "auto-choice", no_argument, nullptr, 0 },
     { "help", no_argument, nullptr, 'h' },
     { nullptr, 0, nullptr, 0 } // End of options
 };
@@ -115,7 +118,8 @@ inline void printHelp(const char* program_name)
               << "  -S, --scale-to-fit                   Scale task's memory to fit the machine. Default: false\n"
               << "  -E, --preemptive-writes              Use preemptive (-E-xtra) writes. Default: false\n"
               << "  -O, --reverse-ordering               Use the rank ordering in the reverse (prefer tasks with smallest ranks). Default: false\n"
-              << " -M, --minimal-weights              Use minimal edge weights (1) instead of real ones. Default: false\n"
+              << " -M, --minimal-weights                 Use minimal edge weights (1) instead of real ones. Default: false\n"
+              << " --auto-choice                         Use auto choice to predict the best algorithm variant. Does not run the algorithm! To obtain the makespan, run the algorithm with the chosen variant. \n"
               << "  -q, --task-release-policy <variant>  Set task release policy. Default: 1\n"
               << "  -h, --help                           Show this help message and exit\n";
 }
@@ -138,6 +142,13 @@ inline Options parseOptions(int argc, char* argv[])
 
     int c;
     while ((c = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1) {
+        if (c == 0) {
+            if (std::string(long_options[option_index].name) == "auto-choice") {
+                options.autoChoice = true;
+                continue;
+            }
+        }
+
         switch (c) {
         case 'm':
             parseArg("memory-multiplicator", optarg, options.memoryMultiplicator, [](const char* arg) { return std::stod(arg); });
