@@ -1620,5 +1620,5 @@ experiments:
 ##
 matrix:
   include:
-    - experiments: [autochoice] #[ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ] # A1-10dev, A2-10dev, A3-10dev,  A1-30dev, A2-30dev, A3-30dev,A4-10dev, A4-30dev, A5-10dev, A5-30dev,
+    - experiments: [ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ] # autochoice A1-10dev, A2-10dev, A3-10dev,  A1-30dev, A2-30dev, A3-30dev,A4-10dev, A4-30dev, A5-10dev, A5-30dev,
       axes: [memSizes, preemptiveWrites, taskReleasePolicy, useMinMem]
