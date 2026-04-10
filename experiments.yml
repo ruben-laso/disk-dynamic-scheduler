@@ -1462,8 +1462,8 @@ variants:
     items:
       - name: 'MM'
         extra_args: [ '-M' ]
-     # - name: 'NoMM'
-     #   extra_args: [ '' ]
+      - name: 'NoMM'
+        extra_args: [ '' ]
 
 
 experiments:
