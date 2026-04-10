@@ -1419,6 +1419,82 @@ instances:
       - name: dag_highedges_15000_general_4
         files: [ ]
         extra_args: [ '-w dag_highedges_10000_general_4.dot', '-i 1' ]
+  - repo: local
+    set: [ highmemlowio ]
+    items:
+      # --- Wide Family ---
+      - name: dag_highmemlowio_50_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_50_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_50_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_50_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_50_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_50_general_4.dot', '-i 1' ]
+      - name: dag_highmemlowio_200_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_200_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_200_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_200_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_200_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_200_general_4.dot', '-i 1' ]
+      - name: dag_highmemlowio_1000_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_1000_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_1000_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_1000_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_1000_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_1000_general_4.dot', '-i 1' ]
+      - name: dag_highmemlowio_2000_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_2000_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_2000_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_2000_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_2000_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_2000_general_4.dot', '-i 1' ]
+      - name: dag_highmemlowio_4000_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_4000_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_4000_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_4000_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_4000_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_4000_general_4.dot', '-i 1' ]
+      - name: dag_highmemlowio_8000_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_8000_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_8000_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_8000_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_8000_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_8000_general_4.dot', '-i 1' ]
+      - name: dag_highmemlowio_10000_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_10000_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_10000_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_10000_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_10000_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_10000_general_4.dot', '-i 1' ]
+      - name: dag_highmemlowio_15000_general_2
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_10000_general_2.dot', '-i 1' ]
+      - name: dag_highmemlowio_15000_general_3
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_10000_general_3.dot', '-i 1' ]
+      - name: dag_highmemlowio_15000_general_4
+        files: [ ]
+        extra_args: [ '-w dag_highmemlowio_10000_general_4.dot', '-i 1' ]
 
 
   #- repo: local
