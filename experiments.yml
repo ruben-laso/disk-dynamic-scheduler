@@ -1344,129 +1344,82 @@ instances:
         extra_args: [ '-w dag_30000_wide_4.dot', '-i 1' ]
 
   - repo: local
-    set: [ lowio ]
+    set: [ highedges ]
     items:
       # --- Wide Family ---
-      - name: dag_lowio_50_general_0
+      - name: dag_highedges_50_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_50_general_0.dot', '-i 1' ]
-      - name: dag_lowio_50_general_1
+        extra_args: [ '-w dag_highedges_50_general_2.dot', '-i 1' ]
+      - name: dag_highedges_50_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_50_general_1.dot', '-i 1' ]
-      - name: dag_lowio_50_general_2
+        extra_args: [ '-w dag_highedges_50_general_3.dot', '-i 1' ]
+      - name: dag_highedges_50_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_50_general_2.dot', '-i 1' ]
-      - name: dag_lowio_50_general_3
+        extra_args: [ '-w dag_highedges_50_general_4.dot', '-i 1' ]
+      - name: dag_highedges_200_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_50_general_3.dot', '-i 1' ]
-      - name: dag_lowio_50_general_4
+        extra_args: [ '-w dag_highedges_200_general_2.dot', '-i 1' ]
+      - name: dag_highedges_200_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_50_general_4.dot', '-i 1' ]
-      - name: dag_lowio_100_general_0
+        extra_args: [ '-w dag_highedges_200_general_3.dot', '-i 1' ]
+      - name: dag_highedges_200_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_100_general_0.dot', '-i 1' ]
-      - name: dag_lowio_100_general_1
+        extra_args: [ '-w dag_highedges_200_general_4.dot', '-i 1' ]
+      - name: dag_highedges_1000_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_100_general_1.dot', '-i 1' ]
-      - name: dag_lowio_100_general_2
+        extra_args: [ '-w dag_highedges_1000_general_2.dot', '-i 1' ]
+      - name: dag_highedges_1000_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_100_general_2.dot', '-i 1' ]
-      - name: dag_lowio_100_general_3
+        extra_args: [ '-w dag_highedges_1000_general_3.dot', '-i 1' ]
+      - name: dag_highedges_1000_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_100_general_3.dot', '-i 1' ]
-      - name: dag_lowio_100_general_4
+        extra_args: [ '-w dag_highedges_1000_general_4.dot', '-i 1' ]
+      - name: dag_highedges_2000_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_100_general_4.dot', '-i 1' ]
-      - name: dag_lowio_200_general_0
+        extra_args: [ '-w dag_highedges_2000_general_2.dot', '-i 1' ]
+      - name: dag_highedges_2000_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_200_general_0.dot', '-i 1' ]
-      - name: dag_lowio_200_general_1
+        extra_args: [ '-w dag_highedges_2000_general_3.dot', '-i 1' ]
+      - name: dag_highedges_2000_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_200_general_1.dot', '-i 1' ]
-      - name: dag_lowio_200_general_2
+        extra_args: [ '-w dag_highedges_2000_general_4.dot', '-i 1' ]
+      - name: dag_highedges_4000_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_200_general_2.dot', '-i 1' ]
-      - name: dag_lowio_200_general_3
+        extra_args: [ '-w dag_highedges_4000_general_2.dot', '-i 1' ]
+      - name: dag_highedges_4000_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_200_general_3.dot', '-i 1' ]
-      - name: dag_lowio_200_general_4
+        extra_args: [ '-w dag_highedges_4000_general_3.dot', '-i 1' ]
+      - name: dag_highedges_4000_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_200_general_4.dot', '-i 1' ]
-      - name: dag_lowio_1000_general_0
+        extra_args: [ '-w dag_highedges_4000_general_4.dot', '-i 1' ]
+      - name: dag_highedges_8000_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_1000_general_0.dot', '-i 1' ]
-      - name: dag_lowio_1000_general_1
+        extra_args: [ '-w dag_highedges_8000_general_2.dot', '-i 1' ]
+      - name: dag_highedges_8000_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_1000_general_1.dot', '-i 1' ]
-      - name: dag_lowio_1000_general_2
+        extra_args: [ '-w dag_highedges_8000_general_3.dot', '-i 1' ]
+      - name: dag_highedges_8000_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_1000_general_2.dot', '-i 1' ]
-      - name: dag_lowio_1000_general_3
+        extra_args: [ '-w dag_highedges_8000_general_4.dot', '-i 1' ]
+      - name: dag_highedges_10000_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_1000_general_3.dot', '-i 1' ]
-      - name: dag_lowio_1000_general_4
+        extra_args: [ '-w dag_highedges_10000_general_2.dot', '-i 1' ]
+      - name: dag_highedges_10000_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_1000_general_4.dot', '-i 1' ]
-      - name: dag_lowio_2000_general_0
+        extra_args: [ '-w dag_highedges_10000_general_3.dot', '-i 1' ]
+      - name: dag_highedges_10000_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_2000_general_0.dot', '-i 1' ]
-      - name: dag_lowio_2000_general_1
+        extra_args: [ '-w dag_highedges_10000_general_4.dot', '-i 1' ]
+      - name: dag_highedges_15000_general_2
         files: [ ]
-        extra_args: [ '-w dag_lowio_2000_general_1.dot', '-i 1' ]
-      - name: dag_lowio_2000_general_2
+        extra_args: [ '-w dag_highedges_10000_general_2.dot', '-i 1' ]
+      - name: dag_highedges_15000_general_3
         files: [ ]
-        extra_args: [ '-w dag_lowio_2000_general_2.dot', '-i 1' ]
-      - name: dag_lowio_2000_general_3
+        extra_args: [ '-w dag_highedges_10000_general_3.dot', '-i 1' ]
+      - name: dag_highedges_15000_general_4
         files: [ ]
-        extra_args: [ '-w dag_lowio_2000_general_3.dot', '-i 1' ]
-      - name: dag_lowio_2000_general_4
-        files: [ ]
-        extra_args: [ '-w dag_lowio_2000_general_4.dot', '-i 1' ]
-      - name: dag_lowio_4000_general_0
-        files: [ ]
-        extra_args: [ '-w dag_lowio_4000_general_0.dot', '-i 1' ]
-      - name: dag_lowio_4000_general_1
-        files: [ ]
-        extra_args: [ '-w dag_lowio_4000_general_1.dot', '-i 1' ]
-      - name: dag_lowio_4000_general_2
-        files: [ ]
-        extra_args: [ '-w dag_lowio_4000_general_2.dot', '-i 1' ]
-      - name: dag_lowio_4000_general_3
-        files: [ ]
-        extra_args: [ '-w dag_lowio_4000_general_3.dot', '-i 1' ]
-      - name: dag_lowio_4000_general_4
-        files: [ ]
-        extra_args: [ '-w dag_lowio_4000_general_4.dot', '-i 1' ]
-      - name: dag_lowio_8000_general_0
-        files: [ ]
-        extra_args: [ '-w dag_lowio_8000_general_0.dot', '-i 1' ]
-      - name: dag_lowio_8000_general_1
-        files: [ ]
-        extra_args: [ '-w dag_lowio_8000_general_1.dot', '-i 1' ]
-      - name: dag_lowio_8000_general_2
-        files: [ ]
-        extra_args: [ '-w dag_lowio_8000_general_2.dot', '-i 1' ]
-      - name: dag_lowio_8000_general_3
-        files: [ ]
-        extra_args: [ '-w dag_lowio_8000_general_3.dot', '-i 1' ]
-      - name: dag_lowio_8000_general_4
-        files: [ ]
-        extra_args: [ '-w dag_lowio_8000_general_4.dot', '-i 1' ]
-      - name: dag_lowio_10000_general_0
-        files: [ ]
-        extra_args: [ '-w dag_lowio_10000_general_0.dot', '-i 1' ]
-      - name: dag_lowio_10000_general_1
-        files: [ ]
-        extra_args: [ '-w dag_lowio_10000_general_1.dot', '-i 1' ]
-      - name: dag_lowio_10000_general_2
-        files: [ ]
-        extra_args: [ '-w dag_lowio_10000_general_2.dot', '-i 1' ]
-      - name: dag_lowio_10000_general_3
-        files: [ ]
-        extra_args: [ '-w dag_lowio_10000_general_3.dot', '-i 1' ]
-      - name: dag_lowio_10000_general_4
-        files: [ ]
-        extra_args: [ '-w dag_lowio_10000_general_4.dot', '-i 1' ]
+        extra_args: [ '-w dag_highedges_10000_general_4.dot', '-i 1' ]
+
 
   #- repo: local
   #  set: [ low-io ]
