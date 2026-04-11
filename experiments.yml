@@ -1177,21 +1177,6 @@ instances:
       - name: dag_50_wide_4
         files: [ ]
         extra_args: [ '-w dag_50_wide_4.dot', '-i 1' ]
-      - name: dag_100_wide_0
-        files: [ ]
-        extra_args: [ '-w dag_100_wide_0.dot', '-i 1' ]
-      - name: dag_100_wide_1
-        files: [ ]
-        extra_args: [ '-w dag_100_wide_1.dot', '-i 1' ]
-      - name: dag_100_wide_2
-        files: [ ]
-        extra_args: [ '-w dag_100_wide_2.dot', '-i 1' ]
-      - name: dag_100_wide_3
-        files: [ ]
-        extra_args: [ '-w dag_100_wide_3.dot', '-i 1' ]
-      - name: dag_100_wide_4
-        files: [ ]
-        extra_args: [ '-w dag_100_wide_4.dot', '-i 1' ]
       - name: dag_200_wide_0
         files: [ ]
         extra_args: [ '-w dag_200_wide_0.dot', '-i 1' ]
@@ -1297,51 +1282,51 @@ instances:
       - name: dag_15000_wide_4
         files: [ ]
         extra_args: [ '-w dag_15000_wide_4.dot', '-i 1' ]
-      - name: dag_20000_wide_0
-        files: [ ]
-        extra_args: [ '-w dag_20000_wide_0.dot', '-i 1' ]
-      - name: dag_20000_wide_1
-        files: [ ]
-        extra_args: [ '-w dag_20000_wide_1.dot', '-i 1' ]
-      - name: dag_20000_wide_2
-        files: [ ]
-        extra_args: [ '-w dag_20000_wide_2.dot', '-i 1' ]
-      - name: dag_20000_wide_3
-        files: [ ]
-        extra_args: [ '-w dag_20000_wide_3.dot', '-i 1' ]
-      - name: dag_20000_wide_4
-        files: [ ]
-        extra_args: [ '-w dag_20000_wide_4.dot', '-i 1' ]
-      - name: dag_25000_wide_0
-        files: [ ]
-        extra_args: [ '-w dag_25000_wide_0.dot', '-i 1' ]
-      - name: dag_25000_wide_1
-        files: [ ]
-        extra_args: [ '-w dag_25000_wide_1.dot', '-i 1' ]
-      - name: dag_25000_wide_2
-        files: [ ]
-        extra_args: [ '-w dag_25000_wide_2.dot', '-i 1' ]
-      - name: dag_25000_wide_3
-        files: [ ]
-        extra_args: [ '-w dag_25000_wide_3.dot', '-i 1' ]
-      - name: dag_25000_wide_4
-        files: [ ]
-        extra_args: [ '-w dag_25000_wide_4.dot', '-i 1' ]
-      - name: dag_30000_wide_0
-        files: [ ]
-        extra_args: [ '-w dag_30000_wide_0.dot', '-i 1' ]
-      - name: dag_30000_wide_1
-        files: [ ]
-        extra_args: [ '-w dag_30000_wide_1.dot', '-i 1' ]
-      - name: dag_30000_wide_2
-        files: [ ]
-        extra_args: [ '-w dag_30000_wide_2.dot', '-i 1' ]
-      - name: dag_30000_wide_3
-        files: [ ]
-        extra_args: [ '-w dag_30000_wide_3.dot', '-i 1' ]
-      - name: dag_30000_wide_4
-        files: [ ]
-        extra_args: [ '-w dag_30000_wide_4.dot', '-i 1' ]
+#      - name: dag_20000_wide_0
+#        files: [ ]
+#        extra_args: [ '-w dag_20000_wide_0.dot', '-i 1' ]
+#      - name: dag_20000_wide_1
+#        files: [ ]
+#        extra_args: [ '-w dag_20000_wide_1.dot', '-i 1' ]
+#      - name: dag_20000_wide_2
+#        files: [ ]
+#        extra_args: [ '-w dag_20000_wide_2.dot', '-i 1' ]
+#      - name: dag_20000_wide_3
+#        files: [ ]
+#        extra_args: [ '-w dag_20000_wide_3.dot', '-i 1' ]
+#      - name: dag_20000_wide_4
+#        files: [ ]
+#        extra_args: [ '-w dag_20000_wide_4.dot', '-i 1' ]
+#      - name: dag_25000_wide_0
+#        files: [ ]
+#        extra_args: [ '-w dag_25000_wide_0.dot', '-i 1' ]
+#      - name: dag_25000_wide_1
+#        files: [ ]
+#        extra_args: [ '-w dag_25000_wide_1.dot', '-i 1' ]
+#      - name: dag_25000_wide_2
+#        files: [ ]
+#        extra_args: [ '-w dag_25000_wide_2.dot', '-i 1' ]
+#      - name: dag_25000_wide_3
+#        files: [ ]
+#        extra_args: [ '-w dag_25000_wide_3.dot', '-i 1' ]
+#      - name: dag_25000_wide_4
+#        files: [ ]
+#        extra_args: [ '-w dag_25000_wide_4.dot', '-i 1' ]
+#      - name: dag_30000_wide_0
+#        files: [ ]
+#        extra_args: [ '-w dag_30000_wide_0.dot', '-i 1' ]
+#      - name: dag_30000_wide_1
+#        files: [ ]
+#        extra_args: [ '-w dag_30000_wide_1.dot', '-i 1' ]
+#      - name: dag_30000_wide_2
+#        files: [ ]
+#        extra_args: [ '-w dag_30000_wide_2.dot', '-i 1' ]
+#      - name: dag_30000_wide_3
+#        files: [ ]
+#        extra_args: [ '-w dag_30000_wide_3.dot', '-i 1' ]
+#      - name: dag_30000_wide_4
+#        files: [ ]
+#        extra_args: [ '-w dag_30000_wide_4.dot', '-i 1' ]
 
   - repo: local
     set: [ highedges ]
