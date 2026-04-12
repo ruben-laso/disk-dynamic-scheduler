@@ -1,4 +1,3 @@
-
 #ifndef FONDA_SCHED_COMMON_HPP
 #define FONDA_SCHED_COMMON_HPP
 
@@ -135,6 +134,13 @@ public:
 
     std::vector<std::shared_ptr<Event>> getPredecessors() { return predecessors; }
     std::vector<std::weak_ptr<Event>> getSuccessors() { return successors; }
+
+    ~Event()
+    {
+        // Clean up predecessor-successor relationships to break cycles
+        // and prevent dangling pointers
+        removeFromDependencies();
+    }
 
     void initialize(const std::vector<std::shared_ptr<Event>>& preds,
         const std::vector<std::weak_ptr<Event>>& succs)

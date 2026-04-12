@@ -71,9 +71,20 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
             bestStartTime = startTime;
 
             bestProcessorToAssign = ourModifiedProc;
+            for (auto& event : bestEvents) {
+                event->removeFromDependencies();
+            }
+            bestEvents.clear();
             bestEvents = newEvents;
             bestReallyUsedMem = reallyUsedMem;
             bestResultingVar= resultingEvictionVariant;
+        }
+        else {
+            //flatten event destruction, because we sometimes have >11K events chaineddeal
+            for (auto& event : newEvents) {
+                event->removeFromDependencies();
+            }
+            newEvents.clear();
         }
 
     }
