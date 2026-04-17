@@ -107,42 +107,10 @@ int main(const int argc, char* argv[])
     };
 
     if (options.autoChoice) {
-        options.algoNumber = findBestAlgorithmForDag(graphMemTopology, options.deviationModel != 1);
+        enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
+        compute_bottom_and_top_levels(graphMemTopology);
+        printGraphAndWeightProperties(graphMemTopology, options.deviationModel != 1);
 
-        switch (options.algoNumber) {
-        case 1:
-            std::cout << "1 Offline MeDiH-BL\n";
-            break;
-        case 2:
-            std::cout << "2 Offline MeDiH-BLC\n";
-            break;
-        case 3:
-            std::cout << "3 Offline MeDiH-MM\n";
-            break;
-        case 4:
-            std::cout << "4 Offline MeDiH-I\n";
-            break;
-        case 5:
-            std::cout << "5 Offline MeDiH-BL-R\n";
-            break;
-        case 6:
-            std::cout << "6 Online MeDiH-BL\n";
-            break;
-        case 7:
-            std::cout << "7 Online MeDiH-BLC\n";
-            break;
-        case 8:
-            std::cout << "8 Online MeDiH-MM\n";
-            break;
-        case 9:
-            std::cout << "9 Online MeDiH-I\n";
-            break;
-        case 10:
-            std::cout << "10 Online MeDiH-BL-R\n";
-            break;
-        default:
-            std::cout << "auto_chose_unknown_algo ";
-        }
     } else {
         if (options.scaleToFit) {
             fonda_scheduler::scaleToFit(graphMemTopology, biggestMem);

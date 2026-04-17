@@ -439,21 +439,29 @@ double computeOutDegreeVariance(graph_t* dag) {
 
     return scaledHubScore;
 }
-/*
- *
- * 1 - offline BL
- * 2 - offline BLC
- * 3 - offline MM
- * 4 - offline L
- * 5 - offline BL-R
- * 6 - online BL
- * 7 - online BLC
- * 8 - online MM
- * 9 - online L
- * 10 - online BL-R
- *
- */
- int findBestAlgorithmForDag(graph_t* dag, bool deviationsExist)
+
+int calculateDagWidth(graph_t* dag) {
+    std::unordered_map<vertex_t*, int> levels;
+    int maxWidth = 0;
+    std::unordered_map<int, int> levelCounts;
+
+    // Assign levels using topological order
+    vertex_t* vertex = dag->first_vertex;
+    while (vertex != nullptr) {
+        int level = 0;
+        for (auto in_edge : vertex->in_edges) {
+            level = std::max(level, levels[in_edge->tail] + 1);
+        }
+        levels[vertex] = level;
+        levelCounts[level]++;
+        maxWidth = std::max(maxWidth, levelCounts[level]);
+        vertex = vertex->next;
+    }
+
+    return maxWidth;
+}
+
+void printGraphAndWeightProperties(graph_t* dag, bool deviationsExist)
 {
     bool existsBypassBranch=false;
     vertex_t* vertex = dag->first_vertex;
@@ -466,7 +474,6 @@ double computeOutDegreeVariance(graph_t* dag) {
         }
         vertex = vertex->next;
     }
-
 
     std::set<vertex_t*> firstLevelChildren;
     std::set<vertex_t*> secondLevelChildren;
@@ -508,8 +515,6 @@ double computeOutDegreeVariance(graph_t* dag) {
     avgEdgeWeightOnFirstTwoLevels/=numEdgesOnFirst2Levels;
     averageEdgeWeight= allEdgeWeights / dag->number_of_edges;
 
-
-
     int singleChildNodes = 0;
     vertex = dag->first_vertex;
     while (vertex != nullptr) {
@@ -523,38 +528,21 @@ double computeOutDegreeVariance(graph_t* dag) {
 
     double hubScore = computeOutDegreeVariance(dag);
 
-    if (chainProbability>0.45) {
-        //thin workflows, need online methods
-        return 6; //any online method will do
+    double longestPathLength = 0;
+    vertex = dag->first_vertex;
+    while (vertex != nullptr) {
+        longestPathLength = std::max(longestPathLength, vertex->bottom_level);
+        vertex = vertex->next;
     }
+    double criticalPathRatio = longestPathLength / dag->vertices_by_id.size();
 
-    if (hubScore<0.87) {
-        if (chainProbability<0.2) {
-            return 1;
-        }
-        return 3;   //offline MM
-    }
+    double maxIndependentSetRatio = (double)calculateDagWidth(dag) / dag->vertices_by_id.size();
 
-    if (existsBypassBranch && avgEdgeWeightOnFirstTwoLevels>averageEdgeWeight*2) {
-        //large weights on top and a bypass branch
-        if (dag->vertices_by_id.size()<200) {
-            //for very small graphs, online is better
-            return 9;
-        }
-        return 5; // offline BLR
-    }
 
-    if (allTaskMemoryRequirements > allComputations * 100) {
-        // memory-heavy
-        return 4; // offline L
-    }
+    std::cout << chainProbability<<" "<<hubScore<<" "<<existsBypassBranch<<" "<< maxIndependentSetRatio<<  " "
 
-    if (allEdgeWeights > allTaskMemoryRequirements * 10) {
-        // io-heavy
-        return 3; // offline MM
-    }
-    if (deviationsExist) {
-        return 6; // fallback - online BL
-    }
-    return 1; // fallback - offline BL
+        << criticalPathRatio <<" "<<
+
+        avgEdgeWeightOnFirstTwoLevels/averageEdgeWeight<<" "<<allTaskMemoryRequirements/allComputations<<" "<<allTaskMemoryRequirements/allEdgeWeights <<" ";
+
 }
