@@ -44,7 +44,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, fonda::Options option
         if (vertex->in_edges.empty()) {
             SchedulingResult bestSchedulingResult(nullptr);
             SchedulingResult bestSchedulingResultIncorrect(nullptr);
-            std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(isHeft, vertex, bestSchedulingResult, bestSchedulingResultIncorrect);
+            std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(isHeft, vertex, bestSchedulingResult, bestSchedulingResultIncorrect, options);
             numProcessedVertices++;
             /*std::cout<<"--------------------------------------------------------------------------------------"<<std::endl;
             std::cout << "Best events for vertex "<< vertex->name << ":" << std::endl;
@@ -109,7 +109,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, fonda::Options option
 
 
 
-        auto newevents = bestTentativeAssignment(isHeft, vertex, bestSchedulingResult, bestSchedulingResultIncorrect);
+        auto newevents = bestTentativeAssignment(isHeft, vertex, bestSchedulingResult, bestSchedulingResultIncorrect, options);
         if (bestSchedulingResult.modifiedProcs.empty()) {
             std::cout << "Invalid assignment of " << vertex->name;
             return {};
@@ -181,7 +181,7 @@ std::vector<std::shared_ptr<Event>> medih2(graph_t* graph, fonda::Options option
 
 }
 
-std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentHEFT2(vertex_t* vertex, SchedulingResult& result, SchedulingResult& resultIncorrect)
+std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentHEFT2(vertex_t* vertex, SchedulingResult& result, SchedulingResult& resultIncorrect, fonda::Options options)
 {
     resultIncorrect.finishTime = std::numeric_limits<double>::max();
     resultIncorrect.startTime = 0;
@@ -195,7 +195,7 @@ std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentHEFT2(vertex_t* vert
         SchedulingResult tentativeResultCorrect(processor);
 
         checkIfPendingMemoryCorrect(processor);
-         std::vector<std::shared_ptr<Event>> eventsFromCorrect = tentativeAssignmentHEFT_withCorrectionAndEvents(vertex, tentativeResultIncorrect, tentativeResultCorrect );
+         std::vector<std::shared_ptr<Event>> eventsFromCorrect = tentativeAssignmentHEFT_withCorrectionAndEvents(vertex, tentativeResultIncorrect, tentativeResultCorrect, options);
 
 
         double finTime =tentativeResultIncorrect.finishTime;
@@ -231,7 +231,7 @@ std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentHEFT2(vertex_t* vert
 }
 
 
-std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentMEDIH2(vertex_t* vertex, SchedulingResult& result)
+std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentMEDIH2(vertex_t* vertex, SchedulingResult& result, const fonda::Options& options)
 {
     result.finishTime = std::numeric_limits<double>::max();
     result.startTime = 0;
@@ -242,7 +242,7 @@ std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentMEDIH2(vertex_t* ver
         SchedulingResult tentativeResult(processor);
 
         checkIfPendingMemoryCorrect(processor);
-        std::vector<std::shared_ptr<Event>> createdEVents = tentativeAssignment(vertex,  tentativeResult);
+        std::vector<std::shared_ptr<Event>> createdEVents = tentativeAssignment(vertex, tentativeResult, options);
         checkIfPendingMemoryCorrect(tentativeResult.processorOfAssignment);
 
         double finTime =tentativeResult.finishTime;
@@ -278,18 +278,18 @@ std::vector<std::shared_ptr<Event>>  bestTentativeAssignmentMEDIH2(vertex_t* ver
 }
 
 
-std::vector<std::shared_ptr<Event>>  bestTentativeAssignment(const bool isHeft, vertex_t* vertex, SchedulingResult& result, SchedulingResult& incorrectResultForHeftOnly)
+std::vector<std::shared_ptr<Event>>  bestTentativeAssignment(const bool isHeft, vertex_t* vertex, SchedulingResult& result, SchedulingResult& incorrectResultForHeftOnly, fonda::Options options)
 {
     std::vector<std::shared_ptr<Event>> eventsnew;
     if (isHeft) {
-       eventsnew =  bestTentativeAssignmentHEFT2(vertex, result, incorrectResultForHeftOnly);
+       eventsnew =  bestTentativeAssignmentHEFT2(vertex, result, incorrectResultForHeftOnly, options);
     } else {
-      eventsnew =   bestTentativeAssignmentMEDIH2(vertex, result);
+      eventsnew =   bestTentativeAssignmentMEDIH2(vertex, result, options);
     }
     return eventsnew;
 }
 
-std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, SchedulingResult& result)
+std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, SchedulingResult& result, fonda::Options options)
 {
 
     if (result.processorOfAssignment->getMemorySize() < outMemoryRequirement(v) || result.processorOfAssignment->getMemorySize() < inMemoryRequirement(v)) {
@@ -334,7 +334,7 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, Scheduling
         // try finish times with and without memory overflow
         const double amountToOffload = -Res;
 
-        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(result.startTime, amountToOffload, v->time, v, result.processorOfAssignment);
+        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(result.startTime, amountToOffload, v->time, v, result.processorOfAssignment, options);
         assert(timeToFinishNoEvicted > result.startTime);
 
         if (sumOut > result.processorOfAssignment->getAvailableMemory()) {
@@ -388,7 +388,7 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, Scheduling
 
             startTimeFor1Evicted = std::max(result.startTime, finishTimeWrite1Evict);
             timeToTaskFinishBiggestEvicted =
-                finishTimeWithMemorySwapping(startTimeFor1Evicted, amountToOffloadWithoutBiggestFile, v->time, v, result.processorOfAssignment);
+                finishTimeWithMemorySwapping(startTimeFor1Evicted, amountToOffloadWithoutBiggestFile, v->time, v, result.processorOfAssignment, options);
 
             //startTimeFor1Evicted
                // + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / result.processorOfAssignment->memoryOffloadingPenalty;
@@ -460,7 +460,7 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, Scheduling
             //  finishTimeToWrite = result.processorOfAssignment->getReadyTimeWrite() +
             //                     timeToWriteAllPending;
             startTimeForAllEvicted = std::max(startTimeForAllEvicted, finishTimeWriteAllEvict);
-            timeToTaskFinishAllEvicted = finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, v->time, v, result.processorOfAssignment);
+            timeToTaskFinishAllEvicted = finishTimeWithMemorySwapping(startTimeForAllEvicted, amountToOffloadWithoutAllFiles, v->time, v, result.processorOfAssignment, options);
 
             // startTimeForAllEvicted + timeToRun / result.processorOfAssignment->getProcessorSpeed() + amountToOffloadWithoutAllFiles / result.processorOfAssignment->memoryOffloadingPenalty;
             assert(timeToTaskFinishAllEvicted > startTimeForAllEvicted);
@@ -535,7 +535,7 @@ std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, Scheduling
     return createdEvents;
 }
 
-std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEvents( vertex_t* v, SchedulingResult& resultIncorrect, SchedulingResult& resultCorrect)
+std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEvents(vertex_t* v, SchedulingResult& resultIncorrect, SchedulingResult& resultCorrect, fonda::Options options)
 {
     resultIncorrect.resultingVar = 1;
     resultCorrect.resultingVar = 1;
@@ -668,7 +668,7 @@ std::vector<std::shared_ptr<Event>> tentativeAssignmentHEFT_withCorrectionAndEve
     const double Res = howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(v, procCorrect);
     if (Res < 0) {
         const double amountToOffload = -Res;
-        double correctFinishTime = finishTimeWithMemorySwapping( resultCorrect.startTime, amountToOffload, v->time,  v,   procIncorrect);
+        double correctFinishTime = finishTimeWithMemorySwapping(resultCorrect.startTime, amountToOffload, v->time, v, procIncorrect, options);
         resultCorrect.finishTime =correctFinishTime;
         resultCorrect.shouldBeFreeOnProcessorDuringTask=0;
     }

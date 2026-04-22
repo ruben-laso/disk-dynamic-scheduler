@@ -2,7 +2,7 @@
 #include "fonda_scheduler/SchedulerHeader.hpp"
 
 std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, std::vector<std::shared_ptr<Processor>>& bestModifiedProcs,
-    std::shared_ptr<Processor>& bestProcessorToAssign, const double notEarlierThan, int &bestResultingVar)
+    std::shared_ptr<Processor>& bestProcessorToAssign, const double notEarlierThan, int& bestResultingVar, fonda::Options options)
 {
 
     if (vertex->in_edges.size()>1 ) {
@@ -32,7 +32,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
         const std::vector<std::shared_ptr<Processor>> modifiedProcs = tentativeAssignment(vertex, ourModifiedProc,
             finTime,
             startTime, resultingEvictionVariant,
-            newEvents, reallyUsedMem, notEarlierThan);
+            newEvents, reallyUsedMem, options, notEarlierThan);
 
 
         double epsilon = 1e-9;
@@ -146,7 +146,7 @@ std::vector<std::shared_ptr<Event>> bestTentativeAssignment(vertex_t* vertex, st
 std::vector<std::shared_ptr<Processor>>
 tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModifiedProc,
     double& finTime, double& startTime, int& resultingVar, std::vector<std::shared_ptr<Event>>& newEvents,
-    double& actuallyUsedMemory, double notEarlierThan)
+    double& actuallyUsedMemory, const fonda::Options& options, double notEarlierThan)
 {
 
 
@@ -187,7 +187,7 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
         // cout<<" overflow! ";
         double amountToOffload = -Res;
 
-        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(startTime,  Res, vertex->time, vertex, ourModifiedProc);
+        double timeToFinishNoEvicted = finishTimeWithMemorySwapping(startTime, Res, vertex->time, vertex, ourModifiedProc, options);
             // startTime + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffload / ourModifiedProc->memoryOffloadingPenalty;
         assert(timeToFinishNoEvicted > startTime);
         if (sumOut > ourModifiedProc->getAvailableMemory()) {
@@ -219,7 +219,7 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
             double finishTimeToWrite = startTimeToWriteBiggestEdge + biggestFileWeight / ourModifiedProc->writeSpeedDisk;
             startTimeOfTaskFor1Evicted = std::max(startTime, finishTimeToWrite);
             timeToFinishBiggestEvicted =
-                finishTimeWithMemorySwapping(startTimeOfTaskFor1Evicted, amountToOffloadWithoutBiggestFile, vertex->time, vertex, ourModifiedProc);
+                finishTimeWithMemorySwapping(startTimeOfTaskFor1Evicted, amountToOffloadWithoutBiggestFile, vertex->time, vertex, ourModifiedProc, options);
                // startTimeFor1Evicted
                // + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffloadWithoutBiggestFile / ourModifiedProc->memoryOffloadingPenalty;
             assert(timeToFinishBiggestEvicted > startTimeOfTaskFor1Evicted);
@@ -248,7 +248,7 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
             //                    timeToWriteAllPending;
             startTimeOfTaskForAllEvicted = std::max(startTimeOfTaskForAllEvicted, finishTimeToWrite);
             timeToFinishTaskAllEvicted =
-                finishTimeWithMemorySwapping(startTimeOfTaskForAllEvicted, amountToOffloadWithoutAllFiles, vertex->time, vertex, ourModifiedProc);
+                finishTimeWithMemorySwapping(startTimeOfTaskForAllEvicted, amountToOffloadWithoutAllFiles, vertex->time, vertex, ourModifiedProc, options);
                 //startTimeForAllEvicted + vertex->time / ourModifiedProc->getProcessorSpeed() + amountToOffloadWithoutAllFiles / ourModifiedProc->memoryOffloadingPenalty;
             assert(timeToFinishTaskAllEvicted > startTimeOfTaskForAllEvicted);
         }
@@ -381,8 +381,9 @@ tentativeAssignment(vertex_t* vertex, const std::shared_ptr<Processor>& ourModif
     assert(resultingVar>-1);
     finishTime =
         resultingVar==0? ( eventStartTask->getExpectedTimeFire() + vertex->time / ourModifiedProc->getProcessorSpeed()):
-        finishTimeWithMemorySwapping(eventStartTask->getExpectedTimeFire() , resultingVar==1 ? std::abs(Res) :
-            resultingVar==2 ? amountToOffloadWithoutBiggestFile  :amountToOffloadWithoutAllFiles,  vertex->time, vertex, ourModifiedProc );
+        finishTimeWithMemorySwapping(eventStartTask->getExpectedTimeFire(), resultingVar == 1 ? std::abs(Res) : resultingVar == 2 ? amountToOffloadWithoutBiggestFile
+                                                                                                                                                                                                                                                               : amountToOffloadWithoutAllFiles,
+                                                                                                                                         vertex->time, vertex, ourModifiedProc, options);
 
      if (vertex->time == 0) {
         finishTime = finishTime + 0.0001;

@@ -48,11 +48,13 @@ struct Options {
     //1 - scheduler all task's children when they are ready
     //2 - schedule only as many children as there are processors in the cluster
     //3 - schedule only until we find the next task for our processor
-    int taskReleasePolicy = 1;
+    int taskReleasePolicy = 3;
 
     bool useMinimalEdgeWeights=false;
 
     bool autoChoice=false;
+
+    int penaltyCoefficient=1;
 };
 
 // List of options
@@ -73,6 +75,7 @@ static const struct option long_options[] = {
     {"task-release-policy", required_argument, nullptr, 'q'},
     { "minimal-weights", no_argument, nullptr, 'M' },
     { "auto-choice", no_argument, nullptr, 0 },
+    { "penalty-coefficient", required_argument, nullptr, 'c' },
     { "help", no_argument, nullptr, 'h' },
     { nullptr, 0, nullptr, 0 } // End of options
 };
@@ -93,6 +96,7 @@ static const char* short_options = "" //
                                    "q:" // task release policy
                                    "O" //reverse ordering
                                    "M" // minimal edge weights
+                                   "c:" //penalty coefficient
                                    "h"; // help
 
 inline void printHelp(const char* program_name)
@@ -121,6 +125,7 @@ inline void printHelp(const char* program_name)
               << " -M, --minimal-weights                 Use minimal edge weights (1) instead of real ones. Default: false\n"
               << " --auto-choice                         Use auto choice to predict the best algorithm variant. Does not run the algorithm! To obtain the makespan, run the algorithm with the chosen variant. \n"
               << "  -q, --task-release-policy <variant>  Set task release policy. Default: 1\n"
+              << "  -c, --penalty-coefficient <value>    Set penalty coefficient. Default: 1\n"
               << "  -h, --help                           Show this help message and exit\n";
 }
 
@@ -197,6 +202,9 @@ inline Options parseOptions(int argc, char* argv[])
                 break;
         case 'S':
             options.scaleToFit = true;
+            break;
+        case 'c':
+            parseArg("penalty-coefficient", optarg, options.penaltyCoefficient, [](const char* arg) { return std::stod(arg); });
             break;
         case 'h':
             printHelp(argv[0]);

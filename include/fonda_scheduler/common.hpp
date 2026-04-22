@@ -4,11 +4,12 @@
 #include "../../extlibs/memdag/src/graph.hpp"
 #include "cluster.hpp"
 #include "json.hpp"
+#include "options.hpp"
 
+#include <queue>
 #include <regex>
 #include <unordered_set>
 #include <utility>
-#include <queue>
 
 extern double timeInSystem;
 
@@ -792,7 +793,7 @@ public:
     void fire();
 
     void fireTaskStart();
-    void scheduleTasksUntilFoundForThisProc();
+    void scheduleTasksUntilFoundForThisProc(fonda::Options options);
 
     void fireTaskFinish();
 

@@ -68,12 +68,12 @@ std::vector<std::pair<vertex_t*, double>> calculateBottomLevels(graph_t* graph, 
 double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj);
 
 
-std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, SchedulingResult& result);
+std::vector<std::shared_ptr<Event>>  tentativeAssignment(vertex_t* v, SchedulingResult& result, fonda::Options options);
 std::vector<std::shared_ptr<Event>>
 tentativeAssignmentHEFT_withCorrectionAndEvents(
     vertex_t* v,
     SchedulingResult& resultIncorrect,
-    SchedulingResult& resultCorrect);
+    SchedulingResult& resultCorrect, fonda::Options options);
 
 graph_t* convertToNonMemRepresentation(graph_t* withMemories, std::map<int, int>& noMemToWithMem);
 
@@ -89,7 +89,7 @@ void processIncomingEdgesByNotGoingIntoPast(const vertex_t* v, const bool useDev
 
 void checkIfPendingMemoryCorrect(const std::shared_ptr<Processor>& p);
 
-std::vector<std::shared_ptr<Event>>  bestTentativeAssignment(bool isHeft,  vertex_t* vertex, SchedulingResult& result, SchedulingResult& incorrectResultForHeftOnly);
+std::vector<std::shared_ptr<Event>>  bestTentativeAssignment(bool isHeft, vertex_t* vertex, SchedulingResult& result, SchedulingResult& incorrectResultForHeftOnly, fonda::Options options);
 
 void realSurplusOfOutgoingEdges(const vertex_t* v, const std::shared_ptr<Processor>& ourModifiedProc, double& sumOut);
 
@@ -111,7 +111,7 @@ void emulateAllEvict2(SchedulingResult& result, double timeToWriteAllPending, co
     double startTimeForAllEvicted, double readyTimeCompute, double readyTimeWrite);
 
 
-double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p);
+double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p, fonda::Options options);
 
 
 double uniquePredecessorProcs(vertex_t* vertex);

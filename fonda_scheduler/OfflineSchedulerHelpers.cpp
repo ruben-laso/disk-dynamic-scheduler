@@ -250,12 +250,14 @@ void realSurplusOfOutgoingEdges(const vertex_t* v, const std::shared_ptr<Process
     //  cout << "REQUIRES AT THE END: " << sumOut << endl;
 }
 
-double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p){
+double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p, fonda::Options options)
+{
+
 
          double result = startTime + timeToRun / p->getProcessorSpeed();
 
          double penaltyToSwap = (1 + task->swapRate) * (std::abs(amountToOffload) / task->memoryRequirement) *
-             (std::abs(amountToOffload) / p->writeSpeedDisk);
+             (std::abs(amountToOffload) / p->writeSpeedDisk) * options.penaltyCoefficient;
 
          result += penaltyToSwap;
 

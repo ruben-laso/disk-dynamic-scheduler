@@ -17,6 +17,8 @@ double runtimeOfScheduler;
 double timeInSystem;
 bool isHeft = false;
 
+fonda::Options opts;
+
 double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1,  fonda::Options options,  double& runtime)
 {
     double resMakespan = -1;
@@ -28,6 +30,7 @@ double correctOflineMedihWithEvents(graph_t* graph, Cluster* cluster1,  fonda::O
     taskReleasePolicy = 0;
     timeInSystem=0;
     runtimeOfScheduler=0;
+    opts= options;
 
     const auto start = std::chrono::system_clock::now();
     std::vector<std::shared_ptr<Event>> newEvents = medih2(graph, options, runtime);
@@ -97,6 +100,7 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, do
     taskReleasePolicy= options.taskReleasePolicy;
     timeInSystem = 0;
     runtimeOfScheduler=0;
+    opts= options;
 
     readyQueue= ReadyQueue(options.reverseOrdering);
 
@@ -151,7 +155,7 @@ double onlineMedih(graph_t* graph, Cluster* cluster1, fonda::Options options, do
             std::vector<std::shared_ptr<Processor>> bestModifiedProcs;
             std::shared_ptr<Processor> bestProcessorToAssign;
             int bestResultingVar;
-            std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(vertex, bestModifiedProcs, bestProcessorToAssign, 0, bestResultingVar);
+            std::vector<std::shared_ptr<Event>> newEvents = bestTentativeAssignment(vertex, bestModifiedProcs, bestProcessorToAssign, 0, bestResultingVar, options);
 
             for (auto& item : newEvents) {
                 events.insert(item);
@@ -329,7 +333,7 @@ void Event::fireTaskFinish()
         this->processor-> setReadyTimeCompute(this->getActualTimeFire());
     }
 
-    scheduleTasksUntilFoundForThisProc();
+    scheduleTasksUntilFoundForThisProc(opts);
 }
 
 void Event::fireReadStart()
@@ -573,7 +577,7 @@ bool Event::cleanupPredecessors()
     return preds.empty();
 }
 
-void Event::scheduleTasksUntilFoundForThisProc()
+void Event::scheduleTasksUntilFoundForThisProc(fonda::Options options)
 {
     bool foundTaskForThisProc = false;
     int counterTaskRelease=0;
@@ -594,8 +598,8 @@ void Event::scheduleTasksUntilFoundForThisProc()
             v,
             modified,
             assigned,
-             this->getActualTimeFire(),
-            bestVar);
+            this->getActualTimeFire(),
+            bestVar, options);
 
         const auto end = std::chrono::system_clock::now();
         const std::chrono::duration<double> elapsed_seconds = end - start;
