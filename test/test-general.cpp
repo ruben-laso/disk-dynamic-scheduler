@@ -41,6 +41,7 @@ TEST(SchedulerLogicTest, ExceedsMemory)
         options.algoNumber = 1; // HEFT-BL
         options.reverseOrdering = false;
         options.deviationModel = 1;
+        options.pageSize=1;
         std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, options, runtime);
         ASSERT_EQ(eventsMedih.size(), 16);
     });
@@ -60,12 +61,10 @@ TEST(BaselineTest, ExceedsMemory)
         options.algoNumber = 1; // HEFT-BL
         options.reverseOrdering = false;
         options.deviationModel = 1;
+        options.pageSize=1;
         std::vector<std::shared_ptr<Event>> eventsMedih = medih2(dag, options, runtime);
         ASSERT_EQ(eventsMedih.size(), 16);
-        for (auto e : eventsMedih) {
-            e->printEventShort();
-        }
-        std::cout << "-------------------\n";
+
         imaginedCluster = ClusterFactory::CreateBottleneckCluster();
         imaginedClusterIncorrect = ClusterFactory::CreateBottleneckCluster();
 

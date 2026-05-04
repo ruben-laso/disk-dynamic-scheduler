@@ -55,6 +55,7 @@ struct Options {
     bool autoChoice=false;
 
     int penaltyCoefficient=1;
+    int pageSize=4096;
 };
 
 // List of options

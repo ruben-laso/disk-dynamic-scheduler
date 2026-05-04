@@ -111,7 +111,7 @@ void emulateAllEvict2(SchedulingResult& result, double timeToWriteAllPending, co
     double startTimeForAllEvicted, double readyTimeCompute, double readyTimeWrite);
 
 
-double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p, fonda::Options options);
+double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p, const fonda::Options& options);
 
 
 double uniquePredecessorProcs(vertex_t* vertex);

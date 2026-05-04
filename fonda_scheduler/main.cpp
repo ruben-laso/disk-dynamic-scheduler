@@ -107,9 +107,14 @@ int main(const int argc, char* argv[])
     };
 
     if (options.autoChoice) {
+        const auto start = std::chrono::system_clock::now();
         enforce_single_source_and_target_with_minimal_weights(graphMemTopology);
         compute_bottom_and_top_levels(graphMemTopology);
         printGraphAndWeightProperties(graphMemTopology, options.deviationModel != 1);
+        const auto end = std::chrono::system_clock::now();
+        auto elapsed_seconds = end - start;
+        long count = elapsed_seconds.count();
+        std::cout<< count<<std::endl;
 
     } else {
         if (options.scaleToFit) {

@@ -333,14 +333,14 @@ TEST(computeSwapPenalty, PenaltyOnTwoProccessors)
     EXPECT_NO_THROW({
 
         //If place source on smallerProcessor
-            fonda::Options opts { };
-
+        fonda::Options opts { };
+        opts.pageSize=1;
         double finishTime = finishTimeWithMemorySwapping(0, 80, 100, dag->vertices_by_id.at(0), imaginedCluster->processors.at(1), opts);
-        ASSERT_EQ(abs(finishTime- 9.04)<1e-6, true);
+        ASSERT_EQ(abs(finishTime- 10.8)<1e-6, true);
 
         //If place left on smallerProcessor, while the right's file is there: from 20 memory 10 is occupied with a file, left's mem req is 22
         finishTime = finishTimeWithMemorySwapping(0, 12, 25, dag->vertices_by_id.at(1), imaginedCluster->processors.at(1), opts);
-        ASSERT_EQ(abs(finishTime- 1.22)<1e-6, true);
+        ASSERT_EQ(abs(finishTime- 1.9)<1e-6, true);
 
     });
 

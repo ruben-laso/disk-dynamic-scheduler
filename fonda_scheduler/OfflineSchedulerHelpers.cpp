@@ -250,23 +250,26 @@ void realSurplusOfOutgoingEdges(const vertex_t* v, const std::shared_ptr<Process
     //  cout << "REQUIRES AT THE END: " << sumOut << endl;
 }
 
-double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task, const std::shared_ptr<Processor>& p, fonda::Options options)
+double finishTimeWithMemorySwapping(double startTime, double amountToOffload, double timeToRun, const vertex_t* task,
+    const std::shared_ptr<Processor>& p, const fonda::Options& options)
 {
+    double pSize=options.pageSize;
+    double result = startTime + timeToRun / p->getProcessorSpeed();
 
+    int mswapPsize = ceil((std::abs(amountToOffload)/pSize));
+    int numpages = ceil(((1 + task->swapRate)* mswapPsize)) ;
 
-         double result = startTime + timeToRun / p->getProcessorSpeed();
+     double penaltyToSwap =  //(std::abs(amountToOffload) / task->memoryRequirement) *
+         numpages * (pSize/p->readSpeedDisk)
+         * options.penaltyCoefficient;
+     result += penaltyToSwap;
 
-         double penaltyToSwap = (1 + task->swapRate) * (std::abs(amountToOffload) / task->memoryRequirement) *
-             (std::abs(amountToOffload) / p->writeSpeedDisk) * options.penaltyCoefficient;
+     if(result<startTime){
+         std::cout<<"bad computed result with memory swapping on vertex "<<task->name<<std::endl;
+     }
 
-         result += penaltyToSwap;
-
-         if(result<startTime){
-             std::cout<<"bad computed result with memory swapping on vertex "<<task->name<<std::endl;
-         }
-
-        // std::cout<<"compute duration from start time  "<<startTime<<" w amountToOffload "<<amountToOffload<< "is "<< result-startTime<< "w penalty "<< penaltyToSwap <<std::endl;
-         return result;
+    // std::cout<<"compute duration from start time  "<<startTime<<" w amountToOffload "<<amountToOffload<< "is "<< result-startTime<< "w penalty "<< penaltyToSwap <<std::endl;
+     return result;
 }
 
 double howMuchMemoryIsStillAvailableOnProcIfTaskScheduledThere(const vertex_t* v, const std::shared_ptr<Processor>& pj)
