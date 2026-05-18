@@ -1328,12 +1328,12 @@ variants:
     items:
      - name: 'norm'
        extra_args: [ '-m 100000000', '-s 100', '-r 10' ]
- # - axis: 'useMinMem'
- #   items:
- #    # - name: 'MM'
- #    #   extra_args: [ '-M' ]
- #     - name: 'NoMM'
- #       extra_args: [ '' ]
+  - axis: 'useMinMem'
+    items:
+      - name: 'MM'
+        extra_args: [ '-M' ]
+      - name: 'NoMM'
+        extra_args: [ '' ]
   - axis: 'penaltyCoefficient'
     items:
       - name: 'nrmpn'
@@ -1356,33 +1356,35 @@ experiments:
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A2-10dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./',   '-d 2', '-S', '-E'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A3-10dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./',   '-d 2', '-S', '-E'   ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
+    slurm_args: ['--qos','low']
   - name: A4-10dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-l', '-p ./',   '-d 2', '-S', '-E'   ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
+    slurm_args: ['--qos','low']
   - name: A5-10dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O', '-p ./',   '-d 2', '-S' , '-E'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    #slurm_args: ['--priority', '1'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
 
 
   - name: A1-30dev
@@ -1391,33 +1393,35 @@ experiments:
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    #slurm_args: [ '--priority', '1' ] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A2-30dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./',   '-d 3' , '-S' , '-E' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    #slurm_args: [ '--priority', '1' ] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A3-30dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./',   '-d 3' , '-S' , '-E' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
+    slurm_args: ['--qos','low']
   - name: A4-30dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-l', '-p ./',   '-d 3' , '-S' , '-E'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
+    slurm_args: ['--qos','low']
   - name: A5-30dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O', '-p ./',   '-d 3' , '-S', '-E'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    #slurm_args: [ '--priority', '1' ] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
 
   - name: A1-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', 'no', '-p ./',   '-d 4', '-S' , '-E'  ]
@@ -1425,35 +1429,35 @@ experiments:
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A2-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./',   '-d 4' , '-S', '-E'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high']
+    slurm_args: ['--qos','low']
   - name: A3-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./',   '-d 4', '-S', '-E'   ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A4-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-l', '-p ./',   '-d 4', '-S' , '-E'  ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A5-50dev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O', '-p ./',   '-d 4', '-S', '-E' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
 
 
   - name: A1-ndev
@@ -1462,35 +1466,35 @@ experiments:
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A2-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-blc', '-p ./',   '-d 1', '-S' , '-E' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A3-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-mm', '-p ./',   '-d 1', '-S', '-E'   ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A4-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-l', '-p ./',   '-d 1', '-S', '-E' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: A5-ndev
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O',  '-p ./',   '-d 1', '-S', '-E' ]
     stdout: out
     num_nodes: 1
     procs_per_node: 1
     num_threads: 1
-    # slurm_args: ['--qos','high'] #'--partition', 'core8a',
+    slurm_args: ['--qos','low'] #'--partition', 'core8a',
   - name: autochoice
     args: [ './build/fonda_scheduler', '@EXTRA_ARGS@', '-a heft-bl', '-O',  '-p ./',  '-d 1', '-S',  '-E',  '--auto-choice' ]
     stdout: out
@@ -1503,15 +1507,21 @@ experiments:
 ##
 matrix:
   #include:
-  #  - experiments: [ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ] # autochoice A1-10dev, A2-10dev, A3-10dev,  A1-30dev, A2-30dev, A3-30dev,A4-10dev, A4-30dev, A5-10dev, A5-30dev,
+  #  - experiments: [ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ] # autochoice  A1-30dev, A2-30dev, A3-30dev,A4-10dev, A4-30dev, A5-10dev, A5-30dev,
   #    axes: [memSizes, penaltyCoefficient, machines] #useMinMem
 
   #matrix:
   include:
       - experiments: [  A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ]
-        axes: [ memSizes, machines, penaltyCoefficient ]
-        variants: [ norm, hlfm, nrmpn ]
+        axes: [ memSizes, machines, penaltyCoefficient,useMinMem ]
+        variants: [ norm, hlfm, nrmpn, NoMM ]
       - experiments: [  A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ]
-        axes: [ memSizes, machines, penaltyCoefficient ]
-        variants: [ norm, mach, dbpn ]
+        axes: [ memSizes, machines, penaltyCoefficient , useMinMem]
+        variants: [ norm, mach, dbpn, NoMM ]
+      - experiments: [ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev , A1-10dev, A2-10dev, A3-10dev, A4-10dev, A5-10dev,  A1-30dev, A2-30dev, A3-30dev ,A4-30dev,  A5-30dev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ]
+        axes: [ memSizes, machines, penaltyCoefficient , useMinMem]
+        variants: [ norm, mach, nrmpn, NoMM ]
+      - experiments: [ A1-ndev,A2-ndev , A3-ndev, A4-ndev, A5-ndev, A1-50dev, A2-50dev, A3-50dev,  A4-50dev, A5-50dev ]
+        axes: [ memSizes, machines, penaltyCoefficient , useMinMem ]
+        variants: [ norm, mach, nrmpn, MM ]
 
