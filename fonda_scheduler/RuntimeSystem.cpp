@@ -724,8 +724,12 @@ double applyDeviationTo(double& in)
         throw std::runtime_error("unknown deviation variant");
     }
 
-    std::normal_distribution<double> dist(in, stddev);
-    double result = dist(gen);
+    double result = in;
+    if (stddev>0) {
+        std::normal_distribution<double> dist(in, stddev);
+        result = dist(gen);
+    }
+
     result = (events.deviationVariant != 1 && events.deviationVariant != 5) ? std::max(result, 1.0) : result;
     if (events.deviationVariant == 5) {
         result *= 2;
